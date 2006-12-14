@@ -80,7 +80,7 @@ class Geometry
   end
 end
 
-Array.class_eval do
+class Array
   # allows you to get new dimensions for the current array of dimensions with a given geometry string
   #
   #   [50, 64] / '40>' # => [40, 51]
