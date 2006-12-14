@@ -32,53 +32,53 @@ class ImageOrPdfAttachment < Attachment
   has_attachment :content_type => ['pdf', :image], :resize_to => 'x50'
 end
 
-#class ImageWithThumbsAttachment < Attachment
-#  has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
-#  after_resize do |record, img|
-#    record.aspect_ratio = img.columns.to_f / img.rows.to_f
-#  end
-#end
+class ImageWithThumbsAttachment < Attachment
+  has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
+  #after_resize do |record, img|
+  #  record.aspect_ratio = img.columns.to_f / img.rows.to_f
+  #end
+end
 
 class FileAttachment < ActiveRecord::Base
   has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files'
   validates_as_attachment
 end
 
-#class ImageFileAttachment < FileAttachment
-#  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files', 
-#    :content_type => :image, :resize_to => [50,50]
-#end
-#
-#class ImageWithThumbsFileAttachment < FileAttachment
-#  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
-#    :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
-#  after_resize do |record, img|
-#    record.aspect_ratio = img.columns.to_f / img.rows.to_f
-#  end
-#end
-#
-#class ImageWithThumbsClassFileAttachment < FileAttachment
-#  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
-#    :thumbnails => { :thumb => [50, 50] }, :resize_to => [55,55],
-#    :thumbnail_class => 'ImageThumbnail'
-#end
-#
-#class ImageThumbnail < FileAttachment
-#  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files/thumbnails'
-#end
-#
-## no parent
-#class OrphanAttachment < ActiveRecord::Base
-#  has_attachment
-#  validates_as_attachment
-#end
-#
-## no filename, no size, no content_type
-#class MinimalAttachment < ActiveRecord::Base
-#  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files'
-#  validates_as_attachment
-#  
-#  def filename
-#    "#{id}.file"
-#  end
-#end
+class ImageFileAttachment < FileAttachment
+  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files', 
+    :content_type => :image, :resize_to => [50,50]
+end
+
+class ImageWithThumbsFileAttachment < FileAttachment
+  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
+    :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
+  #after_resize do |record, img|
+  #  record.aspect_ratio = img.columns.to_f / img.rows.to_f
+  #end
+end
+
+class ImageWithThumbsClassFileAttachment < FileAttachment
+  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
+    :thumbnails => { :thumb => [50, 50] }, :resize_to => [55,55],
+    :thumbnail_class => 'ImageThumbnail'
+end
+
+class ImageThumbnail < FileAttachment
+  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files/thumbnails'
+end
+
+# no parent
+class OrphanAttachment < ActiveRecord::Base
+  has_attachment
+  validates_as_attachment
+end
+
+# no filename, no size, no content_type
+class MinimalAttachment < ActiveRecord::Base
+  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files'
+  validates_as_attachment
+  
+  def filename
+    "#{id}.file"
+  end
+end

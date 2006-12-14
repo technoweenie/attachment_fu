@@ -76,6 +76,11 @@ module Technoweenie # :nodoc:
         validate              :attachment_attributes_valid?
       end
 
+      # Returns true or false if the given content type is recognized as an image.
+      def image?(content_type)
+        content_types.include?(content_type)
+      end
+
       # Callback after an attachment has been saved either to the file system or the DB.
       # Only called if the file has been changed, not necessarily if the record is updated.
       #
@@ -91,6 +96,19 @@ module Technoweenie # :nodoc:
     end
 
     module InstanceMethods
+      # Checks whether the attachment's content type is an image content type
+      def image?
+        self.class.image?(content_type)
+      end
+      
+      def thumbnailable?
+        image? && respond_to?(:parent_id)
+      end
+
+      def thumbnail_class
+        self.class.thumbnail_class
+      end
+
       # Gets the thumbnail name for a filename.  'foo.jpg' becomes 'foo_thumbnail.jpg'
       def thumbnail_name_for(thumbnail = nil)
         return filename if thumbnail.blank?
