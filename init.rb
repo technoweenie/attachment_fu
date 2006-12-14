@@ -1,1 +1,1 @@
-ActiveRecord::Base.send(:include, Technoweenie::ActsAsAttachment)
+ActiveRecord::Base.send(:extend, Technoweenie::AttachmentFu::ActMethods)

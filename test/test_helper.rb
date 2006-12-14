@@ -100,4 +100,3 @@ class Test::Unit::TestCase #:nodoc:
 end
 
 require File.join(File.dirname(__FILE__), 'fixtures/attachment')
-require File.join(File.dirname(__FILE__), 'fixtures/base_attachment_tests')
