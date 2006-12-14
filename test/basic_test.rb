@@ -1,4 +1,4 @@
-require File.join(File.dirname(__FILE__), 'test_helper')
+require File.expand_path(File.join(File.dirname(__FILE__), 'test_helper'))
 
 class BasicTest < Test::Unit::TestCase
   def test_should_set_default_min_size

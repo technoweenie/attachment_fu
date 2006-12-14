@@ -11,7 +11,7 @@ module Technoweenie # :nodoc:
       def attachment_data
         return @attachment_data if @attachment_data
         
-        filename = full_filename
+        filename = @attachment_file || full_filename
         File.open(filename, 'rb') do |file|
           @attachment_data = file.read
         end if File.file?(filename)
@@ -89,13 +89,14 @@ module Technoweenie # :nodoc:
     # Methods for DB backed attachments
     module DbFileBackend
       def self.included(base) #:nodoc:
+        Object.const_set(:DbFile, Class.new(ActiveRecord::Base)) unless Object.const_defined?(:DbFile)
         base.belongs_to  :db_file, :class_name => '::DbFile', :foreign_key => 'db_file_id'
         base.before_save :save_to_storage # so the db_file_id can be set
       end
 
       # Gets the attachment data
       def attachment_data
-        @attachment_data ||= db_file.data
+        @attachment_data ||= (attachment_file_data || db_file.data)
       end
 
       # Destroys the file.  Called in the after_destroy callback

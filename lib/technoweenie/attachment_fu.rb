@@ -1,4 +1,5 @@
 require File.join(File.dirname(__FILE__), 'attachment_fu', 'backends')
+require File.join(File.dirname(__FILE__), 'attachment_fu', 'processors')
 
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
@@ -46,20 +47,22 @@ module Technoweenie # :nodoc:
         unless included_modules.include? InstanceMethods
           class_inheritable_accessor :attachment_options
           
+          options[:processor]        ||= :rmagick
           options[:storage]          ||= options[:file_system_path] ? :file_system : :db_file
           options[:file_system_path] ||= File.join("public", table_name)
           options[:file_system_path]   = options[:file_system_path][1..-1] if options[:file_system_path].first == '/'
 
-          ##with_options :foreign_key => 'parent_id' do |m|
-          ##  m.has_many   :thumbnails, :dependent => :destroy, :class_name => options[:thumbnail_class].to_s
-          ##  m.belongs_to :parent, :class_name => self.base_class.to_s
-          ##end
-
-          ##after_save :create_attachment_thumbnails # allows thumbnails with parent_id to be created
+          with_options :foreign_key => 'parent_id' do |m|
+            m.has_many   :thumbnails, :dependent => :destroy, :class_name => options[:thumbnail_class].to_s
+            m.belongs_to :parent, :class_name => base_class.to_s
+          end
 
           after_destroy :destroy_file
           extend  ClassMethods
-          include InstanceMethods, Technoweenie::AttachmentFu::const_get("#{options[:storage].to_s.classify}Backend")
+          include InstanceMethods
+          include Technoweenie::AttachmentFu::const_get("#{options[:storage].to_s.classify}Backend")
+          include Technoweenie::AttachmentFu::const_get("#{options[:processor].to_s.classify}Processor")
+          before_save :process_attachment
         end
         
         options[:content_type] = [options[:content_type]].flatten.collect { |t| t == :image ? Technoweenie::ActsAsAttachment.content_types : t }.flatten unless options[:content_type].nil?
@@ -81,6 +84,18 @@ module Technoweenie # :nodoc:
         content_types.include?(content_type)
       end
 
+      # Callback after an image has been resized.
+      #
+      #   class Foo < ActiveRecord::Base
+      #     acts_as_attachment
+      #     after_resize do |record, img| 
+      #       record.aspect_ratio = img.columns.to_f / img.rows.to_f
+      #     end
+      #   end
+      def after_resize(&block)
+        write_inheritable_array(:after_resize, [block])
+      end
+
       # Callback after an attachment has been saved either to the file system or the DB.
       # Only called if the file has been changed, not necessarily if the record is updated.
       #
@@ -92,6 +107,25 @@ module Technoweenie # :nodoc:
       #   end
       def after_attachment_saved(&block)
         write_inheritable_array(:after_attachment_saved, [block])
+      end
+
+      # Callback before a thumbnail is saved.  Use this to pass any necessary extra attributes that may be required.
+      #
+      #   class Foo < ActiveRecord::Base
+      #     acts_as_attachment
+      #     before_thumbnail_saved do |record, thumbnail|
+      #       ...
+      #     end
+      #   end
+      def before_thumbnail_saved(&block)
+        write_inheritable_array(:before_thumbnail_saved, [block])
+      end
+
+      # Get the thumbnail class, which is the current attachment class by default.
+      # Configure this with the :thumbnail_class option.
+      def thumbnail_class
+        attachment_options[:thumbnail_class] = attachment_options[:thumbnail_class].constantize unless attachment_options[:thumbnail_class].is_a?(Class)
+        attachment_options[:thumbnail_class]
       end
     end
 
@@ -152,13 +186,32 @@ module Technoweenie # :nodoc:
         @attachment_data = nil
         @save_attachment = false
         self.size = 0
-        return nil if data.nil?
 
         if data
           self.size = data.length
           @save_attachment = true
           @attachment_data = data
         end
+      end
+      
+      # sets a temporary location to the asset.  Use this if the file is already on the local file system
+      # and if you do not need to load it into memory.  
+      def attachment_file=(file)
+        @attachment_file = nil
+        @save_attachment = false
+        self.size = 0
+
+        if file && File.file?(file)
+          file_stat = File.stat(file)
+          self.size = file_stat.size
+          @save_attachment = true
+          @attachment_file = file
+        end
+      end
+
+      # Retrieve the temporary attachment file data if it exists, or return nil
+      def attachment_file_data
+        (@attachment_file && File.file?(@attachment_file)) ? File.read(@attachment_file) : nil
       end
 
       # Sets the content type.
@@ -169,6 +222,11 @@ module Technoweenie # :nodoc:
       # sanitizes a filename.
       def filename=(new_name)
         write_attribute :filename, sanitize_filename(new_name)
+      end
+
+      # Returns the width/height in a suitable format for the image_tag helper: (100x100)
+      def image_size
+        [width.to_s, height.to_s] * 'x'
       end
 
       protected
@@ -192,6 +250,9 @@ module Technoweenie # :nodoc:
             errors.add attr_name, ActiveRecord::Errors.default_error_messages[:inclusion] unless enum.nil? || enum.include?(send(attr_name))
           end
         end
+
+        # Stub for a #process_attachment method in a processor
+        def process_attachment() end
 
         # Yanked from ActiveRecord::Callbacks, modified so I can pass args to the callbacks besides self.
         # Only accept blocks, however

@@ -34,9 +34,9 @@ end
 
 class ImageWithThumbsAttachment < Attachment
   has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
-  #after_resize do |record, img|
-  #  record.aspect_ratio = img.columns.to_f / img.rows.to_f
-  #end
+  after_resize do |record, img|
+    record.aspect_ratio = img.columns.to_f / img.rows.to_f
+  end
 end
 
 class FileAttachment < ActiveRecord::Base
@@ -52,9 +52,9 @@ end
 class ImageWithThumbsFileAttachment < FileAttachment
   has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
     :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
-  #after_resize do |record, img|
-  #  record.aspect_ratio = img.columns.to_f / img.rows.to_f
-  #end
+  after_resize do |record, img|
+    record.aspect_ratio = img.columns.to_f / img.rows.to_f
+  end
 end
 
 class ImageWithThumbsClassFileAttachment < FileAttachment

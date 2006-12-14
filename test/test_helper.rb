@@ -12,7 +12,7 @@ ActiveRecord::Base.establish_connection(config[ENV['DB'] || 'sqlite'])
 
 load(File.dirname(__FILE__) + "/schema.rb")
 
-Test::Unit::TestCase.fixture_path = File.dirname(__FILE__) + "/fixtures/"
+Test::Unit::TestCase.fixture_path = File.dirname(__FILE__) + "/fixtures"
 $LOAD_PATH.unshift(Test::Unit::TestCase.fixture_path)
 
 class Test::Unit::TestCase #:nodoc:
@@ -26,6 +26,8 @@ class Test::Unit::TestCase #:nodoc:
   end
 
   def setup
+    Attachment.saves = 0
+    DbFile.transaction { [Attachment, FileAttachment, OrphanAttachment, MinimalAttachment, DbFile].each { |klass| klass.delete_all } }
     FileUtils.rm_rf File.join(File.dirname(__FILE__), 'files')
     attachment_model self.class.attachment_model
   end
@@ -100,3 +102,5 @@ class Test::Unit::TestCase #:nodoc:
 end
 
 require File.join(File.dirname(__FILE__), 'fixtures/attachment')
+require File.join(File.dirname(__FILE__), 'base_attachment_tests')
+require File.join(File.dirname(__FILE__), 'image_attachment_tests')
