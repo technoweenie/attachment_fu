@@ -65,13 +65,13 @@ module Technoweenie # :nodoc:
           before_save :process_attachment
         end
         
-        options[:content_type] = [options[:content_type]].flatten.collect { |t| t == :image ? Technoweenie::ActsAsAttachment.content_types : t }.flatten unless options[:content_type].nil?
+        options[:content_type] = [options[:content_type]].flatten.collect { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
         self.attachment_options = options
       end
     end
 
     module ClassMethods
-      delegate :content_types, :to => Technoweenie::ActsAsAttachment
+      delegate :content_types, :to => Technoweenie::AttachmentFu
 
       # Performs common validations for attachment models.
       def validates_as_attachment
