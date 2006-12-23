@@ -42,7 +42,7 @@ module BaseAttachmentTests
     assert_not_created do # no new db_file records
       use_temp_file 'files/rails.png' do |file|
         attachment.filename = 'rails2.png'
-        attachment.temp_path = File.join(Test::Unit::TestCase.fixture_path, file)
+        attachment.temp_path = File.join(fixture_path, file)
         attachment.save!
       end
     end

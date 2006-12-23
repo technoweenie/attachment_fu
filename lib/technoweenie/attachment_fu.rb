@@ -11,9 +11,9 @@ end
 
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
-    @@temp_path = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
+    @@tempfile_path = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
     @@content_types = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png']
-    mattr_reader :content_types, :temp_path
+    mattr_reader :content_types, :tempfile_path
 
     class ThumbnailError < StandardError;  end
     class AttachmentError < StandardError; end
@@ -142,7 +142,7 @@ module Technoweenie # :nodoc:
 
       def copy_to_temp_file(file, temp_base_name)
         path = nil
-        Tempfile.open temp_base_name, Technoweenie::AttachmentFu.temp_path do |f| 
+        Tempfile.open temp_base_name, Technoweenie::AttachmentFu.tempfile_path do |f| 
           path = f.path
         end
         FileUtils.cp file, path
@@ -151,7 +151,7 @@ module Technoweenie # :nodoc:
       
       def write_to_temp_file(data, temp_base_name)
         path = nil
-        Tempfile.open temp_base_name, Technoweenie::AttachmentFu.temp_path do |f| 
+        Tempfile.open temp_base_name, Technoweenie::AttachmentFu.tempfile_path do |f| 
           path = f.path
           f.write data
         end
@@ -180,8 +180,7 @@ module Technoweenie # :nodoc:
         return filename if thumbnail.blank?
         ext = nil
         basename = filename.gsub /\.\w+$/ do |s|
-          ext = s
-          ''
+          ext = s; ''
         end
         "#{basename}_#{thumbnail}#{ext}"
       end
@@ -264,8 +263,7 @@ module Technoweenie # :nodoc:
         end
 
         def set_size_from_temp_path
-          return unless save_attachment?
-          self.size = File.size(temp_path)
+          self.size = File.size(temp_path) if save_attachment?
         end
 
         # validates the size and content_type attributes according to the current model's options
