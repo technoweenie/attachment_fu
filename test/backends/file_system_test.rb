@@ -50,11 +50,13 @@ class FileSystemTest < Test::Unit::TestCase
     attachment   = upload_file :filename => '/files/rails.png'
     old_filename = attachment.full_filename
     assert_not_created do
-      attachment.filename        = 'rails2.png'
-      attachment.attachment_data = IO.read(File.join(Test::Unit::TestCase.fixture_path, 'files/rails.png'))
-      attachment.save
-      assert  File.exists?(attachment.full_filename), "#{attachment.full_filename} does not exist"    
-      assert !File.exists?(old_filename),             "#{old_filename} still exists"
+      use_temp_file 'files/rails.png' do |file|
+        attachment.filename        = 'rails2.png'
+        attachment.temp_path = File.join(Test::Unit::TestCase.fixture_path, file)
+        attachment.save!
+        assert  File.exists?(attachment.full_filename), "#{attachment.full_filename} does not exist"    
+        assert !File.exists?(old_filename),             "#{old_filename} still exists"
+      end
     end
   end
   

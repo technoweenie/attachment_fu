@@ -54,11 +54,22 @@ class Test::Unit::TestCase #:nodoc:
 
   protected
     def upload_file(options = {})
-      att = attachment_model.create :uploaded_data => fixture_file_upload(options[:filename], options[:content_type] || 'image/png')
-      att.reload unless att.new_record?
-      att
+      use_temp_file options[:filename] do |file|
+        att = attachment_model.create :uploaded_data => fixture_file_upload(file, options[:content_type] || 'image/png')
+        att.reload unless att.new_record?
+        return att
+      end
     end
-    
+
+    def use_temp_file(fixture_filename)
+      temp_path = File.join('/tmp', File.basename(fixture_filename))
+      FileUtils.mkdir_p File.join(fixture_path, 'tmp')
+      FileUtils.cp File.join(fixture_path, fixture_filename), File.join(fixture_path, temp_path)
+      yield temp_path
+    ensure
+      FileUtils.rm_rf File.join(fixture_path, 'tmp')
+    end
+
     def assert_created(num = 1)
       assert_difference attachment_model.base_class, :count, num do
         if attachment_model.included_modules.include? DbFile

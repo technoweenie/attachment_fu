@@ -4,18 +4,6 @@ module Technoweenie # :nodoc:
     module FileSystemBackend
       def self.included(base) #:nodoc:
         base.before_update :rename_file
-        base.after_save    :save_to_storage # so the id can be part of the url
-      end
-
-      # Gets the attachment data
-      def attachment_data
-        return @attachment_data if @attachment_data
-        
-        filename = @attachment_file || full_filename
-        File.open(filename, 'rb') do |file|
-          @attachment_data = file.read
-        end if File.file?(filename)
-        @attachment_data
       end
 
       # Gets the full path to the filename in this format:
@@ -52,6 +40,10 @@ module Technoweenie # :nodoc:
         write_attribute :filename, sanitize_filename(value)
       end
 
+      def create_temp_file!
+        copy_to_temp_file full_filename
+      end
+
       # Destroys the file.  Called in the after_destroy callback
       def destroy_file
         FileUtils.rm full_filename rescue nil
@@ -59,7 +51,7 @@ module Technoweenie # :nodoc:
       
       def rename_file
         return unless @old_filename && @old_filename != full_filename
-        if @save_attachment && File.exists?(@old_filename)
+        if save_attachment? && File.exists?(@old_filename)
           FileUtils.rm @old_filename
         elsif File.exists?(@old_filename)
           FileUtils.mv @old_filename, full_filename
@@ -70,19 +62,17 @@ module Technoweenie # :nodoc:
       
       # Saves the file to the file system
       def save_to_storage
-        if @save_attachment
+        if save_attachment?
           # TODO: This overwrites the file if it exists, maybe have an allow_overwrite option?
           FileUtils.mkdir_p(File.dirname(full_filename))
-          
-          # TODO Convert to streaming storage to prevent excessive memory usage
-          # FileUtils.copy_stream is very efficient in regards to copies
-          # OR - get the tmp filename for large files and do FileUtils.cp ? *agile*
-          File.open(full_filename, "wb") do |file|
-            file.write(attachment_data)
-          end
+          FileUtils.mv @temp_path, full_filename
         end
         @old_filename = nil
         true
+      end
+      
+      def current_data
+        File.file?(full_filename) ? File.read(full_filename) : nil
       end
     end
 
@@ -94,9 +84,8 @@ module Technoweenie # :nodoc:
         base.before_save :save_to_storage # so the db_file_id can be set
       end
 
-      # Gets the attachment data
-      def attachment_data
-        @attachment_data ||= (attachment_file_data || db_file.data)
+      def create_temp_file!
+        write_to_temp_file db_file.data
       end
 
       # Destroys the file.  Called in the after_destroy callback
@@ -106,12 +95,16 @@ module Technoweenie # :nodoc:
       
       # Saves the data to the DbFile model
       def save_to_storage
-        if @save_attachment
-          (db_file || build_db_file).data = attachment_data
+        if save_attachment?
+          (db_file || build_db_file).data = temp_data
           db_file.save!
-          self.db_file_id = db_file.id # needed for my own sanity, k thx
+          self.class.update_all ['db_file_id = ?', self.db_file_id = db_file.id], ['id = ?', id]
         end
         true
+      end
+      
+      def current_data
+        db_file.data
       end
     end
   end

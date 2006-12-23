@@ -16,12 +16,13 @@ module BaseAttachmentTests
     assert_created 1 do
       attachment = upload_file :filename => '/files/rails.png'
       assert_valid attachment
-      assert attachment.attachment_data.size > 0, "no data was set"
+      assert attachment.size > 0, "no data was set"
       
-      attachment.attachment_data = 'wtf'
-      attachment.save
+      attachment.temp_data = 'wtf'
+      assert attachment.save_attachment?
+      attachment.save!
       
-      assert_equal 'wtf', attachment_model.find(attachment.id).attachment_data
+      assert_equal 'wtf', attachment_model.find(attachment.id).current_data
     end
   end
   
@@ -29,9 +30,9 @@ module BaseAttachmentTests
     assert_created 1 do
       attachment = upload_file :filename => '/files/rails.png'
       assert_valid attachment
-      assert attachment.attachment_data.size > 0, "no data was set"
+      assert attachment.size > 0, "no data was set"
       
-      attachment.attachment_data = nil
+      attachment.temp_data = nil
       assert !attachment.save_attachment?
     end
   end
@@ -39,9 +40,11 @@ module BaseAttachmentTests
   def test_should_overwrite_old_contents_when_updating
     attachment   = upload_file :filename => '/files/rails.png'
     assert_not_created do # no new db_file records
-      attachment.filename        = 'rails2.png'
-      attachment.attachment_data = IO.read(File.join(Test::Unit::TestCase.fixture_path, 'files', 'rails.png'))
-      attachment.save
+      use_temp_file 'files/rails.png' do |file|
+        attachment.filename = 'rails2.png'
+        attachment.temp_path = File.join(Test::Unit::TestCase.fixture_path, file)
+        attachment.save!
+      end
     end
   end
 end

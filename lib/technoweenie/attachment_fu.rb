@@ -1,10 +1,19 @@
 require File.join(File.dirname(__FILE__), 'attachment_fu', 'backends')
 require File.join(File.dirname(__FILE__), 'attachment_fu', 'processors')
+require 'tempfile'
+
+class Tempfile
+  # overwrite so tempfiles have no extension
+  def make_tmpname(basename, n)
+    sprintf("%s%d-%d", basename, $$, n)
+  end
+end
 
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
+    @@temp_path = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
     @@content_types = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png']
-    mattr_reader :content_types
+    mattr_reader :content_types, :temp_path
 
     class ThumbnailError < StandardError;  end
     class AttachmentError < StandardError; end
@@ -46,7 +55,8 @@ module Technoweenie # :nodoc:
         # only need to define these once on a class
         unless included_modules.include? InstanceMethods
           class_inheritable_accessor :attachment_options
-          
+          attr_accessor :temp_path
+
           options[:processor]        ||= :rmagick
           options[:storage]          ||= options[:file_system_path] ? :file_system : :db_file
           options[:file_system_path] ||= File.join("public", table_name)
@@ -57,6 +67,8 @@ module Technoweenie # :nodoc:
             m.belongs_to :parent, :class_name => base_class.to_s
           end
 
+          before_validation :set_size_from_temp_path
+          after_save :after_process_attachment
           after_destroy :destroy_file
           extend  ClassMethods
           include InstanceMethods
@@ -127,9 +139,29 @@ module Technoweenie # :nodoc:
         attachment_options[:thumbnail_class] = attachment_options[:thumbnail_class].constantize unless attachment_options[:thumbnail_class].is_a?(Class)
         attachment_options[:thumbnail_class]
       end
+
+      def copy_to_temp_file(file, temp_base_name)
+        path = nil
+        Tempfile.open temp_base_name, Technoweenie::AttachmentFu.temp_path do |f| 
+          path = f.path
+        end
+        FileUtils.cp file, path
+        path
+      end
+      
+      def write_to_temp_file(data, temp_base_name)
+        path = nil
+        Tempfile.open temp_base_name, Technoweenie::AttachmentFu.temp_path do |f| 
+          path = f.path
+          f.write data
+        end
+        path
+      end
     end
 
     module InstanceMethods
+      attr_accessor :thumbnail_resize_options
+
       # Checks whether the attachment's content type is an image content type
       def image?
         self.class.image?(content_type)
@@ -170,49 +202,33 @@ module Technoweenie # :nodoc:
       # TODO: Allow it to work with Merb tempfiles too.
       def uploaded_data=(file_data)
         return nil if file_data.nil? || file_data.size == 0 
-        self.content_type    = file_data.content_type
-        self.filename        = file_data.original_filename if respond_to?(:filename)
-        self.attachment_data = file_data.read
+        self.content_type = file_data.content_type
+        self.filename     = file_data.original_filename if respond_to?(:filename)
+        self.temp_path    = file_data.path
       end
 
       # returns true if the attachment data will be written to the storage system on the next save
       def save_attachment?
-        @save_attachment == true
+        File.file?(@temp_path.to_s)
       end
 
-      # Sets the actual binary data.  This is typically called by uploaded_data=, but you can call this
-      # manually if you're creating from the console.  This is also where the resizing occurs.
-      def attachment_data=(data)
-        @attachment_data = nil
-        @save_attachment = false
-        self.size = 0
-
-        if data
-          self.size = data.length
-          @save_attachment = true
-          @attachment_data = data
-        end
+      def temp_data
+        save_attachment? ? File.read(@temp_path) : nil
       end
       
-      # sets a temporary location to the asset.  Use this if the file is already on the local file system
-      # and if you do not need to load it into memory.  
-      def attachment_file=(file)
-        @attachment_file = nil
-        @save_attachment = false
-        self.size = 0
-
-        if file && File.file?(file)
-          file_stat = File.stat(file)
-          self.size = file_stat.size
-          @save_attachment = true
-          @attachment_file = file
-        end
+      def temp_data=(data)
+        self.temp_path = write_to_temp_file data unless data.nil?
       end
-
-      # Retrieve the temporary attachment file data if it exists, or return nil
-      def attachment_file_data
-        (@attachment_file && File.file?(@attachment_file)) ? File.read(@attachment_file) : nil
+      
+      def copy_to_temp_file(file)
+        self.class.copy_to_temp_file file, random_tempfile_filename
       end
+      
+      def write_to_temp_file(data)
+        self.class.write_to_temp_file data, random_tempfile_filename
+      end
+      
+      def create_temp_file!() end
 
       # Sets the content type.
       def content_type=(new_type)
@@ -230,6 +246,10 @@ module Technoweenie # :nodoc:
       end
 
       protected
+        def random_tempfile_filename
+          "#{filename || 'attachment'}#{rand Time.now.to_i}"
+        end
+
         @@filename_basename_regex  = /^.*(\\|\/)/
         @@filename_character_regex = /[^\w\.\-]/
         def sanitize_filename(filename)
@@ -243,6 +263,11 @@ module Technoweenie # :nodoc:
           end
         end
 
+        def set_size_from_temp_path
+          return unless save_attachment?
+          self.size = File.size(temp_path)
+        end
+
         # validates the size and content_type attributes according to the current model's options
         def attachment_attributes_valid?
           [:size, :content_type].each do |attr_name|
@@ -252,7 +277,16 @@ module Technoweenie # :nodoc:
         end
 
         # Stub for a #process_attachment method in a processor
-        def process_attachment() end
+        def process_attachment
+          @saved_attachment = save_attachment?
+        end
+
+        def after_process_attachment
+          save_to_storage
+          @temp_path = nil
+          @saved_attachment     = nil
+          callback :after_attachment_saved
+        end
 
         # Yanked from ActiveRecord::Callbacks, modified so I can pass args to the callbacks besides self.
         # Only accept blocks, however

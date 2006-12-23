@@ -88,15 +88,17 @@ class RmagickTest < Test::Unit::TestCase
 
   def test_should_use_thumbnail_subclass(klass = ImageWithThumbsClassFileAttachment)
     attachment_model klass
+    attachment = nil
     assert_difference ImageThumbnail, :count do
       attachment = upload_file :filename => '/files/rails.png'
-      assert_kind_of ImageThumbnail,  attachment.thumbnails.first
-      assert_equal attachment.id,     attachment.thumbnails.first.parent.id
-      assert_kind_of FileAttachment,  attachment.thumbnails.first.parent
-      assert_equal 'rails_thumb.png', attachment.thumbnails.first.filename
-      assert_equal attachment.thumbnails.first.full_filename, attachment.full_filename(attachment.thumbnails.first.thumbnail),
-        "#full_filename does not use thumbnail class' path."
+      assert_valid attachment
     end
+    assert_kind_of ImageThumbnail,  attachment.thumbnails.first
+    assert_equal attachment.id,     attachment.thumbnails.first.parent.id
+    assert_kind_of FileAttachment,  attachment.thumbnails.first.parent
+    assert_equal 'rails_thumb.png', attachment.thumbnails.first.filename
+    assert_equal attachment.thumbnails.first.full_filename, attachment.full_filename(attachment.thumbnails.first.thumbnail),
+      "#full_filename does not use thumbnail class' path."
   end
   
   test_against_subclass :test_should_use_thumbnail_subclass, ImageWithThumbsClassFileAttachment
@@ -111,12 +113,14 @@ class RmagickTest < Test::Unit::TestCase
     old_filenames = [attachment.full_filename] + attachment.thumbnails.collect(&:full_filename)
 
     assert_not_created do
-      attachment.filename        = 'rails2.png'
-      attachment.attachment_data = IO.read(File.join(File.dirname(__FILE__), '../fixtures/files/rails.png'))
-      attachment.save
-      new_filenames = [attachment.reload.full_filename] + attachment.thumbnails.collect { |t| t.reload.full_filename }
-      new_filenames.each { |f| assert  File.exists?(f), "#{f} does not exist" }
-      old_filenames.each { |f| assert !File.exists?(f), "#{f} still exists" }
+      use_temp_file "files/rails.png" do |file|
+        attachment.filename        = 'rails2.png'
+        attachment.temp_path = File.join(fixture_path, file)
+        attachment.save
+        new_filenames = [attachment.reload.full_filename] + attachment.thumbnails.collect { |t| t.reload.full_filename }
+        new_filenames.each { |f| assert  File.exists?(f), "#{f} does not exist" }
+        old_filenames.each { |f| assert !File.exists?(f), "#{f} still exists" }
+      end
     end
   end
   
@@ -140,9 +144,11 @@ class RmagickTest < Test::Unit::TestCase
       attachment = upload_file :filename => '/files/rails.png'
     end
     assert_not_created do # no new db_file records
-      attachment.filename        = 'rails2.png'
-      attachment.attachment_data = IO.read(File.join(File.dirname(__FILE__), '../fixtures/files/rails.png'))
-      attachment.save
+      use_temp_file "files/rails.png" do |file|
+        attachment.filename             = 'rails2.png'
+        attachment.temp_path = File.join(fixture_path, file)
+        attachment.save!
+      end
     end
   end
   

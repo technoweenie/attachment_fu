@@ -7,15 +7,16 @@ module Technoweenie # :nodoc:
         rescue LoadError
           # boo hoo no rmagick
         end
-        base.after_save :create_attachment_thumbnails # allows thumbnails with parent_id to be created
         base.send :extend, ClassMethods
+        base.alias_method_chain :process_attachment, :processing
+        base.alias_method_chain :after_process_attachment, :processing
       end
       
       module ClassMethods
         # Yields a block containing an RMagick Image for the given binary data.
-        def with_image(data, &block)
+        def with_image(file, &block)
           begin
-            binary_data = data.is_a?(Magick::Image) ? data : Magick::Image::from_blob(data).first unless !Object.const_defined?(:Magick)
+            binary_data = file.is_a?(Magick::Image) ? file : Magick::Image.read(file).first unless !Object.const_defined?(:Magick)
           rescue
             # Log the failure to load the image.  This should match ::Magick::ImageMagickError
             # but that would cause acts_as_attachment to require rmagick.
@@ -34,44 +35,47 @@ module Technoweenie # :nodoc:
       #     self.data = img.thumbnail(100, 100).to_blob
       #   end
       #
-      def with_image(data = self.attachment_data, &block)
-        self.class.with_image(data, &block)
+      def with_image(&block)
+        self.class.with_image(temp_path, &block)
       end
 
       # Creates or updates the thumbnail for the current attachment.
-      def create_or_update_thumbnail(file_name_suffix, *size)
+      def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
         thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
         returning find_or_initialize_thumbnail(file_name_suffix) do |thumb|
-          resized_image = resize_image_to(size)
-          return if resized_image.nil?
           thumb.attributes = {
-            :content_type    => content_type, 
-            :filename        => thumbnail_name_for(file_name_suffix), 
-            :attachment_data => resized_image.to_blob
+            :content_type             => content_type, 
+            :filename                 => thumbnail_name_for(file_name_suffix), 
+            :temp_path     => temp_file,
+            :thumbnail_resize_options => size
           }
           callback_with_args :before_thumbnail_saved, thumb
           thumb.save!
         end
       end
 
-      # Resizes a thumbnail.
-      def resize_image_to(size)
-        thumb = nil
-        with_image do |img|
-          thumb = thumbnail_for_image(img, size)
-        end
-        thumb
-      end
-
       protected
-        def create_attachment_thumbnails
-          if thumbnailable? && @save_attachment && !attachment_options[:thumbnails].blank? && parent_id.nil?
-            attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(suffix, size) }
+        def process_attachment_with_processing
+          return unless process_attachment_without_processing
+          with_image do |img|
+            if !respond_to?(:parent_id) || parent_id.nil? # parent image
+              thumbnail_for_image(img, attachment_options[:resize_to]) if attachment_options[:resize_to]
+            else # thumbnail
+              thumbnail_for_image(img, thumbnail_resize_options) if thumbnail_resize_options
+            end
+            self.width  = img.columns if respond_to?(:width)
+            self.height = img.rows    if respond_to?(:height)
+            callback_with_args :after_resize, img
+          end if image?
+        end
+
+        def after_process_attachment_with_processing
+          return unless @saved_attachment
+          if thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
+            temp_file = temp_path || create_temp_file!
+            attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
           end
-          if @save_attachment
-            @save_attachment = nil
-            callback :after_attachment_saved
-          end
+          after_process_attachment_without_processing
         end
 
         # Performs the actual resizing operation for a thumbnail
@@ -79,27 +83,17 @@ module Technoweenie # :nodoc:
           size = size.first if size.is_a?(Array) && size.length == 1 && !size.first.is_a?(Fixnum)
           if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
             size = [size, size] if size.is_a?(Fixnum)
-            img.thumbnail(size.first, size[1])
+            img.thumbnail!(*size)
           else
-            img.change_geometry(size.to_s) { |cols, rows, image| image.resize(cols, rows) }
+            img.change_geometry(size.to_s) { |cols, rows, image| image.resize!(cols, rows) }
           end
+          self.temp_path = write_to_temp_file(img.to_blob)
         end
 
         def find_or_initialize_thumbnail(file_name_suffix)
           respond_to?(:parent_id) ?
             thumbnail_class.find_or_initialize_by_thumbnail_and_parent_id(file_name_suffix.to_s, id) :
             thumbnail_class.find_or_initialize_by_thumbnail(file_name_suffix.to_s)
-        end
-
-        def process_attachment
-          with_image do |img|
-            resized_img       = (attachment_options[:resize_to] && (!respond_to?(:parent_id) || parent_id.nil?)) ? 
-              thumbnail_for_image(img, attachment_options[:resize_to]) : img
-            self.width           = resized_img.columns if respond_to?(:width)
-            self.height          = resized_img.rows    if respond_to?(:height)
-            self.attachment_data = resized_img.to_blob
-            callback_with_args :after_resize, resized_img
-          end if image?
         end
     end
   end

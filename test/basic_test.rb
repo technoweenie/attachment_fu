@@ -54,18 +54,4 @@ class BasicTest < Test::Unit::TestCase
     @attachment.filename = 'foo.bar.baz'
     assert_equal 'foo.bar_blah.baz', @attachment.thumbnail_name_for(:blah)
   end
-  
-  def test_should_set_attachment_data
-    @attachment = FileAttachment.new :filename => 'foo.bar'
-    assert_nil @attachment.attachment_data
-    assert !@attachment.save_attachment?
-    
-    @attachment.attachment_data = 'blah'
-    assert @attachment.save_attachment?
-    assert_equal 4, @attachment.size
-    
-    @attachment.attachment_data = nil
-    assert !@attachment.save_attachment?
-    assert_equal 0, @attachment.size
-  end
 end
