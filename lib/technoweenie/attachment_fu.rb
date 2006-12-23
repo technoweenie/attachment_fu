@@ -10,16 +10,16 @@ module Technoweenie # :nodoc:
 
     module ActMethods
       # Options: 
-      #   <tt>:content_type</tt> - Allowed content types.  Allows all by default.  Use :image to allow all standard image types.
-      #   <tt>:min_size</tt> - Minimum size allowed.  1 byte is the default.
-      #   <tt>:max_size</tt> - Maximum size allowed.  1.megabyte is the default.
-      #   <tt>:size</tt> - Range of sizes allowed.  (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
-      #   <tt>:resize_to</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
-      #   <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of filename suffixes and RMagick resizing options.
-      #   <tt>:thumbnail_class</tt> - Set what class to use for thumbnails.  This attachment class is used by default.
-      #   <tt>:file_system_path</tt> - path to store the uploaded files.  Uses public/#{table_name} by default.  
-      #                                Setting this sets the :storage to :file_system.
-      #   <tt>:storage</tt> - Use :file_system to specify the attachment data is stored with the file system.  Defaults to :db_system.
+      # *  <tt>:content_type</tt> - Allowed content types.  Allows all by default.  Use :image to allow all standard image types.
+      # *  <tt>:min_size</tt> - Minimum size allowed.  1 byte is the default.
+      # *  <tt>:max_size</tt> - Maximum size allowed.  1.megabyte is the default.
+      # *  <tt>:size</tt> - Range of sizes allowed.  (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
+      # *  <tt>:resize_to</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
+      # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of filename suffixes and RMagick resizing options.
+      # *  <tt>:thumbnail_class</tt> - Set what class to use for thumbnails.  This attachment class is used by default.
+      # *  <tt>:file_system_path</tt> - path to store the uploaded files.  Uses public/#{table_name} by default.  
+      #                                 Setting this sets the :storage to :file_system.
+      # *  <tt>:storage</tt> - Use :file_system to specify the attachment data is stored with the file system.  Defaults to :db_system.
       #
       # Examples:
       #   has_attachment :max_size => 1.kilobyte
@@ -34,6 +34,7 @@ module Technoweenie # :nodoc:
       #     :content_type => :image, :resize_to => [50,50]
       #   has_attachment :storage => :file_system, :file_system_path => 'public/files',
       #     :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
+      #   has_attachment :storage => :s3
       def has_attachment(options = {})
         # this allows you to redefine the acts' options for each subclass, however
         options[:min_size]         ||= 1
