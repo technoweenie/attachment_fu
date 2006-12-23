@@ -28,8 +28,11 @@ class Test::Unit::TestCase #:nodoc:
   def setup
     Attachment.saves = 0
     DbFile.transaction { [Attachment, FileAttachment, OrphanAttachment, MinimalAttachment, DbFile].each { |klass| klass.delete_all } }
-    FileUtils.rm_rf File.join(File.dirname(__FILE__), 'files')
     attachment_model self.class.attachment_model
+  end
+  
+  def teardown
+    FileUtils.rm_rf File.join(File.dirname(__FILE__), 'files')
   end
 
   self.use_transactional_fixtures = true

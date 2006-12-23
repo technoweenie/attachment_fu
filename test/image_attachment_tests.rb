@@ -32,7 +32,7 @@ module ImageAttachmentTests
     
     assert_created do
       basename, ext = attachment.filename.split '.'
-      thumbnail = attachment.create_or_update_thumbnail('thumb', 50, 50)
+      thumbnail = attachment.create_or_update_thumbnail(attachment.create_temp_file, 'thumb', 50, 50)
       assert_valid thumbnail
       assert !thumbnail.size.zero?
       #assert_in_delta 4673, thumbnail.size, 2
@@ -45,11 +45,11 @@ module ImageAttachmentTests
   end
   
   def test_should_create_thumbnail_with_geometry_string
-   attachment = upload_file :filename => '/files/rails.png'
+    attachment = upload_file :filename => '/files/rails.png'
     
     assert_created do
       basename, ext = attachment.filename.split '.'
-      thumbnail = attachment.create_or_update_thumbnail('thumb', 'x50')
+      thumbnail = attachment.create_or_update_thumbnail(attachment.create_temp_file, 'thumb', 'x50')
       assert_valid thumbnail
       assert !thumbnail.size.zero?
       #assert_equal 3915, thumbnail.size

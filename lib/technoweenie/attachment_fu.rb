@@ -55,7 +55,7 @@ module Technoweenie # :nodoc:
         # only need to define these once on a class
         unless included_modules.include? InstanceMethods
           class_inheritable_accessor :attachment_options
-          attr_accessor :temp_path
+          attr_accessor :thumbnail_resize_options
 
           options[:processor]        ||= :rmagick
           options[:storage]          ||= options[:file_system_path] ? :file_system : :db_file
@@ -141,27 +141,21 @@ module Technoweenie # :nodoc:
       end
 
       def copy_to_temp_file(file, temp_base_name)
-        path = nil
-        Tempfile.open temp_base_name, Technoweenie::AttachmentFu.tempfile_path do |f| 
-          path = f.path
+        returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
+          tmp.close
+          FileUtils.cp file, tmp.path
         end
-        FileUtils.cp file, path
-        path
       end
       
       def write_to_temp_file(data, temp_base_name)
-        path = nil
-        Tempfile.open temp_base_name, Technoweenie::AttachmentFu.tempfile_path do |f| 
-          path = f.path
-          f.write data
+        returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
+          tmp.write data
+          tmp.close
         end
-        path
       end
     end
 
     module InstanceMethods
-      attr_accessor :thumbnail_resize_options
-
       # Checks whether the attachment's content type is an image content type
       def image?
         self.class.image?(content_type)
@@ -208,11 +202,25 @@ module Technoweenie # :nodoc:
 
       # returns true if the attachment data will be written to the storage system on the next save
       def save_attachment?
-        File.file?(@temp_path.to_s)
+        File.file?(temp_path.to_s)
+      end
+
+      def temp_path
+        p = temp_paths.first
+        p.respond_to?(:path) ? p.path : p.to_s
+      end
+      
+      def temp_paths
+        @temp_paths ||= []
+      end
+      
+      def temp_path=(value)
+        temp_paths.unshift value
+        temp_path
       end
 
       def temp_data
-        save_attachment? ? File.read(@temp_path) : nil
+        save_attachment? ? File.read(temp_path) : nil
       end
       
       def temp_data=(data)
@@ -227,7 +235,7 @@ module Technoweenie # :nodoc:
         self.class.write_to_temp_file data, random_tempfile_filename
       end
       
-      def create_temp_file!() end
+      def create_temp_file() end
 
       # Sets the content type.
       def content_type=(new_type)
@@ -281,8 +289,8 @@ module Technoweenie # :nodoc:
 
         def after_process_attachment
           save_to_storage
-          @temp_path = nil
-          @saved_attachment     = nil
+          @temp_paths.clear
+          @saved_attachment = nil
           callback :after_attachment_saved
         end
 

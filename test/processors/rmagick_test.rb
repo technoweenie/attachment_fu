@@ -3,6 +3,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'test_helper'))
 class RmagickTest < Test::Unit::TestCase
   include ImageAttachmentTests
   attachment_model Attachment
+
   def test_should_resize_image(klass = ImageAttachment)
     attachment_model klass
     assert_equal [50, 50], attachment_model.attachment_options[:resize_to]

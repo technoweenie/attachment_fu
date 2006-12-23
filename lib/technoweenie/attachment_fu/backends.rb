@@ -40,7 +40,7 @@ module Technoweenie # :nodoc:
         write_attribute :filename, sanitize_filename(value)
       end
 
-      def create_temp_file!
+      def create_temp_file
         copy_to_temp_file full_filename
       end
 
@@ -65,7 +65,7 @@ module Technoweenie # :nodoc:
         if save_attachment?
           # TODO: This overwrites the file if it exists, maybe have an allow_overwrite option?
           FileUtils.mkdir_p(File.dirname(full_filename))
-          FileUtils.mv @temp_path, full_filename
+          FileUtils.mv temp_path, full_filename
         end
         @old_filename = nil
         true
@@ -81,10 +81,9 @@ module Technoweenie # :nodoc:
       def self.included(base) #:nodoc:
         Object.const_set(:DbFile, Class.new(ActiveRecord::Base)) unless Object.const_defined?(:DbFile)
         base.belongs_to  :db_file, :class_name => '::DbFile', :foreign_key => 'db_file_id'
-        base.before_save :save_to_storage # so the db_file_id can be set
       end
 
-      def create_temp_file!
+      def create_temp_file
         write_to_temp_file db_file.data
       end
 

@@ -46,7 +46,7 @@ module Technoweenie # :nodoc:
           thumb.attributes = {
             :content_type             => content_type, 
             :filename                 => thumbnail_name_for(file_name_suffix), 
-            :temp_path     => temp_file,
+            :temp_path                => temp_file,
             :thumbnail_resize_options => size
           }
           callback_with_args :before_thumbnail_saved, thumb
@@ -72,7 +72,7 @@ module Technoweenie # :nodoc:
         def after_process_attachment_with_processing
           return unless @saved_attachment
           if thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
-            temp_file = temp_path || create_temp_file!
+            temp_file = temp_path || create_temp_file
             attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
           end
           after_process_attachment_without_processing
