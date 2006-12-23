@@ -1,19 +1,9 @@
-require File.join(File.dirname(__FILE__), 'attachment_fu', 'backends')
-require File.join(File.dirname(__FILE__), 'attachment_fu', 'processors')
-require 'tempfile'
-
-class Tempfile
-  # overwrite so tempfiles have no extension
-  def make_tmpname(basename, n)
-    sprintf("%s%d-%d", basename, $$, n)
-  end
-end
-
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
-    @@tempfile_path = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
-    @@content_types = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png']
-    mattr_reader :content_types, :tempfile_path
+    @@default_processors = %w(Rmagick)
+    @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
+    @@content_types      = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png']
+    mattr_reader :content_types, :tempfile_path, :default_processors
 
     class ThumbnailError < StandardError;  end
     class AttachmentError < StandardError; end
@@ -57,7 +47,6 @@ module Technoweenie # :nodoc:
           class_inheritable_accessor :attachment_options
           attr_accessor :thumbnail_resize_options
 
-          options[:processor]        ||= :rmagick
           options[:storage]          ||= options[:file_system_path] ? :file_system : :db_file
           options[:file_system_path] ||= File.join("public", table_name)
           options[:file_system_path]   = options[:file_system_path][1..-1] if options[:file_system_path].first == '/'
@@ -72,8 +61,20 @@ module Technoweenie # :nodoc:
           after_destroy :destroy_file
           extend  ClassMethods
           include InstanceMethods
-          include Technoweenie::AttachmentFu::const_get("#{options[:storage].to_s.classify}Backend")
-          include Technoweenie::AttachmentFu::const_get("#{options[:processor].to_s.classify}Processor")
+          include Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}")
+          case options[:processor]
+            when :none
+            when nil
+              processors = Technoweenie::AttachmentFu.default_processors.dup
+              begin
+                include Technoweenie::AttachmentFu::Processors.const_get(processors.first) if processors.any?
+              rescue LoadError
+                processors.shift
+                retry
+              end
+            else
+              include Technoweenie::AttachmentFu::Processors.const_get("#{options[:processor].to_s.classify}")
+          end
           before_save :process_attachment
         end
         
