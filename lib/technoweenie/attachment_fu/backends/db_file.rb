@@ -8,28 +8,31 @@ module Technoweenie # :nodoc:
           base.belongs_to  :db_file, :class_name => '::DbFile', :foreign_key => 'db_file_id'
         end
 
+        # Creates a temp file with the current db data.
         def create_temp_file
-          write_to_temp_file db_file.data
+          write_to_temp_file current_data
         end
-
-        # Destroys the file.  Called in the after_destroy callback
-        def destroy_file
-          db_file.destroy if db_file
-        end
-      
-        # Saves the data to the DbFile model
-        def save_to_storage
-          if save_attachment?
-            (db_file || build_db_file).data = temp_data
-            db_file.save!
-            self.class.update_all ['db_file_id = ?', self.db_file_id = db_file.id], ['id = ?', id]
+        
+        protected
+          # Destroys the file.  Called in the after_destroy callback
+          def destroy_file
+            db_file.destroy if db_file
           end
-          true
-        end
-      
-        def current_data
-          db_file.data
-        end
+          
+          # Saves the data to the DbFile model
+          def save_to_storage
+            if save_attachment?
+              (db_file || build_db_file).data = temp_data
+              db_file.save!
+              self.class.update_all ['db_file_id = ?', self.db_file_id = db_file.id], ['id = ?', id]
+            end
+            true
+          end
+          
+          # Gets the current data from the database
+          def current_data
+            db_file.data
+          end
       end
     end
   end

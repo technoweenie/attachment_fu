@@ -22,7 +22,7 @@ module BaseAttachmentTests
       assert attachment.save_attachment?
       attachment.save!
       
-      assert_equal 'wtf', attachment_model.find(attachment.id).current_data
+      assert_equal 'wtf', attachment_model.find(attachment.id).send(:current_data)
     end
   end
   

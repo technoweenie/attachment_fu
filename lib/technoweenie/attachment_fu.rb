@@ -142,6 +142,7 @@ module Technoweenie # :nodoc:
         attachment_options[:thumbnail_class]
       end
 
+      # Copies the given file path to a new tempfile, returning the closed tempfile.
       def copy_to_temp_file(file, temp_base_name)
         returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
           tmp.close
@@ -149,6 +150,7 @@ module Technoweenie # :nodoc:
         end
       end
       
+      # Writes the given data to a new tempfile, returning the closed tempfile.
       def write_to_temp_file(data, temp_base_name)
         returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
           tmp.write data
@@ -163,10 +165,12 @@ module Technoweenie # :nodoc:
         self.class.image?(content_type)
       end
       
+      # Returns true/false if an attachment is thumbnailable.  A thumbnailable attachment has an image content type and the parent_id attribute.
       def thumbnailable?
         image? && respond_to?(:parent_id)
       end
 
+      # Returns the class used to create new thumbnails for this attachment.
       def thumbnail_class
         self.class.thumbnail_class
       end
@@ -179,6 +183,41 @@ module Technoweenie # :nodoc:
           ext = s; ''
         end
         "#{basename}_#{thumbnail}#{ext}"
+      end
+
+      # Creates or updates the thumbnail for the current attachment.
+      def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
+        thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
+        returning find_or_initialize_thumbnail(file_name_suffix) do |thumb|
+          thumb.attributes = {
+            :content_type             => content_type, 
+            :filename                 => thumbnail_name_for(file_name_suffix), 
+            :temp_path                => temp_file,
+            :thumbnail_resize_options => size
+          }
+          callback_with_args :before_thumbnail_saved, thumb
+          thumb.save!
+        end
+      end
+
+      # Sets the content type.
+      def content_type=(new_type)
+        write_attribute :content_type, new_type.to_s.strip
+      end
+      
+      # Sanitizes a filename.
+      def filename=(new_name)
+        write_attribute :filename, sanitize_filename(new_name)
+      end
+
+      # Returns the width/height in a suitable format for the image_tag helper: (100x100)
+      def image_size
+        [width.to_s, height.to_s] * 'x'
+      end
+
+      # Returns true if the attachment data will be written to the storage system on the next save
+      def save_attachment?
+        File.file?(temp_path.to_s)
       end
 
       # nil placeholder in case this field is used in a form.
@@ -202,59 +241,52 @@ module Technoweenie # :nodoc:
         self.temp_path    = file_data.path
       end
 
-      # returns true if the attachment data will be written to the storage system on the next save
-      def save_attachment?
-        File.file?(temp_path.to_s)
-      end
-
+      # Gets the latest temp path from the collection of temp paths.  While working with an attachment,
+      # multiple Tempfile objects may be created for various processing purposes (resizing, for example).
+      # An array of all the tempfile objects is stored so that the Tempfile instance is held on to until
+      # it's not needed anymore.  The collection is cleared after saving the attachment.
       def temp_path
         p = temp_paths.first
         p.respond_to?(:path) ? p.path : p.to_s
       end
       
+      # Gets an array of the currently used temp paths.
       def temp_paths
         @temp_paths ||= []
       end
       
+      # Adds a new temp_path to the array.  This should take a string or a Tempfile.  This class makes no 
+      # attempt to remove the files, so Tempfiles should be used.  Tempfiles remove themselves when they go out of scope.
+      # You can also use string paths for temporary files, such as those used for uploaded files in a web server.
       def temp_path=(value)
         temp_paths.unshift value
         temp_path
       end
 
+      # Gets the data from the latest temp file.  This will read the file into memory.
       def temp_data
         save_attachment? ? File.read(temp_path) : nil
       end
       
+      # Writes the given data to a Tempfile and adds it to the collection of temp files.
       def temp_data=(data)
         self.temp_path = write_to_temp_file data unless data.nil?
       end
       
+      # Copies the given file to a randomly named Tempfile.
       def copy_to_temp_file(file)
         self.class.copy_to_temp_file file, random_tempfile_filename
       end
       
+      # Writes the given file to a randomly named Tempfile.
       def write_to_temp_file(data)
         self.class.write_to_temp_file data, random_tempfile_filename
       end
       
+      # Stub for creating a temp file from the attachment data.  This should be defined in the backend module.
       def create_temp_file() end
 
-      # Sets the content type.
-      def content_type=(new_type)
-        write_attribute :content_type, new_type.to_s.strip
-      end
-      
-      # sanitizes a filename.
-      def filename=(new_name)
-        write_attribute :filename, sanitize_filename(new_name)
-      end
-
-      # Returns the width/height in a suitable format for the image_tag helper: (100x100)
-      def image_size
-        [width.to_s, height.to_s] * 'x'
-      end
-
-      # Allows you to work with an RMagick representation of the attachment in a block.  
+      # Allows you to work with a processed representation (RMagick, ImageScience, etc) of the attachment in a block.
       #
       #   @attachment.with_image do |img|
       #     self.data = img.thumbnail(100, 100).to_blob
@@ -263,23 +295,9 @@ module Technoweenie # :nodoc:
       def with_image(&block)
         self.class.with_image(temp_path, &block)
       end
-    
-      # Creates or updates the thumbnail for the current attachment.
-      def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
-        thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
-        returning find_or_initialize_thumbnail(file_name_suffix) do |thumb|
-          thumb.attributes = {
-            :content_type             => content_type, 
-            :filename                 => thumbnail_name_for(file_name_suffix), 
-            :temp_path                => temp_file,
-            :thumbnail_resize_options => size
-          }
-          callback_with_args :before_thumbnail_saved, thumb
-          thumb.save!
-        end
-      end
 
       protected
+        # Generates a unique filename for a Tempfile. 
         def random_tempfile_filename
           "#{rand Time.now.to_i}#{filename || 'attachment'}"
         end
@@ -297,6 +315,7 @@ module Technoweenie # :nodoc:
           end
         end
 
+        # before_validation callback.
         def set_size_from_temp_path
           self.size = File.size(temp_path) if save_attachment?
         end
@@ -308,7 +327,8 @@ module Technoweenie # :nodoc:
             errors.add attr_name, ActiveRecord::Errors.default_error_messages[:inclusion] unless enum.nil? || enum.include?(send(attr_name))
           end
         end
-      
+
+        # Initializes a new thumbnail with the given suffix.
         def find_or_initialize_thumbnail(file_name_suffix)
           respond_to?(:parent_id) ?
             thumbnail_class.find_or_initialize_by_thumbnail_and_parent_id(file_name_suffix.to_s, id) :
@@ -320,6 +340,7 @@ module Technoweenie # :nodoc:
           @saved_attachment = save_attachment?
         end
 
+        # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
           if @saved_attachment
             if thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
@@ -333,6 +354,7 @@ module Technoweenie # :nodoc:
           end
         end
 
+        # Resizes the given processed img object with either the attachment resize options or the thumbnail resize options.
         def resize_image_or_thumbnail!(img)
           if (!respond_to?(:parent_id) || parent_id.nil?) && attachment_options[:resize_to] # parent image
             resize_image(img, attachment_options[:resize_to])

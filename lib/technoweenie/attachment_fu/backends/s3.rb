@@ -53,13 +53,13 @@ module Technoweenie # :nodoc:
       # To specify S3 as the storage mechanism for a model, set the acts_as_attachment <tt>:storage</tt> option to <tt>:s3</tt>.
       #
       #   class Photo < ActiveRecord::Base
-      #     acts_as_attachment :storage => :s3
+      #     has_attachment :storage => :s3
       #   end
       #
       # Of course, all the usual configuration options apply:
       #
-      #   acts_as_attachment :storage => :s3, :content_type => ['application/pdf', :image], :resize_to => 'x50'
-      #   acts_as_attachment :storage => :s3, :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
+      #   has_attachment :storage => :s3, :content_type => ['application/pdf', :image], :resize_to => 'x50'
+      #   has_attachment :storage => :s3, :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
       module S3
         class S3RequiredLibraryNotFound < StandardError; end
         class S3ConfigFileNotFound < StandardError; end
@@ -109,29 +109,30 @@ module Technoweenie # :nodoc:
         def create_temp_file
           write_to_temp_file current_data
         end
-      
-        # Destroys the file.  Called in the after_destroy callback
-        def destroy_file
-          AWS::S3::S3Object.delete filename, bucket
-        end
-        
-        def rename_file
-          return unless @old_filename && @old_filename != filename
-          AWS::S3::S3Object.rename(@old_filename, filename, bucket, :access => :public_read)
-          @old_filename = nil
-          true
-        end
-        
-        # Saves the file to the file system
-        def save_to_storage
-          AWS::S3::S3Object.store(filename, attachment_data, bucket, :content_type => content_type, :access => attachment_options[:s3_access]) if save_attachment?
-          @old_filename = nil
-          true
-        end
-        
-        def current_data
-          AWS::S3::S3Object.value filename, bucket 
-        end
+
+        protected
+          # Destroys the file.  Called in the after_destroy callback
+          def destroy_file
+            AWS::S3::S3Object.delete filename, bucket
+          end
+          
+          def rename_file
+            return unless @old_filename && @old_filename != filename
+            AWS::S3::S3Object.rename(@old_filename, filename, bucket, :access => :public_read)
+            @old_filename = nil
+            true
+          end
+          
+          # Saves the file to S3
+          def save_to_storage
+            AWS::S3::S3Object.store(filename, attachment_data, bucket, :content_type => content_type, :access => attachment_options[:s3_access]) if save_attachment?
+            @old_filename = nil
+            true
+          end
+          
+          def current_data
+            AWS::S3::S3Object.value filename, bucket
+          end
       end
     end
   end

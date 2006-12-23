@@ -40,41 +40,44 @@ module Technoweenie # :nodoc:
           @old_filename = full_filename unless filename.nil? || @old_filename
           write_attribute :filename, sanitize_filename(value)
         end
-      
+
+        # Creates a temp file from the currently saved file.
         def create_temp_file
           copy_to_temp_file full_filename
         end
-      
-        # Destroys the file.  Called in the after_destroy callback
-        def destroy_file
-          FileUtils.rm full_filename rescue nil
-        end
-        
-        def rename_file
-          return unless @old_filename && @old_filename != full_filename
-          if save_attachment? && File.exists?(@old_filename)
-            FileUtils.rm @old_filename
-          elsif File.exists?(@old_filename)
-            FileUtils.mv @old_filename, full_filename
+
+        protected
+          # Destroys the file.  Called in the after_destroy callback
+          def destroy_file
+            FileUtils.rm full_filename rescue nil
           end
-          @old_filename =  nil
-          true
-        end
-        
-        # Saves the file to the file system
-        def save_to_storage
-          if save_attachment?
-            # TODO: This overwrites the file if it exists, maybe have an allow_overwrite option?
-            FileUtils.mkdir_p(File.dirname(full_filename))
-            FileUtils.mv temp_path, full_filename
+
+          # Renames the given file before saving
+          def rename_file
+            return unless @old_filename && @old_filename != full_filename
+            if save_attachment? && File.exists?(@old_filename)
+              FileUtils.rm @old_filename
+            elsif File.exists?(@old_filename)
+              FileUtils.mv @old_filename, full_filename
+            end
+            @old_filename =  nil
+            true
           end
-          @old_filename = nil
-          true
-        end
-        
-        def current_data
-          File.file?(full_filename) ? File.read(full_filename) : nil
-        end
+          
+          # Saves the file to the file system
+          def save_to_storage
+            if save_attachment?
+              # TODO: This overwrites the file if it exists, maybe have an allow_overwrite option?
+              FileUtils.mkdir_p(File.dirname(full_filename))
+              FileUtils.mv temp_path, full_filename
+            end
+            @old_filename = nil
+            true
+          end
+          
+          def current_data
+            File.file?(full_filename) ? File.read(full_filename) : nil
+          end
       end
     end
   end
