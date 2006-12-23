@@ -1,7 +1,7 @@
 class Attachment < ActiveRecord::Base
   @@saves = 0
   cattr_accessor :saves
-  has_attachment
+  has_attachment :processor => :rmagick
   validates_as_attachment
   after_attachment_saved do |record|
     self.saves += 1
@@ -40,7 +40,7 @@ class ImageWithThumbsAttachment < Attachment
 end
 
 class FileAttachment < ActiveRecord::Base
-  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files'
+  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
   validates_as_attachment
 end
 
@@ -69,16 +69,21 @@ end
 
 # no parent
 class OrphanAttachment < ActiveRecord::Base
-  has_attachment
+  has_attachment :processor => :rmagick
   validates_as_attachment
 end
 
 # no filename, no size, no content_type
 class MinimalAttachment < ActiveRecord::Base
-  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files'
+  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
   validates_as_attachment
   
   def filename
     "#{id}.file"
   end
+end
+
+class ImageScienceAttachment < ActiveRecord::Base
+  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
+    :processor => :image_science, :thumbnails => { :thumb => [50, 50], :geometry => '53>', :width => 40 }, :resize_to => [55,55]
 end

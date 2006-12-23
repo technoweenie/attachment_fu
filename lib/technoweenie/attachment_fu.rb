@@ -1,6 +1,6 @@
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
-    @@default_processors = %w(Rmagick)
+    @@default_processors = %w(Rmagick ImageScience)
     @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
     @@content_types      = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png']
     mattr_reader :content_types, :tempfile_path, :default_processors
@@ -253,9 +253,34 @@ module Technoweenie # :nodoc:
         [width.to_s, height.to_s] * 'x'
       end
 
+      # Allows you to work with an RMagick representation of the attachment in a block.  
+      #
+      #   @attachment.with_image do |img|
+      #     self.data = img.thumbnail(100, 100).to_blob
+      #   end
+      #
+      def with_image(&block)
+        self.class.with_image(temp_path, &block)
+      end
+    
+      # Creates or updates the thumbnail for the current attachment.
+      def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
+        thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
+        returning find_or_initialize_thumbnail(file_name_suffix) do |thumb|
+          thumb.attributes = {
+            :content_type             => content_type, 
+            :filename                 => thumbnail_name_for(file_name_suffix), 
+            :temp_path                => temp_file,
+            :thumbnail_resize_options => size
+          }
+          callback_with_args :before_thumbnail_saved, thumb
+          thumb.save!
+        end
+      end
+
       protected
         def random_tempfile_filename
-          "#{filename || 'attachment'}#{rand Time.now.to_i}"
+          "#{rand Time.now.to_i}#{filename || 'attachment'}"
         end
 
         @@filename_basename_regex  = /^.*(\\|\/)/
@@ -282,6 +307,12 @@ module Technoweenie # :nodoc:
             errors.add attr_name, ActiveRecord::Errors.default_error_messages[:inclusion] unless enum.nil? || enum.include?(send(attr_name))
           end
         end
+      
+        def find_or_initialize_thumbnail(file_name_suffix)
+          respond_to?(:parent_id) ?
+            thumbnail_class.find_or_initialize_by_thumbnail_and_parent_id(file_name_suffix.to_s, id) :
+            thumbnail_class.find_or_initialize_by_thumbnail(file_name_suffix.to_s)
+        end
 
         # Stub for a #process_attachment method in a processor
         def process_attachment
@@ -289,10 +320,24 @@ module Technoweenie # :nodoc:
         end
 
         def after_process_attachment
-          save_to_storage
-          @temp_paths.clear
-          @saved_attachment = nil
-          callback :after_attachment_saved
+          if @saved_attachment
+            if thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
+              temp_file = temp_path || create_temp_file
+              attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
+            end
+            save_to_storage
+            @temp_paths.clear
+            @saved_attachment = nil
+            callback :after_attachment_saved
+          end
+        end
+
+        def resize_image_or_thumbnail!(img)
+          if (!respond_to?(:parent_id) || parent_id.nil?) && attachment_options[:resize_to] # parent image
+            resize_image(img, attachment_options[:resize_to])
+          elsif thumbnail_resize_options # thumbnail
+            resize_image(img, thumbnail_resize_options) 
+          end
         end
 
         # Yanked from ActiveRecord::Callbacks, modified so I can pass args to the callbacks besides self.

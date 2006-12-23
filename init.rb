@@ -1,9 +1,10 @@
 require 'tempfile'
 
-class Tempfile
-  # overwrite so tempfiles have no extension
+Tempfile.class_eval do
+  # overwrite so tempfiles keep the basename extension
   def make_tmpname(basename, n)
-    sprintf("%s%d-%d", basename, $$, n)
+    ext = nil
+    sprintf("%s%d-%d%s", basename.gsub(/\.\w+$/) { |s| ext = s; '' }, $$, n, ext)
   end
 end
 

@@ -117,4 +117,3 @@ end
 
 require File.join(File.dirname(__FILE__), 'fixtures/attachment')
 require File.join(File.dirname(__FILE__), 'base_attachment_tests')
-require File.join(File.dirname(__FILE__), 'image_attachment_tests')
