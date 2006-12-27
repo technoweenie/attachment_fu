@@ -69,7 +69,7 @@ module Technoweenie # :nodoc:
               processors = Technoweenie::AttachmentFu.default_processors.dup
               begin
                 include Technoweenie::AttachmentFu::Processors.const_get(processors.first) if processors.any?
-              rescue LoadError
+              rescue LoadError, MissingSourceFile
                 processors.shift
                 retry
               end
