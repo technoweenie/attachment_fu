@@ -43,6 +43,7 @@ module Technoweenie # :nodoc:
         options[:size]             ||= (options[:min_size]..options[:max_size])
         options[:thumbnails]       ||= {}
         options[:thumbnail_class]  ||= self
+        options[:s3_access]        ||= :public_read
 
         # only need to define these once on a class
         unless included_modules.include? InstanceMethods
