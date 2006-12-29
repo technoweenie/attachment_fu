@@ -13,6 +13,11 @@ module Technoweenie # :nodoc:
           write_to_temp_file current_data
         end
         
+        # Gets the current data from the database
+        def current_data
+          db_file.data
+        end
+        
         protected
           # Destroys the file.  Called in the after_destroy callback
           def destroy_file
@@ -27,11 +32,6 @@ module Technoweenie # :nodoc:
               self.class.update_all ['db_file_id = ?', self.db_file_id = db_file.id], ['id = ?', id]
             end
             true
-          end
-          
-          # Gets the current data from the database
-          def current_data
-            db_file.data
           end
       end
     end

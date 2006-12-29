@@ -110,6 +110,10 @@ module Technoweenie # :nodoc:
           write_to_temp_file current_data
         end
 
+        def current_data
+          AWS::S3::S3Object.value filename, bucket
+        end
+
         protected
           # Destroys the file.  Called in the after_destroy callback
           def destroy_file
@@ -128,10 +132,6 @@ module Technoweenie # :nodoc:
             AWS::S3::S3Object.store(filename, attachment_data, bucket, :content_type => content_type, :access => attachment_options[:s3_access]) if save_attachment?
             @old_filename = nil
             true
-          end
-          
-          def current_data
-            AWS::S3::S3Object.value filename, bucket
           end
       end
     end
