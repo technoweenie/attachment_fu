@@ -4,6 +4,7 @@ module Technoweenie # :nodoc:
     @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
     @@content_types      = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png']
     mattr_reader :content_types, :tempfile_path, :default_processors
+    mattr_writer :tempfile_path
 
     class ThumbnailError < StandardError;  end
     class AttachmentError < StandardError; end

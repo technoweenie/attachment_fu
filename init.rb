@@ -9,3 +9,5 @@ Tempfile.class_eval do
 end
 
 ActiveRecord::Base.send(:extend, Technoweenie::AttachmentFu::ActMethods)
+Technoweenie::AttachmentFu.tempfile_path = ATTACHMENT_FU_TEMPFILE_PATH if const_defined?(:ATTACHMENT_FU_TEMPFILE_PATH)
+FileUtils.mkdir_p Technoweenie::AttachmentFu.tempfile_path
