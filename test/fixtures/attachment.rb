@@ -45,7 +45,7 @@ class FileAttachment < ActiveRecord::Base
 end
 
 class ImageFileAttachment < FileAttachment
-  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files', 
+  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
     :content_type => :image, :resize_to => [50,50]
 end
 
@@ -84,6 +84,8 @@ class MinimalAttachment < ActiveRecord::Base
 end
 
 class ImageScienceAttachment < ActiveRecord::Base
-  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
-    :processor => :image_science, :thumbnails => { :thumb => [50, 50], :geometry => '53>', :width => 40 }, :resize_to => [55,55]
+  if Object.const_defined?(:ImageScience)
+    has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :image_science, :thumbnails => { :thumb => [50, 50], :geometry => '53>', :width => 40 }, :resize_to => [55,55]
+  end
 end
