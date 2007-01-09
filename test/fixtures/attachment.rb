@@ -83,9 +83,10 @@ class MinimalAttachment < ActiveRecord::Base
   end
 end
 
-class ImageScienceAttachment < ActiveRecord::Base
-  if Object.const_defined?(:ImageScience)
+begin
+  class ImageScienceAttachment < ActiveRecord::Base
     has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
-      :processor => :image_science, :thumbnails => { :thumb => [50, 50], :geometry => '53>', :width => 40 }, :resize_to => [55,55]
+      :processor => :image_science, :thumbnails => { :thumb => [50, 51], :geometry => '31>' }, :resize_to => 55
   end
+rescue MissingSourceFile
 end

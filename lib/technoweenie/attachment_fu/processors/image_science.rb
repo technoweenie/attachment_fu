@@ -19,17 +19,30 @@ module Technoweenie # :nodoc:
           def process_attachment_with_processing
             return unless process_attachment_without_processing || !image?
             with_image { |img| resize_image_or_thumbnail! img }
-            with_image do |img|
-              self.width  = img.width  if respond_to?(:width)
-              self.height = img.height if respond_to?(:height)
-              callback_with_args :after_resize, img
-            end
           end
 
           # Performs the actual resizing operation for a thumbnail
           def resize_image(img, size)
-            self.temp_path = write_to_temp_file('foo')
-            img.thumbnail(temp_path, (size.is_a?(Array) ? size.first : size).to_i)
+            # create a dummy temp file to write to
+            self.temp_path = write_to_temp_file(filename)
+            grab_dimensions = lambda do |img|
+              self.width  = img.width  if respond_to?(:width)
+              self.height = img.height if respond_to?(:height)
+              img.save temp_path
+              callback_with_args :after_resize, img
+            end
+
+            size = size.first if size.is_a?(Array) && size.length == 1
+            if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
+              if size.is_a?(Fixnum)
+                img.thumbnail(size, &grab_dimensions)
+              else
+                img.resize(size[0], size[1], &grab_dimensions)
+              end
+            else
+              new_size = [img.width, img.height] / size.to_s
+              img.resize(new_size[0], new_size[1], &grab_dimensions)
+            end
           end
       end
     end
