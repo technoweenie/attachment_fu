@@ -47,4 +47,11 @@ module BaseAttachmentTests
       end
     end
   end
+  
+  def test_should_save_without_updating_file
+    attachment = upload_file :filename => '/files/foo.txt'
+    assert_valid attachment
+    assert !attachment.save_attachment?
+    assert_nothing_raised { attachment.save! }
+  end
 end

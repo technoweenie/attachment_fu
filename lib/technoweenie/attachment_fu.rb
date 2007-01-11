@@ -78,7 +78,7 @@ module Technoweenie # :nodoc:
             else
               include Technoweenie::AttachmentFu::Processors.const_get("#{options[:processor].to_s.classify}")
           end
-          before_save :process_attachment
+          after_validation :process_attachment
         end
         
         options[:content_type] = [options[:content_type]].flatten.collect { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
