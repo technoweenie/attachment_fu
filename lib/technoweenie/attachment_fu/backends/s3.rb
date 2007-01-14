@@ -148,6 +148,32 @@ module Technoweenie # :nodoc:
           base.before_update :rename_file
         end
 
+        def self.protocol
+          @protocol ||= s3_config[:use_ssl] ? 'https://' : 'http://'
+        end
+        
+        def self.hostname
+          @hostname ||= s3_config[:server] || AWS::S3::DEFAULT_HOST
+        end
+        
+        def self.port_string
+          @port_string ||= s3_config[:port] ? ":#{s3_config[:port]}" : ''
+        end
+
+        module ClassMethods
+          def s3_protocol
+            Technoweenie::AttachmentFu::Backends::S3.protocol
+          end
+          
+          def s3_hostname
+            Technoweenie::AttachmentFu::Backends::S3.hostname
+          end
+          
+          def s3_port_string
+            Technoweenie::AttachmentFu::Backends::S3.port_string
+          end
+        end
+
         # Overwrites the base filename writer in order to store the old filename
         def filename=(value)
           @old_filename = filename unless filename.nil? || @old_filename
@@ -182,8 +208,7 @@ module Technoweenie # :nodoc:
         #
         # The optional thumbnail argument will output the thumbnail's filename (if any).
         def s3_url(thumbnail = nil)
-          protocol, hostname = s3_config[:use_ssl] ? 'https://' : 'http://', s3_config[:server] || DEFAULT_HOST
-          protocol + File.join(hostname, bucket_name, full_filename(thumbnail))
+          File.join(s3_protocol + s3_hostname + s3_port_string, bucket_name, full_filename(thumbnail))
         end
         alias :public_filename :s3_url
 
@@ -223,6 +248,18 @@ module Technoweenie # :nodoc:
 
         def current_data
           S3Object.value full_filename, bucket_name
+        end
+
+        def s3_protocol
+          Technoweenie::AttachmentFu::Backends::S3.protocol
+        end
+        
+        def s3_hostname
+          Technoweenie::AttachmentFu::Backends::S3.hostname
+        end
+          
+        def s3_port_string
+          Technoweenie::AttachmentFu::Backends::S3.port_string
         end
 
         protected
