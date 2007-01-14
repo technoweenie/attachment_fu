@@ -40,17 +40,17 @@ class ImageWithThumbsAttachment < Attachment
 end
 
 class FileAttachment < ActiveRecord::Base
-  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
+  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
   validates_as_attachment
 end
 
 class ImageFileAttachment < FileAttachment
-  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
+  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
     :content_type => :image, :resize_to => [50,50]
 end
 
 class ImageWithThumbsFileAttachment < FileAttachment
-  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
+  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
     :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
   after_resize do |record, img|
     record.aspect_ratio = img.columns.to_f / img.rows.to_f
@@ -58,13 +58,14 @@ class ImageWithThumbsFileAttachment < FileAttachment
 end
 
 class ImageWithThumbsClassFileAttachment < FileAttachment
+  # use file_system_path to test backwards compatibility
   has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
     :thumbnails => { :thumb => [50, 50] }, :resize_to => [55,55],
     :thumbnail_class => 'ImageThumbnail'
 end
 
 class ImageThumbnail < FileAttachment
-  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files/thumbnails'
+  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files/thumbnails'
 end
 
 # no parent
@@ -75,7 +76,7 @@ end
 
 # no filename, no size, no content_type
 class MinimalAttachment < ActiveRecord::Base
-  has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
+  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
   validates_as_attachment
   
   def filename
@@ -85,8 +86,21 @@ end
 
 begin
   class ImageScienceAttachment < ActiveRecord::Base
-    has_attachment :file_system_path => 'vendor/plugins/attachment_fu/test/files',
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :image_science, :thumbnails => { :thumb => [50, 51], :geometry => '31>' }, :resize_to => 55
   end
 rescue MissingSourceFile
+end
+
+begin
+  class S3Attachment < ActiveRecord::Base
+    has_attachment :storage => :s3, :processor => :rmagick
+    validates_as_attachment
+  end
+
+  class S3WithPathPrefixAttachment < S3Attachment
+    has_attachment :storage => :s3, :path_prefix => 'some/custom/path/prefix', :processor => :rmagick
+    validates_as_attachment
+  end
+rescue Technoweenie::AttachmentFu::Backends::S3::S3ConfigFileNotFoundError
 end

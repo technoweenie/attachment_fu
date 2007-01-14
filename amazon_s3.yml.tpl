@@ -1,14 +1,14 @@
 development:
-  secret_access_key: AbCDEfGHiJKlmNOPQRS1
-  access_key_id: 1234567891abcdeFGHI/JKL+MnoPQrsT123UvwX4
-  bucket_prefix: appname_development
+  bucket_name: appname_development
+  access_key_id: 
+  secret_access_key: 
 
 test:
-  secret_access_key: AbCDEfGHiJKlmNOPQRS1
-  access_key_id: 1234567891abcdeFGHI/JKL+MnoPQrsT123UvwX4
-  bucket_prefix: appname_test
+  bucket_name: appname_test
+  access_key_id: 
+  secret_access_key: 
 
 production:
-  secret_access_key: AbCDEfGHiJKlmNOPQRS1
-  access_key_id: 1234567891abcdeFGHI/JKL+MnoPQrsT123UvwX4
-  bucket_prefix: appname
+  bucket_name: appname
+  access_key_id: 
+  secret_access_key: 

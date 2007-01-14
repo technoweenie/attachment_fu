@@ -3,50 +3,58 @@ module Technoweenie # :nodoc:
     module Backends
       # = AWS::S3 Storage Backend
       #
-      # Enables use of Amazon's Simple Storage Service (http://aws.amazon.com/s3) as a storage mechanism
+      # Enables use of {Amazon's Simple Storage Service}[http://aws.amazon.com/s3] as a storage mechanism
       #
       # == Requirements
       #
-      # Requires the AWS::S3 Library for S3 by Marcel Molina Jr. (http://amazon.rubyforge.org) installed either
+      # Requires the {AWS::S3 Library}[http://amazon.rubyforge.org] for S3 by Marcel Molina Jr. installed either
       # as a gem or a as a Rails plugin.
       #
       # == Configuration
       #
       # Configuration is done via <tt>RAILS_ROOT/config/amazon_s3.yml</tt> and is loaded according to the <tt>RAILS_ENV</tt>.
-      # The minimum connection options that you must specify are your access key id and your secret access key.
+      # The minimum connection options that you must specify are a bucket name, your access key id and your secret access key.
       # If you don't already have your access keys, all you need to sign up for the S3 service is an account at Amazon.
       # You can sign up for S3 and get access keys by visiting http://aws.amazon.com/s3.
-      # 
+      #
       # Example configuration (RAILS_ROOT/config/amazon_s3.yml)
       # 
       #   development:
-      #     secret_access_key: AbCDEfGHiJKlmNOPQRS1
-      #     access_key_id: 1234567891abcdeFGHI/JKL+MnoPQrsT123UvwX4
-      #     bucket_prefix: appname_development
+      #     bucket_name: appname_development
+      #     access_key_id: <your key>
+      #     secret_access_key: <your key>
       #   
       #   test:
-      #     secret_access_key: AbCDEfGHiJKlmNOPQRS1
-      #     access_key_id: 1234567891abcdeFGHI/JKL+MnoPQrsT123UvwX4
-      #     bucket_prefix: appname_test
+      #     bucket_name: appname_test
+      #     access_key_id: <your key>
+      #     secret_access_key: <your key>
       #   
       #   production:
-      #     secret_access_key: AbCDEfGHiJKlmNOPQRS1
-      #     access_key_id: 1234567891abcdeFGHI/JKL+MnoPQrsT123UvwX4
-      #     bucket_prefix: appname
+      #     bucket_name: appname
+      #     access_key_id: <your key>
+      #     secret_access_key: <your key>
       #
-      # === Required arguments
+      # === Required configuration parameters
       #
       # * <tt>:access_key_id</tt> - The access key id for your S3 account. Provided by Amazon.
       # * <tt>:secret_access_key</tt> - The secret access key for your S3 account. Provided by Amazon.
-      # * <tt>:bucket_prefix</tt> - The string prefix to assign to each bucket. Used to create unique bucket names in the format <tt>#{bucket_prefix}_#{table_name}</tt>.
+      # * <tt>:bucket_name</tt> - A unique bucket name (think of the bucket_name as being like a database name).
       #
       # If any of these required arguments is missing, a MissingAccessKey exception will be raised from AWS::S3.
       #
-      # === Optional arguments
+      # == About bucket names
       #
-      # * <tt>:server</tt> - The server to make requests to. You can use this to specify your bucket in the subdomain, or your own domain's cname if you are using virtual hosted buckets. Defaults to <tt>s3.amazonaws.com</tt>.
+      # Bucket names have to be globaly unique across the S3 system. And you can only have up to 100 of them,
+      # so it's a good idea to think of a bucket as being like a database, hence the correspondance in this
+      # implementation to the development, test, and production environments.
+      #
+      # The number of objects you can store in a bucket is, for all intents and purposes, unlimited.
+      #
+      # === Optional configuration parameters
+      #
+      # * <tt>:server</tt> - The server to make requests to. Defaults to <tt>s3.amazonaws.com</tt>.
       # * <tt>:port</tt> - The port to the requests should be made on. Defaults to 80 or 443 if <tt>:use_ssl</tt> is set.
-      # * <tt>:use_ssl</tt> - Whether requests should be made over SSL. If set to true, <tt>:port</tt> will be implicitly set to 443, unless specified otherwise. Defaults to false.
+      # * <tt>:use_ssl</tt> - If set to true, <tt>:port</tt> will be implicitly set to 443, unless specified otherwise. Defaults to false.
       #
       # == Usage
       #
@@ -56,79 +64,200 @@ module Technoweenie # :nodoc:
       #     has_attachment :storage => :s3
       #   end
       #
-      # Of course, all the usual configuration options apply:
+      # === Customizing the path
       #
-      #   has_attachment :storage => :s3, :content_type => ['application/pdf', :image], :resize_to => 'x50'
-      #   has_attachment :storage => :s3, :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
+      # By default, files are prefixed using a pseudo hierarchy in the form of <tt>:table_name/:id</tt>, which results
+      # in S3 urls that look like: http(s)://:server/:bucket_name/:table_name/:id/:filename with :table_name
+      # representing the customizable portion of the path. You can customize this prefix using the <tt>:path_prefix</tt>
+      # option:
+      #
+      #   class Photo < ActiveRecord::Base
+      #     has_attachment :storage => :s3, :path_prefix => 'my/custom/path'
+      #   end
+      #
+      # Which would result in URLs like <tt>http(s)://:server/:bucket_name/my/custom/path/:id/:filename.</tt>
+      #
+      # === Permissions
+      #
+      # By default, files are stored on S3 with public access permissions. You can customize this using
+      # the <tt>:s3_access</tt> option to <tt>has_attachment</tt>. Available values are 
+      # <tt>:private</tt>, <tt>:public_read_write</tt>, and <tt>:authenticated_read</tt>.
+      #
+      # === Other options
+      #
+      # Of course, all the usual configuration options apply, such as content_type and thumbnails:
+      #
+      #   class Photo < ActiveRecord::Base
+      #     has_attachment :storage => :s3, :content_type => ['application/pdf', :image], :resize_to => 'x50'
+      #     has_attachment :storage => :s3, :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
+      #   end
+      #
+      # === Accessing S3 URLs
+      #
+      # You can get an object's URL using the s3_url accessor. For example, assuming that for your postcard app
+      # you had a bucket name like 'postcard_world_development', and an attachment model called Photo:
+      #
+      #   @postcard.s3_url # => http(s)://s3.amazonaws.com/postcard_world_development/photos/1/mexico.jpg
+      #
+      # The resulting url is in the form: http(s)://:server/:bucket_name/:table_name/:id/:file.
+      # The optional thumbnail argument will output the thumbnail's filename (if any).
+      #
+      # Additionally, you can get an object's base path relative to the bucket root using
+      # <tt>base_path</tt>:
+      #
+      #   @photo.file_base_path # => photos/1
+      #
+      # And the full path (including the filename) using <tt>full_filename</tt>:
+      #
+      #   @photo.full_filename # => photos/
+      #
+      # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the bucket name as part of the path.
+      # You can retrieve the bucket name using the <tt>bucket_name</tt> method.
       module S3
-        class S3RequiredLibraryNotFound < StandardError; end
-        class S3ConfigFileNotFound < StandardError; end
-        class S3BucketExists < StandardError; end
+        class S3RequiredLibraryNotFoundError < StandardError; end
+        class S3ConfigFileNotFoundError < StandardError; end
 
         def self.included(base) #:nodoc:
+          mattr_reader :bucket_name, :s3_config
+          
           begin
             require 'aws/s3'
+            include AWS::S3
           rescue LoadError
-            raise S3RequiredLibraryNotFound.new('AWS::S3 could not be loaded. Try installing with sudo gem i aws-s3, or see http://amazon.rubyforge.org for more information')
+            raise S3RequiredLibraryNotFoundError.new('AWS::S3 could not be loaded')
           end
 
           begin
             @@s3_config = YAML.load_file(RAILS_ROOT + '/config/amazon_s3.yml')[ENV['RAILS_ENV']].symbolize_keys
           rescue
-            raise S3ConfigFileNotFound.new('File RAILS_ROOT/config/amazon_s3.yml not found')
+            raise S3ConfigFileNotFoundError.new('File RAILS_ROOT/config/amazon_s3.yml not found')
           end
 
-          @@bucket = [@@s3_config.delete(:bucket_prefix), base.table_name].join('_')
-          mattr_reader :s3_config, :bucket
+          @@bucket_name = s3_config[:bucket_name]
 
-          AWS::S3::Base.establish_connection!(s3_config)
-          find_or_create_bucket(bucket)
+          Base.establish_connection!(
+            :access_key_id     => s3_config[:access_key_id],
+            :secret_access_key => s3_config[:secret_access_key],
+            :server            => s3_config[:server],
+            :port              => s3_config[:port],
+            :use_ssl           => s3_config[:use_ssl]
+          )
+
+          # Bucket.create(@@bucket_name)
 
           base.before_update :rename_file
         end
-      
-        def self.find_or_create_bucket(name)
-          AWS::S3::Bucket.find(name)
-        rescue AWS::S3::NoSuchBucket
-          AWS::S3::Bucket.create(name)
-        rescue AWS::S3::AccessDenied
-          raise S3BucketExists.new("Bucket name already exists: #{name}. Use a different bucket_prefix in RAILS_ROOT/config/amazon_s3.yml")
+
+        # Overwrites the base filename writer in order to store the old filename
+        def filename=(value)
+          @old_filename = filename unless filename.nil? || @old_filename
+          write_attribute :filename, sanitize_filename(value)
         end
 
-        # Generates an S3 URL for the file in the form of: http(s)://<tt>{server}</tt>/<tt>{bucket_name}</tt>/<tt>{file_name}</tt>
-        # The <tt>{server}</tt> variable defaults to <tt>AWS::S3 URL::DEFAULT_HOST</tt> (http://s3.amazonaws.com) and can be
-        # set using the configuration parameters in <tt>RAILS_ROOT/config/amazon_s3.yml</tt>
+        # The attachment ID used in the full path of a file
+        def attachment_path_id
+          ((respond_to?(:parent_id) && parent_id) || id).to_s
+        end
+
+        # The pseudo hierarchy containing the file relative to the bucket name
+        # Example: <tt>:table_name/:id</tt>
+        def base_path
+          File.join(attachment_options[:path_prefix], attachment_path_id)
+        end
+
+        # The full path to the file relative to the bucket name
+        # Example: <tt>:table_name/:id/:filename</tt>
+        def full_filename(thumbnail = nil)
+          File.join(base_path, thumbnail_name_for(thumbnail))
+        end
+
+        # All public objects are accessible via a GET request to the S3 servers. You can generate a 
+        # url for an object using the s3_url method.
         #
-        # Example usage: <tt>image_tag(@photo.s3_url)</tt>
+        #   @photo.s3_url
+        #
+        # The resulting url is in the form: <tt>http(s)://:server/:bucket_name/:table_name/:id/:file</tt> where
+        # the <tt>:server</tt> variable defaults to <tt>AWS::S3 URL::DEFAULT_HOST</tt> (s3.amazonaws.com) and can be
+        # set using the configuration parameters in <tt>RAILS_ROOT/config/amazon_s3.yml</tt>.
+        #
+        # The optional thumbnail argument will output the thumbnail's filename (if any).
         def s3_url(thumbnail = nil)
-          s3_config[:use_ssl] ? 'https://' : 'http://' + (s3_config[:server] || AWS::S3::DEFAULT_HOST) + '/' + bucket + '/' + thumbnail_name_for(thumbnail)
+          protocol, hostname = s3_config[:use_ssl] ? 'https://' : 'http://', s3_config[:server] || DEFAULT_HOST
+          protocol + File.join(hostname, bucket_name, full_filename(thumbnail))
         end
         alias :public_filename :s3_url
+
+        # All private objects are accessible via an authenticated GET request to the S3 servers. You can generate an 
+        # authenticated url for an object like this:
+        #
+        #   @photo.authenticated_s3_url
+        #
+        # By default authenticated urls expire 5 minutes after they were generated.
+        #
+        # Expiration options can be specified either with an absolute time using the <tt>:expires</tt> option,
+        # or with a number of seconds relative to now with the <tt>:expires_in</tt> option:
+        #
+        #   # Absolute expiration date (October 13th, 2025)
+        #   @photo.authenticated_s3_url(:expires => Time.mktime(2025,10,13).to_i)
+        #   
+        #   # Expiration in five hours from now
+        #   @photo.authenticated_s3_url(:expires_in => 5.hours)
+        #
+        # You can specify whether the url should go over SSL with the <tt>:use_ssl</tt> option.
+        # By default, the ssl settings for the current connection will be used:
+        #
+        #   @photo.authenticated_s3_url(:use_ssl => true)
+        #
+        # Finally, the optional thumbnail argument will output the thumbnail's filename (if any):
+        #
+        #   @photo.authenticated_s3_url('thumbnail', :expires_in => 5.hours, :use_ssl => true)
+        def authenticated_s3_url(*args)
+          thumbnail = args.first.is_a?(String) ? args.first : nil
+          options   = args.last.is_a?(Hash)    ? args.last  : {}
+          S3Object.url_for(full_filename(thumbnail), bucket_name, options)
+        end
 
         def create_temp_file
           write_to_temp_file current_data
         end
 
         def current_data
-          AWS::S3::S3Object.value filename, bucket
+          S3Object.value full_filename, bucket_name
         end
 
         protected
-          # Destroys the file.  Called in the after_destroy callback
+          # Called in the after_destroy callback
           def destroy_file
-            AWS::S3::S3Object.delete filename, bucket
+            S3Object.delete full_filename, bucket_name
           end
-          
+
           def rename_file
             return unless @old_filename && @old_filename != filename
-            AWS::S3::S3Object.rename(@old_filename, filename, bucket, :access => attachment_options[:s3_access])
+            
+            old_full_filename = File.join(base_path, @old_filename)
+
+            S3Object.rename(
+              old_full_filename,
+              full_filename,
+              bucket_name,
+              :access => attachment_options[:s3_access]
+            )
+
             @old_filename = nil
             true
           end
-          
-          # Saves the file to S3
+
           def save_to_storage
-            AWS::S3::S3Object.store(filename, temp_data, bucket, :content_type => content_type, :access => attachment_options[:s3_access]) if save_attachment?
+            if save_attachment?
+              S3Object.store(
+                full_filename,
+                temp_data,
+                bucket_name,
+                :content_type => content_type,
+                :access => attachment_options[:s3_access]
+              )
+            end
+
             @old_filename = nil
             true
           end

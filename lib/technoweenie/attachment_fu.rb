@@ -18,8 +18,8 @@ module Technoweenie # :nodoc:
       # *  <tt>:resize_to</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
       # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of filename suffixes and RMagick resizing options.
       # *  <tt>:thumbnail_class</tt> - Set what class to use for thumbnails.  This attachment class is used by default.
-      # *  <tt>:file_system_path</tt> - path to store the uploaded files.  Uses public/#{table_name} by default.  
-      #                                 Setting this sets the :storage to :file_system.
+      # *  <tt>:path_prefix</tt> - path to store the uploaded files.  Uses public/#{table_name} by default for the filesystem, and just #{table_name}
+      #      for the S3 backend.  Setting this sets the :storage to :file_system.
       # *  <tt>:storage</tt> - Use :file_system to specify the attachment data is stored with the file system.  Defaults to :db_system.
       #
       # Examples:
@@ -30,10 +30,10 @@ module Technoweenie # :nodoc:
       #   has_attachment :content_type => :image, :resize_to => [50,50]
       #   has_attachment :content_type => ['application/pdf', :image], :resize_to => 'x50'
       #   has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
-      #   has_attachment :storage => :file_system, :file_system_path => 'public/files'
-      #   has_attachment :storage => :file_system, :file_system_path => 'public/files', 
+      #   has_attachment :storage => :file_system, :path_prefix => 'public/files'
+      #   has_attachment :storage => :file_system, :path_prefix => 'public/files', 
       #     :content_type => :image, :resize_to => [50,50]
-      #   has_attachment :storage => :file_system, :file_system_path => 'public/files',
+      #   has_attachment :storage => :file_system, :path_prefix => 'public/files',
       #     :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
       #   has_attachment :storage => :s3
       def has_attachment(options = {})
@@ -50,9 +50,12 @@ module Technoweenie # :nodoc:
           class_inheritable_accessor :attachment_options
           attr_accessor :thumbnail_resize_options
 
-          options[:storage]          ||= options[:file_system_path] ? :file_system : :db_file
-          options[:file_system_path] ||= File.join("public", table_name)
-          options[:file_system_path]   = options[:file_system_path][1..-1] if options[:file_system_path].first == '/'
+          options[:storage]     ||= (options[:file_system_path] || options[:path_prefix]) ? :file_system : :db_file
+          options[:path_prefix] ||= options[:file_system_path]
+          if options[:path_prefix].nil?
+            options[:path_prefix] = options[:storage] == :s3 ? table_name : File.join("public", table_name)
+          end
+          options[:path_prefix]   = options[:path_prefix][1..-1] if options[:path_prefix].first == '/'
 
           with_options :foreign_key => 'parent_id' do |m|
             m.has_many   :thumbnails, :dependent => :destroy, :class_name => options[:thumbnail_class].to_s
