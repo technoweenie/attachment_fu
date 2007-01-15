@@ -17,7 +17,7 @@ module Technoweenie # :nodoc:
 
         protected
           def process_attachment_with_processing
-            return unless process_attachment_without_processing || !image?
+            return unless process_attachment_without_processing && image?
             with_image { |img| resize_image_or_thumbnail! img }
           end
 
