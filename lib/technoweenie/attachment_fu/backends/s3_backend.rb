@@ -114,8 +114,8 @@ module Technoweenie # :nodoc:
       # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the bucket name as part of the path.
       # You can retrieve the bucket name using the <tt>bucket_name</tt> method.
       module S3Backend
-        class S3RequiredLibraryNotFoundError < StandardError; end
-        class S3ConfigFileNotFoundError < StandardError; end
+        class RequiredLibraryNotFoundError < StandardError; end
+        class ConfigFileNotFoundError < StandardError; end
 
         def self.included(base) #:nodoc:
           mattr_reader :bucket_name, :s3_config
@@ -124,13 +124,13 @@ module Technoweenie # :nodoc:
             require 'aws/s3'
             include AWS::S3
           rescue LoadError
-            raise S3RequiredLibraryNotFoundError.new('AWS::S3 could not be loaded')
+            raise RequiredLibraryNotFoundError.new('AWS::S3 could not be loaded')
           end
 
           begin
             @@s3_config = YAML.load_file(RAILS_ROOT + '/config/amazon_s3.yml')[ENV['RAILS_ENV']].symbolize_keys
           rescue
-            raise S3ConfigFileNotFoundError.new('File RAILS_ROOT/config/amazon_s3.yml not found')
+            raise ConfigFileNotFoundError.new('File RAILS_ROOT/config/amazon_s3.yml not found')
           end
 
           @@bucket_name = s3_config[:bucket_name]

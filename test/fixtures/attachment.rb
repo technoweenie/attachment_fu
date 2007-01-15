@@ -102,5 +102,5 @@ begin
     has_attachment :storage => :s3, :path_prefix => 'some/custom/path/prefix', :processor => :rmagick
     validates_as_attachment
   end
-rescue Technoweenie::AttachmentFu::Backends::S3::S3ConfigFileNotFoundError
+rescue Technoweenie::AttachmentFu::Backends::S3Backend::ConfigFileNotFoundError
 end
