@@ -73,7 +73,7 @@ module Technoweenie # :nodoc:
             when nil
               processors = Technoweenie::AttachmentFu.default_processors.dup
               begin
-                include Technoweenie::AttachmentFu::Processors.const_get(processors.first) if processors.any?
+                include Technoweenie::AttachmentFu::Processors.const_get("#{processors.first}Processor") if processors.any?
               rescue LoadError, MissingSourceFile
                 processors.shift
                 retry
