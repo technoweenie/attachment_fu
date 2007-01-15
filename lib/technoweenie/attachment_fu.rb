@@ -67,7 +67,7 @@ module Technoweenie # :nodoc:
           after_destroy :destroy_file
           extend  ClassMethods
           include InstanceMethods
-          include Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}")
+          include Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
           case options[:processor]
             when :none
             when nil
@@ -79,7 +79,7 @@ module Technoweenie # :nodoc:
                 retry
               end
             else
-              include Technoweenie::AttachmentFu::Processors.const_get("#{options[:processor].to_s.classify}")
+              include Technoweenie::AttachmentFu::Processors.const_get("#{options[:processor].to_s.classify}Processor")
           end
           after_validation :process_attachment
         end

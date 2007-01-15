@@ -2,7 +2,7 @@ require 'RMagick'
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     module Processors
-      module Rmagick
+      module RmagickProcessor
         def self.included(base)
           base.send :extend, ClassMethods
           base.alias_method_chain :process_attachment, :processing

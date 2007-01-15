@@ -2,7 +2,7 @@ module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     module Backends
       # Methods for DB backed attachments
-      module DbFile
+      module DbFileBackend
         def self.included(base) #:nodoc:
           Object.const_set(:DbFile, Class.new(ActiveRecord::Base)) unless Object.const_defined?(:DbFile)
           base.belongs_to  :db_file, :class_name => '::DbFile', :foreign_key => 'db_file_id'

@@ -113,7 +113,7 @@ module Technoweenie # :nodoc:
       #
       # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the bucket name as part of the path.
       # You can retrieve the bucket name using the <tt>bucket_name</tt> method.
-      module S3
+      module S3Backend
         class S3RequiredLibraryNotFoundError < StandardError; end
         class S3ConfigFileNotFoundError < StandardError; end
 
@@ -157,7 +157,7 @@ module Technoweenie # :nodoc:
         end
         
         def self.port_string
-          @port_string ||= s3_config[:port] ? ":#{s3_config[:port]}" : ''
+          @port_string ||= options[:port] == (options[:use_ssl] ? 443 : 80) ? '' : ":#{options[:port]}"
         end
 
         module ClassMethods

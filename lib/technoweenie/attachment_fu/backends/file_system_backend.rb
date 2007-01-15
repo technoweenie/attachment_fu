@@ -2,7 +2,7 @@ module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     module Backends
       # Methods for file system backed attachments
-      module FileSystem
+      module FileSystemBackend
         def self.included(base) #:nodoc:
           base.before_update :rename_file
         end
