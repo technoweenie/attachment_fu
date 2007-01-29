@@ -69,7 +69,8 @@ module Technoweenie # :nodoc:
             if save_attachment?
               # TODO: This overwrites the file if it exists, maybe have an allow_overwrite option?
               FileUtils.mkdir_p(File.dirname(full_filename))
-              FileUtils.mv temp_path, full_filename
+              File.cp(temp_path, full_filename)
+              File.chmod(attachment_options[:chmod] || 0644, full_filename)
             end
             @old_filename = nil
             true

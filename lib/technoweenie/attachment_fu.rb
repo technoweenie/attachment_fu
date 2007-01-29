@@ -312,16 +312,14 @@ module Technoweenie # :nodoc:
           "#{rand Time.now.to_i}#{filename || 'attachment'}"
         end
 
-        @@filename_basename_regex  = /^.*(\\|\/)/
-        @@filename_character_regex = /[^\w\.\-]/
         def sanitize_filename(filename)
           returning filename.strip do |name|
             # NOTE: File.basename doesn't work right with Windows paths on Unix
             # get only the filename, not the whole path
-            name.gsub! @@filename_basename_regex, ''
+            name.gsub! /^.*(\\|\/)/, ''
             
             # Finally, replace all non alphanumeric, underscore or periods with underscore
-            name.gsub! @@filename_character_regex, '_'
+            name.gsub! /[^\w\.\-]/, '_'
           end
         end
 
