@@ -157,20 +157,20 @@ module Technoweenie # :nodoc:
         end
         
         def self.port_string
-          @port_string ||= options[:port] == (options[:use_ssl] ? 443 : 80) ? '' : ":#{options[:port]}"
+          @port_string ||= s3_config[:port] == (s3_config[:use_ssl] ? 443 : 80) ? '' : ":#{s3_config[:port]}"
         end
 
         module ClassMethods
           def s3_protocol
-            Technoweenie::AttachmentFu::Backends::S3.protocol
+            Technoweenie::AttachmentFu::Backends::S3Backend.protocol
           end
           
           def s3_hostname
-            Technoweenie::AttachmentFu::Backends::S3.hostname
+            Technoweenie::AttachmentFu::Backends::S3Backend.hostname
           end
           
           def s3_port_string
-            Technoweenie::AttachmentFu::Backends::S3.port_string
+            Technoweenie::AttachmentFu::Backends::S3Backend.port_string
           end
         end
 
@@ -251,15 +251,15 @@ module Technoweenie # :nodoc:
         end
 
         def s3_protocol
-          Technoweenie::AttachmentFu::Backends::S3.protocol
+          Technoweenie::AttachmentFu::Backends::S3Backend.protocol
         end
         
         def s3_hostname
-          Technoweenie::AttachmentFu::Backends::S3.hostname
+          Technoweenie::AttachmentFu::Backends::S3Backend.hostname
         end
           
         def s3_port_string
-          Technoweenie::AttachmentFu::Backends::S3.port_string
+          Technoweenie::AttachmentFu::Backends::S3Backend.port_string
         end
 
         protected
