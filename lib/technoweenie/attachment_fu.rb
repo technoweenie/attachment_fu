@@ -1,6 +1,6 @@
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
-    @@default_processors = %w(ImageScience Rmagick)
+    @@default_processors = %w(ImageScience Rmagick MiniMagick)
     @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
     @@content_types      = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png']
     mattr_reader :content_types, :tempfile_path, :default_processors
