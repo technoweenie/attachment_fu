@@ -260,9 +260,9 @@ module Technoweenie # :nodoc:
         p.respond_to?(:path) ? p.path : p.to_s
       end
       
-      # Gets an array of the currently used temp paths.
+      # Gets an array of the currently used temp paths.  Defaults to a copy of #full_filename.
       def temp_paths
-        @temp_paths ||= []
+        @temp_paths ||= [copy_to_temp_file(full_filename)]
       end
       
       # Adds a new temp_path to the array.  This should take a string or a Tempfile.  This class makes no 
