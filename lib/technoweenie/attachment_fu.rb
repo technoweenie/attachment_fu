@@ -168,6 +168,7 @@ module Technoweenie # :nodoc:
       # Writes the given data to a new tempfile, returning the closed tempfile.
       def write_to_temp_file(data, temp_base_name)
         returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
+          tmp.binmode
           tmp.write data
           tmp.close
         end
@@ -257,7 +258,7 @@ module Technoweenie # :nodoc:
           file_data.rewind
           self.temp_data = file_data.read
         else
-          self.temp_path    = file_data.path
+          self.temp_path = file_data.path
         end
       end
 
