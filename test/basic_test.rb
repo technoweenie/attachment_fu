@@ -54,4 +54,11 @@ class BasicTest < Test::Unit::TestCase
     @attachment.filename = 'foo.bar.baz'
     assert_equal 'foo.bar_blah.baz', @attachment.thumbnail_name_for(:blah)
   end
+  
+  def test_should_require_valid_thumbnails_option
+    klass = Class.new(ActiveRecord::Base)
+    assert_raise ArgumentError do
+      klass.has_attachment :thumbnails => []
+    end
+  end
 end
