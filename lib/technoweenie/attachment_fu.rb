@@ -44,23 +44,28 @@ module Technoweenie # :nodoc:
         options[:thumbnails]       ||= {}
         options[:thumbnail_class]  ||= self
         options[:s3_access]        ||= :public_read
+        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
+        
+        # doing these shenanigans so that #attachment_options is available to processors and backends
+        class_inheritable_accessor :attachment_options
+        self.attachment_options = options
 
         # only need to define these once on a class
-        unless included_modules.include? InstanceMethods
-          class_inheritable_accessor :attachment_options
+        unless included_modules.include?(InstanceMethods)
           attr_accessor :thumbnail_resize_options
 
-          options[:storage]     ||= (options[:file_system_path] || options[:path_prefix]) ? :file_system : :db_file
-          options[:path_prefix] ||= options[:file_system_path]
-          if options[:path_prefix].nil?
-            options[:path_prefix] = options[:storage] == :s3 ? table_name : File.join("public", table_name)
+          attachment_options[:storage]     ||= (attachment_options[:file_system_path] || attachment_options[:path_prefix]) ? :file_system : :db_file
+          attachment_options[:path_prefix] ||= attachment_options[:file_system_path]
+          if attachment_options[:path_prefix].nil?
+            attachment_options[:path_prefix] = attachment_options[:storage] == :s3 ? table_name : File.join("public", table_name)
           end
-          options[:path_prefix]   = options[:path_prefix][1..-1] if options[:path_prefix].first == '/'
+          attachment_options[:path_prefix]   = attachment_options[:path_prefix][1..-1] if options[:path_prefix].first == '/'
 
           with_options :foreign_key => 'parent_id' do |m|
-            m.has_many   :thumbnails, :dependent => :destroy, :class_name => options[:thumbnail_class].to_s
+            m.has_many   :thumbnails, :class_name => attachment_options[:thumbnail_class].to_s
             m.belongs_to :parent, :class_name => base_class.to_s
           end
+          before_destroy :destroy_thumbnails
 
           before_validation :set_size_from_temp_path
           after_save :after_process_attachment
@@ -68,7 +73,7 @@ module Technoweenie # :nodoc:
           extend  ClassMethods
           include InstanceMethods
           include Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
-          case options[:processor]
+          case attachment_options[:processor]
             when :none
             when nil
               processors = Technoweenie::AttachmentFu.default_processors.dup
@@ -79,13 +84,14 @@ module Technoweenie # :nodoc:
                 retry
               end
             else
-              include Technoweenie::AttachmentFu::Processors.const_get("#{options[:processor].to_s.classify}Processor")
+              begin
+                include Technoweenie::AttachmentFu::Processors.const_get("#{options[:processor].to_s.classify}Processor")
+              rescue LoadError, MissingSourceFile
+                puts "Problems loading #{options[:processor]}Processor: #{$!}"
+              end
           end
           after_validation :process_attachment
         end
-        
-        options[:content_type] = [options[:content_type]].flatten.collect { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
-        self.attachment_options = options
       end
     end
 
@@ -383,6 +389,11 @@ module Technoweenie # :nodoc:
           end
 
           return result
+        end
+        
+        # Removes the thumbnails for the attachment, if it has any
+        def destroy_thumbnails
+          self.thumbnails.each { |thumbnail| thumbnail.destroy } if thumbnailable?
         end
     end
   end

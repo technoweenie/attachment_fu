@@ -9,7 +9,7 @@ class ImageScienceTest < Test::Unit::TestCase
       assert_valid attachment
       assert attachment.image?
       # test image science thumbnail
-      assert_equal 43, attachment.width
+      assert_equal 42, attachment.width
       assert_equal 55, attachment.height
       
       thumb      = attachment.thumbnails.detect { |t| t.filename =~ /_thumb/ }
@@ -21,7 +21,7 @@ class ImageScienceTest < Test::Unit::TestCase
       
       # test geometry string
       assert_equal 31, geo.width
-      assert_equal 40, geo.height
+      assert_equal 41, geo.height
     end
   else
     def test_flunk

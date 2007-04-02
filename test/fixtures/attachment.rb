@@ -114,7 +114,7 @@ end
 
 begin
   class S3Attachment < ActiveRecord::Base
-    has_attachment :storage => :s3, :processor => :rmagick
+    has_attachment :storage => :s3, :processor => :rmagick, :s3_config_path => File.join(File.dirname(__FILE__), '../amazon_s3.yml')
     validates_as_attachment
   end
 
@@ -123,4 +123,5 @@ begin
     validates_as_attachment
   end
 rescue Technoweenie::AttachmentFu::Backends::S3Backend::ConfigFileNotFoundError
+  puts "S3 error: #{$!}"
 end

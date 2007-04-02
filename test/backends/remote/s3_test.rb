@@ -2,7 +2,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'test_hel
 require 'net/http'
 
 class S3Test < Test::Unit::TestCase
-  if File.exist?(RAILS_ROOT + '/config/amazon_s3.yml')
+  if File.exist?(File.join(File.dirname(__FILE__), '../../amazon_s3.yml'))
     include BaseAttachmentTests
     attachment_model S3Attachment
 
@@ -85,15 +85,15 @@ class S3Test < Test::Unit::TestCase
       end
       
       def s3_protocol
-        Technoweenie::AttachmentFu::Backends::S3.protocol
+        Technoweenie::AttachmentFu::Backends::S3Backend.protocol
       end
       
       def s3_hostname
-        Technoweenie::AttachmentFu::Backends::S3.hostname
+        Technoweenie::AttachmentFu::Backends::S3Backend.hostname
       end
 
       def s3_port_string
-        Technoweenie::AttachmentFu::Backends::S3.port_string
+        Technoweenie::AttachmentFu::Backends::S3Backend.port_string
       end
   else
     def test_flunk_s3
