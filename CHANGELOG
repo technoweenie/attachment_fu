@@ -1,5 +1,6 @@
 * April 2, 2007 *
 
+* don't copy the #full_filename to the default #temp_paths array if it doesn't exist
 * add default ID partitioning for attachments
 * add #binmode call to Tempfile (note: ruby should be doing this!) [Eric Beland]
 * Check for current type of :thumbnails option.

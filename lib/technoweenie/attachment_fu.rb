@@ -273,7 +273,7 @@ module Technoweenie # :nodoc:
       
       # Gets an array of the currently used temp paths.  Defaults to a copy of #full_filename.
       def temp_paths
-        @temp_paths ||= new_record? ? [] : [copy_to_temp_file(full_filename)]
+        @temp_paths ||= (new_record? || !File.exist?(full_filename)) ? [] : [copy_to_temp_file(full_filename)]
       end
       
       # Adds a new temp_path to the array.  This should take a string or a Tempfile.  This class makes no 
