@@ -1,5 +1,6 @@
 * April 2, 2007 *
 
+* add default ID partitioning for attachments
 * add #binmode call to Tempfile (note: ruby should be doing this!) [Eric Beland]
 * Check for current type of :thumbnails option.
 * allow customization of the S3 configuration file path with the :s3_config_path option.

@@ -18,7 +18,7 @@ module Technoweenie # :nodoc:
         # The optional thumbnail argument will output the thumbnail's filename.
         def full_filename(thumbnail = nil)
           file_system_path = (thumbnail ? thumbnail_class : self).attachment_options[:path_prefix].to_s
-          File.join(RAILS_ROOT, file_system_path, attachment_path_id, thumbnail_name_for(thumbnail))
+          File.join(RAILS_ROOT, file_system_path, *partitioned_path(thumbnail_name_for(thumbnail)))
         end
       
         # Used as the base path that #public_filename strips off full_filename to create the public path
@@ -28,7 +28,13 @@ module Technoweenie # :nodoc:
       
         # The attachment ID used in the full path of a file
         def attachment_path_id
-          ((respond_to?(:parent_id) && parent_id) || id).to_s
+          ((respond_to?(:parent_id) && parent_id) || id).to_i
+        end
+      
+        # overrwrite this to do your own app-specific partitioning. 
+        # you can thank Jamis Buck for this: http://www.37signals.com/svn/archives2/id_partitioning.php
+        def partitioned_path(*args)
+          ("%08d" % attachment_path_id).scan(/..../) + args
         end
       
         # Gets the public path to the file
