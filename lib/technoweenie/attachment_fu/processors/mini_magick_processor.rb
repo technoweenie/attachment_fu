@@ -48,7 +48,7 @@ module Technoweenie # :nodoc:
           else
             img.resize(size.to_s)
           end
-          self.temp_path = img.path
+          self.temp_path = img
         end
       end
     end
