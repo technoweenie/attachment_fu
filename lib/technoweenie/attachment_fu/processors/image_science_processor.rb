@@ -28,11 +28,12 @@ module Technoweenie # :nodoc:
           # Performs the actual resizing operation for a thumbnail
           def resize_image(img, size)
             # create a dummy temp file to write to
+            filename.sub! /gif$/, 'png'
             self.temp_path = write_to_temp_file(filename)
             grab_dimensions = lambda do |img|
               self.width  = img.width  if respond_to?(:width)
               self.height = img.height if respond_to?(:height)
-              img.save temp_path.sub(/gif$/, 'png')
+              img.save temp_path
               callback_with_args :after_resize, img
             end
 
