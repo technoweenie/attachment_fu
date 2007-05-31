@@ -32,7 +32,7 @@ module Technoweenie # :nodoc:
             grab_dimensions = lambda do |img|
               self.width  = img.width  if respond_to?(:width)
               self.height = img.height if respond_to?(:height)
-              img.save temp_path
+              img.save temp_path.sub(/gif$/, 'png')
               callback_with_args :after_resize, img
             end
 
