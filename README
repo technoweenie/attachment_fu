@@ -45,7 +45,7 @@ has_attachment(options = {})
                       # Uses public/#{table_name} by default for the filesystem, and just #{table_name} for the S3 backend.  
                       # Setting this sets the :storage to :file_system.
     :storage          # Specifies the storage system to use..
-                      # Defaults to :db_system.  Options are :file_system, :db_file, and :s3.
+                      # Defaults to :db_file.  Options are :file_system, :db_file, and :s3.
     :processor        # Sets the image processor to use for resizing of the attached image.
                       # Options include ImageScience, Rmagick, and MiniMagick.  Default is whatever is installed.
     
