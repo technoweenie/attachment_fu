@@ -162,6 +162,7 @@ class RmagickTest < Test::Unit::TestCase
       assert_equal 'rails_thumb.png', attachment.thumbnails.first.filename
       assert_equal attachment.thumbnails.first.full_filename, attachment.full_filename(attachment.thumbnails.first.thumbnail),
         "#full_filename does not use thumbnail class' path."
+      assert_equal attachment.destroy attachment
     end
     
     test_against_subclass :test_should_use_thumbnail_subclass, ImageWithThumbsClassFileAttachment

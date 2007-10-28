@@ -183,7 +183,7 @@ module Technoweenie # :nodoc:
       
       # Returns true/false if an attachment is thumbnailable.  A thumbnailable attachment has an image content type and the parent_id attribute.
       def thumbnailable?
-        image? && respond_to?(:parent_id)
+        image? && respond_to?(:parent_id) && parent_id.nil?
       end
 
       # Returns the class used to create new thumbnails for this attachment.
