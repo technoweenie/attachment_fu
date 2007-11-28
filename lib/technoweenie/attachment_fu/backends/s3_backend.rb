@@ -133,7 +133,7 @@ module Technoweenie # :nodoc:
 
           begin
             @@s3_config_path = base.attachment_options[:s3_config_path] || (RAILS_ROOT + '/config/amazon_s3.yml')
-            @@s3_config = YAML.load_file(@@s3_config_path)[ENV['RAILS_ENV']].symbolize_keys
+            @@s3_config = @@s3_config = YAML.load_file(@@s3_config_path)[RAILS_ENV].symbolize_keys
           #rescue
           #  raise ConfigFileNotFoundError.new('File %s not found' % @@s3_config_path)
           end

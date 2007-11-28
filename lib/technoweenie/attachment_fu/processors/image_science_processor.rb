@@ -28,12 +28,18 @@ module Technoweenie # :nodoc:
           # Performs the actual resizing operation for a thumbnail
           def resize_image(img, size)
             # create a dummy temp file to write to
+            # ImageScience doesn't handle all gifs properly, so it converts them to
+            # pngs for thumbnails.  It has something to do with trying to save gifs
+            # with a larger palette than 256 colors, which is all the gif format
+            # supports.
             filename.sub! /gif$/, 'png'
+            content_type.sub!(/gif$/, 'png')
             self.temp_path = write_to_temp_file(filename)
             grab_dimensions = lambda do |img|
               self.width  = img.width  if respond_to?(:width)
               self.height = img.height if respond_to?(:height)
-              img.save temp_path
+              img.save self.temp_path
+              self.size = File.size(self.temp_path)
               callback_with_args :after_resize, img
             end
 
