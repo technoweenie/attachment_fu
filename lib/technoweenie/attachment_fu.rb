@@ -263,7 +263,7 @@ module Technoweenie # :nodoc:
           file_data.rewind
           self.temp_data = file_data.read
         else
-          self.temp_path = file_data.path
+          self.temp_path = file_data
         end
       end
 
