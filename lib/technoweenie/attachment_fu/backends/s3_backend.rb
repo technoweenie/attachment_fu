@@ -162,7 +162,7 @@ module Technoweenie # :nodoc:
         end
         
         def self.port_string
-          @port_string ||= s3_config[:port] == (s3_config[:use_ssl] ? 443 : 80) ? '' : ":#{s3_config[:port]}"
+          @port_string ||= (s3_config[:port].nil? || s3_config[:port] == (s3_config[:use_ssl] ? 443 : 80)) ? '' : ":#{s3_config[:port]}"
         end
 
         module ClassMethods
