@@ -116,41 +116,47 @@ module Technoweenie # :nodoc:
         content_types.include?(content_type)
       end
 
-      # Callback after an image has been resized.
-      #
-      #   class Foo < ActiveRecord::Base
-      #     acts_as_attachment
-      #     after_resize do |record, img| 
-      #       record.aspect_ratio = img.columns.to_f / img.rows.to_f
-      #     end
-      #   end
-      def after_resize(&block)
-        write_inheritable_array(:after_resize, [block])
-      end
+      if defined?(::ActiveSupport::Callbacks)
+        def self.extended(base)
+          base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
+        end
+      else
+        # Callback after an image has been resized.
+        #
+        #   class Foo < ActiveRecord::Base
+        #     acts_as_attachment
+        #     after_resize do |record, img| 
+        #       record.aspect_ratio = img.columns.to_f / img.rows.to_f
+        #     end
+        #   end
+        def after_resize(&block)
+          write_inheritable_array(:after_resize, [block])
+        end
 
-      # Callback after an attachment has been saved either to the file system or the DB.
-      # Only called if the file has been changed, not necessarily if the record is updated.
-      #
-      #   class Foo < ActiveRecord::Base
-      #     acts_as_attachment
-      #     after_attachment_saved do |record|
-      #       ...
-      #     end
-      #   end
-      def after_attachment_saved(&block)
-        write_inheritable_array(:after_attachment_saved, [block])
-      end
+        # Callback after an attachment has been saved either to the file system or the DB.
+        # Only called if the file has been changed, not necessarily if the record is updated.
+        #
+        #   class Foo < ActiveRecord::Base
+        #     acts_as_attachment
+        #     after_attachment_saved do |record|
+        #       ...
+        #     end
+        #   end
+        def after_attachment_saved(&block)
+          write_inheritable_array(:after_attachment_saved, [block])
+        end
 
-      # Callback before a thumbnail is saved.  Use this to pass any necessary extra attributes that may be required.
-      #
-      #   class Foo < ActiveRecord::Base
-      #     acts_as_attachment
-      #     before_thumbnail_saved do |record, thumbnail|
-      #       ...
-      #     end
-      #   end
-      def before_thumbnail_saved(&block)
-        write_inheritable_array(:before_thumbnail_saved, [block])
+        # Callback before a thumbnail is saved.  Use this to pass any necessary extra attributes that may be required.
+        #
+        #   class Foo < ActiveRecord::Base
+        #     acts_as_attachment
+        #     before_thumbnail_saved do |record, thumbnail|
+        #       ...
+        #     end
+        #   end
+        def before_thumbnail_saved(&block)
+          write_inheritable_array(:before_thumbnail_saved, [block])
+        end
       end
 
       # Get the thumbnail class, which is the current attachment class by default.
@@ -397,10 +403,30 @@ module Technoweenie # :nodoc:
             result = callback.call(self, arg)
             return false if result == false
           end
-
-          return result
+          result
         end
-        
+
+        # Rather ugly monkey-patch of AS::Callbacks to support taking an arg
+        if defined?(::ActiveSupport::Callbacks)
+          def callbacks_for(method) #:nodoc: compatibility method
+            self.class.send("#{method}_callback_chain")
+          end
+          class ::ActiveSupport::Callbacks::Callback
+            # Make callbacks accept arguments, but only pass them along to procs for now
+            def call(object, *args)
+              if should_run_callback?(object)
+                case method
+                when Proc
+                  args = [object, *args].compact
+                  method.call(*args)
+                else
+                  evaluate_method(method, object)
+                end
+              end
+            end
+          end
+        end
+
         # Removes the thumbnails for the attachment, if it has any
         def destroy_thumbnails
           self.thumbnails.each { |thumbnail| thumbnail.destroy } if thumbnailable?
