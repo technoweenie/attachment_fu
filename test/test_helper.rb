@@ -5,7 +5,6 @@ ENV['RAILS_ROOT'] ||= File.dirname(__FILE__) + '../../../..'
 
 require 'test/unit'
 require File.expand_path(File.join(ENV['RAILS_ROOT'], 'config/environment.rb'))
-require 'breakpoint'
 require 'active_record/fixtures'
 require 'action_controller/test_process'
 
