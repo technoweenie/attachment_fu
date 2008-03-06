@@ -4,7 +4,6 @@ ENV['RAILS_ENV'] = 'test'
 
 require 'test/unit'
 require File.expand_path(File.join(File.dirname(__FILE__), '../../../../config/environment.rb'))
-require 'breakpoint'
 require 'active_record/fixtures'
 require 'action_controller/test_process'
 

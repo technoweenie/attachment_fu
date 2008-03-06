@@ -1,3 +1,7 @@
+* Feb. 26, 2008 *
+* remove breakpoint from test_helper, makes test suite crazy (at least Rails 2+) [Rob Sanheim]
+* make S3 test really optional [Rob Sanheim]
+
 * Nov 27, 2007 *
 * Handle properly ImageScience thumbnails resized from a gif file [Matt Aimonetti]
 * Save thumbnails file size properly when using ImageScience [Matt Aimonetti]
