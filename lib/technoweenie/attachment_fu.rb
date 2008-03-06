@@ -45,60 +45,57 @@ module Technoweenie # :nodoc:
         options[:thumbnail_class]  ||= self
         options[:s3_access]        ||= :public_read
         options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
-        
+
         unless options[:thumbnails].is_a?(Hash)
           raise ArgumentError, ":thumbnails option should be a hash: e.g. :thumbnails => { :foo => '50x50' }"
         end
-        
+
+        extend ClassMethods unless (class << self; included_modules; end).include?(ClassMethods)
+        include InstanceMethods unless included_modules.include?(InstanceMethods)
+
+        parent_options = attachment_options || {}
         # doing these shenanigans so that #attachment_options is available to processors and backends
-        class_inheritable_accessor :attachment_options
         self.attachment_options = options
 
-        # only need to define these once on a class
-        unless included_modules.include?(InstanceMethods)
-          attr_accessor :thumbnail_resize_options
+        attr_accessor :thumbnail_resize_options
 
-          attachment_options[:storage]     ||= (attachment_options[:file_system_path] || attachment_options[:path_prefix]) ? :file_system : :db_file
-          attachment_options[:path_prefix] ||= attachment_options[:file_system_path]
-          if attachment_options[:path_prefix].nil?
-            attachment_options[:path_prefix] = attachment_options[:storage] == :s3 ? table_name : File.join("public", table_name)
-          end
-          attachment_options[:path_prefix]   = attachment_options[:path_prefix][1..-1] if options[:path_prefix].first == '/'
-
-          with_options :foreign_key => 'parent_id' do |m|
-            m.has_many   :thumbnails, :class_name => attachment_options[:thumbnail_class].to_s
-            m.belongs_to :parent, :class_name => base_class.to_s
-          end unless options[:thumbnails].empty?
-          before_destroy :destroy_thumbnails
-
-          before_validation :set_size_from_temp_path
-          after_save :after_process_attachment
-          after_destroy :destroy_file
-          extend  ClassMethods
-          include InstanceMethods
-          include Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
-          case attachment_options[:processor]
-            when :none
-            when nil
-              processors = Technoweenie::AttachmentFu.default_processors.dup
-              begin
-                if processors.any?
-                  attachment_options[:processor] = "#{processors.first}Processor"
-                  include Technoweenie::AttachmentFu::Processors.const_get(attachment_options[:processor])
-                end
-              rescue LoadError, MissingSourceFile
-                processors.shift
-                retry
-              end
-            else
-              begin
-                include Technoweenie::AttachmentFu::Processors.const_get("#{options[:processor].to_s.classify}Processor")
-              rescue LoadError, MissingSourceFile
-                puts "Problems loading #{options[:processor]}Processor: #{$!}"
-              end
-          end
-          after_validation :process_attachment
+        attachment_options[:storage]     ||= (attachment_options[:file_system_path] || attachment_options[:path_prefix]) ? :file_system : :db_file
+        attachment_options[:storage]     ||= parent_options[:storage]
+        attachment_options[:path_prefix] ||= attachment_options[:file_system_path]
+        if attachment_options[:path_prefix].nil?
+          attachment_options[:path_prefix] = attachment_options[:storage] == :s3 ? table_name : File.join("public", table_name)
         end
+        attachment_options[:path_prefix]   = attachment_options[:path_prefix][1..-1] if options[:path_prefix].first == '/'
+
+        with_options :foreign_key => 'parent_id' do |m|
+          m.has_many   :thumbnails, :class_name => attachment_options[:thumbnail_class].to_s
+          m.belongs_to :parent, :class_name => base_class.to_s
+        end
+
+        storage_mod = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
+        include storage_mod unless included_modules.include?(storage_mod)
+
+        case attachment_options[:processor]
+        when :none, nil
+          processors = Technoweenie::AttachmentFu.default_processors.dup
+          begin
+            if processors.any?
+              attachment_options[:processor] = "#{processors.first}Processor"
+              processor_mod = Technoweenie::AttachmentFu::Processors.const_get(attachment_options[:processor])
+              include processor_mod unless included_modules.include?(processor_mod)
+            end
+          rescue LoadError, MissingSourceFile
+            processors.shift
+            retry
+          end
+        else
+          begin
+            processor_mod = Technoweenie::AttachmentFu::Processors.const_get("#{attachment_options[:processor].to_s.classify}Processor")
+            include processor_mod unless included_modules.include?(processor_mod)
+          rescue LoadError, MissingSourceFile
+            puts "Problems loading #{options[:processor]}Processor: #{$!}"
+          end
+        end unless parent_options[:processor] # Don't let child override processor
       end
     end
 
@@ -116,41 +113,55 @@ module Technoweenie # :nodoc:
         content_types.include?(content_type)
       end
 
-      # Callback after an image has been resized.
-      #
-      #   class Foo < ActiveRecord::Base
-      #     acts_as_attachment
-      #     after_resize do |record, img| 
-      #       record.aspect_ratio = img.columns.to_f / img.rows.to_f
-      #     end
-      #   end
-      def after_resize(&block)
-        write_inheritable_array(:after_resize, [block])
+      def self.extended(base)
+        base.class_inheritable_accessor :attachment_options
+        base.before_destroy :destroy_thumbnails
+        base.before_validation :set_size_from_temp_path
+        base.after_save :after_process_attachment
+        base.after_destroy :destroy_file
+        base.after_validation :process_attachment
+        if defined?(::ActiveSupport::Callbacks)
+          base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
+        end
       end
 
-      # Callback after an attachment has been saved either to the file system or the DB.
-      # Only called if the file has been changed, not necessarily if the record is updated.
-      #
-      #   class Foo < ActiveRecord::Base
-      #     acts_as_attachment
-      #     after_attachment_saved do |record|
-      #       ...
-      #     end
-      #   end
-      def after_attachment_saved(&block)
-        write_inheritable_array(:after_attachment_saved, [block])
-      end
+      unless defined?(::ActiveSupport::Callbacks)
+        # Callback after an image has been resized.
+        #
+        #   class Foo < ActiveRecord::Base
+        #     acts_as_attachment
+        #     after_resize do |record, img| 
+        #       record.aspect_ratio = img.columns.to_f / img.rows.to_f
+        #     end
+        #   end
+        def after_resize(&block)
+          write_inheritable_array(:after_resize, [block])
+        end
 
-      # Callback before a thumbnail is saved.  Use this to pass any necessary extra attributes that may be required.
-      #
-      #   class Foo < ActiveRecord::Base
-      #     acts_as_attachment
-      #     before_thumbnail_saved do |record, thumbnail|
-      #       ...
-      #     end
-      #   end
-      def before_thumbnail_saved(&block)
-        write_inheritable_array(:before_thumbnail_saved, [block])
+        # Callback after an attachment has been saved either to the file system or the DB.
+        # Only called if the file has been changed, not necessarily if the record is updated.
+        #
+        #   class Foo < ActiveRecord::Base
+        #     acts_as_attachment
+        #     after_attachment_saved do |record|
+        #       ...
+        #     end
+        #   end
+        def after_attachment_saved(&block)
+          write_inheritable_array(:after_attachment_saved, [block])
+        end
+
+        # Callback before a thumbnail is saved.  Use this to pass any necessary extra attributes that may be required.
+        #
+        #   class Foo < ActiveRecord::Base
+        #     acts_as_attachment
+        #     before_thumbnail_saved do |record, thumbnail|
+        #       ...
+        #     end
+        #   end
+        def before_thumbnail_saved(&block)
+          write_inheritable_array(:before_thumbnail_saved, [block])
+        end
       end
 
       # Get the thumbnail class, which is the current attachment class by default.
@@ -278,7 +289,8 @@ module Technoweenie # :nodoc:
       
       # Gets an array of the currently used temp paths.  Defaults to a copy of #full_filename.
       def temp_paths
-        @temp_paths ||= (new_record? || !File.exist?(full_filename)) ? [] : [copy_to_temp_file(full_filename)]
+        @temp_paths ||= (new_record? || !respond_to?(:full_filename) || !File.exist?(full_filename) ?
+          [] : [copy_to_temp_file(full_filename)])
       end
       
       # Adds a new temp_path to the array.  This should take a string or a Tempfile.  This class makes no 
@@ -397,10 +409,30 @@ module Technoweenie # :nodoc:
             result = callback.call(self, arg)
             return false if result == false
           end
-
-          return result
+          result
         end
-        
+
+        # Rather ugly monkey-patch of AS::Callbacks to support taking an arg
+        if defined?(::ActiveSupport::Callbacks)
+          def callbacks_for(method) #:nodoc: compatibility method
+            self.class.send("#{method}_callback_chain")
+          end
+          class ::ActiveSupport::Callbacks::Callback
+            # Make callbacks accept arguments, but only pass them along to procs for now
+            def call(object, *args)
+              if should_run_callback?(object)
+                case method
+                when Proc
+                  args = [object, *args].compact
+                  method.call(*args)
+                else
+                  evaluate_method(method, object)
+                end
+              end
+            end
+          end
+        end
+
         # Removes the thumbnails for the attachment, if it has any
         def destroy_thumbnails
           self.thumbnails.each { |thumbnail| thumbnail.destroy } if thumbnailable?
