@@ -84,7 +84,7 @@ module Technoweenie # :nodoc:
               processor_mod = Technoweenie::AttachmentFu::Processors.const_get(attachment_options[:processor])
               include processor_mod unless included_modules.include?(processor_mod)
             end
-          rescue LoadError, MissingSourceFile
+          rescue LoadError, MissingSourceFile, CompilationError
             processors.shift
             retry
           end
@@ -92,7 +92,7 @@ module Technoweenie # :nodoc:
           begin
             processor_mod = Technoweenie::AttachmentFu::Processors.const_get("#{attachment_options[:processor].to_s.classify}Processor")
             include processor_mod unless included_modules.include?(processor_mod)
-          rescue LoadError, MissingSourceFile
+          rescue LoadError, MissingSourceFile, CompilationError
             puts "Problems loading #{options[:processor]}Processor: #{$!}"
           end
         end unless parent_options[:processor] # Don't let child override processor
