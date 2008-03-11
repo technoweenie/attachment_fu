@@ -84,7 +84,9 @@ module Technoweenie # :nodoc:
               processor_mod = Technoweenie::AttachmentFu::Processors.const_get(attachment_options[:processor])
               include processor_mod unless included_modules.include?(processor_mod)
             end
-          rescue LoadError, MissingSourceFile, CompilationError
+          rescue Object, Exception
+            raise unless load_related_exception?($!)
+
             processors.shift
             retry
           end
@@ -92,11 +94,25 @@ module Technoweenie # :nodoc:
           begin
             processor_mod = Technoweenie::AttachmentFu::Processors.const_get("#{attachment_options[:processor].to_s.classify}Processor")
             include processor_mod unless included_modules.include?(processor_mod)
-          rescue LoadError, MissingSourceFile, CompilationError
+          rescue Object, Exception
+            raise unless load_related_exception?($!)
+
             puts "Problems loading #{options[:processor]}Processor: #{$!}"
           end
         end unless parent_options[:processor] # Don't let child override processor
       end
+
+      def load_related_exception?(e) #:nodoc: implementation specific
+        case
+        when e.kind_of?(LoadError), e.kind_of?(MissingSourceFile), $!.class.name == "CompilationError"
+          # We can't rescue CompilationError directly, as it is part of the RubyInline library.
+          # We must instead rescue RuntimeError, and check the class' name.
+          true
+        else
+          false
+        end
+      end
+      private :load_related_exception?
     end
 
     module ClassMethods
