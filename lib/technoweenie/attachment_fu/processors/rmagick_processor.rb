@@ -43,7 +43,7 @@ module Technoweenie # :nodoc:
             size = [size, size] if size.is_a?(Fixnum)
             img.thumbnail!(*size)
           else
-            img.change_geometry(size.to_s) { |cols, rows, image| image.resize!(cols, rows) }
+            img.change_geometry(size.to_s) { |cols, rows, image| image.resize!(cols<1 ? 1 : cols, rows<1 ? 1 : rows) }
           end
           self.temp_path = write_to_temp_file(img.to_blob)
         end
