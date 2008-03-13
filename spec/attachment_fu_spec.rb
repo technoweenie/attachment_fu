@@ -67,6 +67,10 @@ module AttachmentFu
       it "removes the file" do
         File.exist?(@asset.full_filename).should == false
       end
+      
+      it "clears empty directory tree" do
+        pending "should test that empty directories are deleted, like assets/table_name/0000/0001, etc"
+      end
     end
 
     describe "setting temp_path" do

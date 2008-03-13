@@ -30,7 +30,7 @@ module AttachmentFu
     end
     
     def setup_spec_env
-      connection.create_table :afu_spec_assets do |t|
+      connection.create_table :afu_spec_assets, :force => true do |t|
         t.integer :size
         t.string  :filename
         t.string  :content_type

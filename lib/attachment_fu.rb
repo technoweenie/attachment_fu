@@ -60,7 +60,7 @@ module AttachmentFu
   #
   #   @attachment = Attachment.create! params[:attachment]
   #
-  # TODO: Allow it to work with Merb tempfiles too.
+  # HIDDEN until we have specs
   #def uploaded_data=(file_data)
   #  return nil if file_data.nil? || file_data.size == 0 
   #  self.content_type = file_data.content_type
