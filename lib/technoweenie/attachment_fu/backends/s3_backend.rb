@@ -145,7 +145,8 @@ module Technoweenie # :nodoc:
             :secret_access_key => s3_config[:secret_access_key],
             :server            => s3_config[:server],
             :port              => s3_config[:port],
-            :use_ssl           => s3_config[:use_ssl]
+            :use_ssl           => s3_config[:use_ssl],
+            :persistent        => s3_config.has_key?(:persistent) ? s3_config[:persistent] : true
           )
 
           # Bucket.create(@@bucket_name)
