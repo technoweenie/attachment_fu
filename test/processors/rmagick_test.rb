@@ -201,12 +201,13 @@ class RmagickTest < Test::Unit::TestCase
     
     test_against_subclass :test_should_delete_file_when_in_file_system_when_attachment_record_destroyed, ImageWithThumbsFileAttachment
     
-    def test_should_have_full_filename_method(klass = ImageWithThumbsAttachment)
+    def test_should_have_full_filename_method(klass = FileAttachment)
+      attachment_model klass
       attachment = upload_file :filename => '/files/rails.png'
       assert_respond_to attachment, :full_filename
     end
     
-    test_against_subclass :test_should_have_full_filename_method, ImageWithThumbsAttachment
+    test_against_subclass :test_should_have_full_filename_method, FileAttachment
     
     def test_should_overwrite_old_thumbnail_records_when_updating(klass = ImageWithThumbsAttachment)
       attachment_model klass
