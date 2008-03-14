@@ -45,6 +45,17 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :type,            :string
   end
 
+  create_table :core_image_attachments, :force => true do |t|
+    t.column :parent_id,       :integer
+    t.column :thumbnail,       :string 
+    t.column :filename,        :string, :limit => 255
+    t.column :content_type,    :string, :limit => 255
+    t.column :size,            :integer
+    t.column :width,           :integer
+    t.column :height,          :integer
+    t.column :type,            :string
+  end
+  
   create_table :mini_magick_attachments, :force => true do |t|
     t.column :parent_id,       :integer
     t.column :thumbnail,       :string 

@@ -95,6 +95,16 @@ rescue MissingSourceFile
 end
 
 begin
+  class CoreImageAttachment < ActiveRecord::Base
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :core_image, :thumbnails => { :thumb => [50, 51], :geometry => '31>' }, :resize_to => 55
+  end
+rescue MissingSourceFile
+  puts $!.message
+  puts "no CoreImage"
+end
+
+begin
   class MiniMagickAttachment < ActiveRecord::Base
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>' }, :resize_to => 55
