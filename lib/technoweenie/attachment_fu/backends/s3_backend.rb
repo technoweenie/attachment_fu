@@ -140,14 +140,7 @@ module Technoweenie # :nodoc:
 
           @@bucket_name = s3_config[:bucket_name]
 
-          Base.establish_connection!(
-            :access_key_id     => s3_config[:access_key_id],
-            :secret_access_key => s3_config[:secret_access_key],
-            :server            => s3_config[:server],
-            :port              => s3_config[:port],
-            :use_ssl           => s3_config[:use_ssl],
-            :persistent        => s3_config.has_key?(:persistent) ? s3_config[:persistent] : true
-          )
+          Base.establish_connection!(s3_config.slice(:access_key_id, :secret_access_key, :server, :port, :use_ssl, :persistent, :proxy))
 
           # Bucket.create(@@bucket_name)
 
