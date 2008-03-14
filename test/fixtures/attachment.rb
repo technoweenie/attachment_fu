@@ -105,6 +105,17 @@ rescue MissingSourceFile
 end
 
 begin
+  class GD2Attachment < ActiveRecord::Base
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :gd2, :thumbnails => { :thumb => [50, 51], :geometry => '31>' }, :resize_to => 55
+  end
+rescue MissingSourceFile
+  puts $!.message
+  puts "no GD2"
+end
+
+
+begin
   class MiniMagickAttachment < ActiveRecord::Base
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>' }, :resize_to => 55
