@@ -72,7 +72,7 @@ module Technoweenie # :nodoc:
         with_options :foreign_key => 'parent_id' do |m|
           m.has_many   :thumbnails, :class_name => attachment_options[:thumbnail_class].to_s
           m.belongs_to :parent, :class_name => base_class.to_s
-        end
+        end unless options[:thumbnails].empty?
 
         storage_mod = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
         include storage_mod unless included_modules.include?(storage_mod)
