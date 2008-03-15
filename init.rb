@@ -1,1 +1,1 @@
-AttachmentFu.init
+AttachmentFu.setup ActiveRecord::Base

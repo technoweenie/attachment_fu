@@ -19,8 +19,8 @@ module AttachmentFu
     @root_path = value
   end
 
-  def self.init
-    class << ActiveRecord::Base
+  def self.setup(klass)
+    class << klass
       def is_attachment(options = {})
         include AttachmentFu
         self.attachment_path = options[:path] || File.join("public", table_name)
@@ -94,17 +94,9 @@ module AttachmentFu
   end
   
   def temp_path=(value)
-    self.size = value.is_a?(String) || !value.respond_to?(:size) ? File.size(value) : value.size
-    self.filename ||= begin
-      if value.respond_to?(:basename)
-        value.basename.to_s
-      elsif value.respond_to?(:path)
-        File.basename(value.path)
-      else
-        File.basename(value)
-      end
-    end
-    @temp_path = value
+    self.size       = value.is_a?(String) || !value.respond_to?(:size) ? File.size(value) : value.size
+    self.filename ||= basename_for value
+    @temp_path      = value
   end
   
   def delete_attachment
@@ -113,17 +105,31 @@ module AttachmentFu
 
 protected
   def save_attachment
-    old_path = if @temp_path.respond_to?(:path)
-      @temp_path.path
-    elsif @temp_path.respond_to?(:realpath)
-      @temp_path.realpath.to_s
-    elsif @temp_path
-      @temp_path.to_s
-    end
+    old_path = full_path_for @temp_path
     return if old_path.nil?
     FileUtils.mkdir_p(File.dirname(full_filename))
     FileUtils.mv(old_path, full_filename)
     File.chmod(0644, full_filename)
     @temp_path = nil
+  end
+  
+  # Could be a string, Pathname, Tempfile, who knows?
+  def full_path_for(path)
+    if path.respond_to?(:path)
+      path.path
+    elsif path.respond_to?(:realpath)
+      path.realpath.to_s
+    elsif path
+      path.to_s
+    end
+  end
+  
+  # Could be a string, Pathname, Tempfile, who knows?
+  def basename_for(path)
+    if path.respond_to?(:basename)
+      path.basename.to_s
+    else
+      File.basename(path.respond_to?(:path) ? path.path : path)
+    end
   end
 end

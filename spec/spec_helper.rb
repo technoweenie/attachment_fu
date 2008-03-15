@@ -1,7 +1,7 @@
 require 'rubygems'
 
 dir = File.dirname(__FILE__)
-rails_app_spec = "#{dir}/../../../../config/environment.rb"
+rails_app      = "#{dir}/../../../../config/environment.rb"
 vendor_rspec   = "#{dir}/../../rspec/lib"
 
 if File.exist?(vendor_rspec)
@@ -10,8 +10,8 @@ else
   gem 'rspec'
 end
 
-if File.exist?(rails_app_spec)
-  require rails_app_spec
+if File.exist?(rails_app)
+  require rails_app
 else
   raise "TODO: attempt to load activerecord and activesupport from gems"
   # also, establish connection with sqlite3 or use DB env var as path to database.yml
