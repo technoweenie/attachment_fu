@@ -94,6 +94,77 @@ module AttachmentFu
         fail "#{dir_to_check.inspect} is deleted" unless File.directory?(dir_to_check)
       end
     end
+    
+    describe "being uploaded" do
+      before do
+        @asset = BasicAsset.new
+        @file  = __FILE__
+        @file.stub!(:size).and_return(File.size(__FILE__))
+        @file.stub!(:content_type).and_return("application/x-ruby")
+        @file.stub!(:original_filename).and_return("/Users/rickybobby/shake_and_bake.rb")
+        @file.stub!(:read).and_return { IO.read(__FILE__) }
+      end
+      
+      describe "with temp file" do        
+        it "sets temp_path as string path to file" do
+          @asset.uploaded_data = @file
+          @asset.temp_path.should == __FILE__
+        end
+
+        it "sets content_type" do
+          @asset.uploaded_data = @file
+          @asset.content_type.should == @file.content_type
+        end
+      
+        it "sets filename" do
+          @asset.uploaded_data = @file
+          @asset.filename.should == @file.original_filename
+        end
+        
+        it "ignores nil value" do
+          @asset.uploaded_data = nil
+          @asset.content_type.should be_nil
+        end
+        
+        it "ignores uploaded file with size=0" do
+          @file.stub!(:size).and_return(0)
+          @asset.uploaded_data = @file
+          @asset.content_type.should be_nil
+        end
+      end
+      
+      describe "with IO" do
+        before do
+          @file.stub!(:rewind)
+        end
+        
+        it "sets temp_path as Tempfile" do
+          @asset.uploaded_data = @file
+          @asset.temp_path.should be_instance_of(Tempfile)
+        end
+
+        it "sets content_type" do
+          @asset.uploaded_data = @file
+          @asset.content_type.should == @file.content_type
+        end
+      
+        it "sets filename" do
+          @asset.uploaded_data = @file
+          @asset.filename.should == @file.original_filename
+        end
+        
+        it "ignores nil value" do
+          @asset.uploaded_data = nil
+          @asset.content_type.should be_nil
+        end
+        
+        it "ignores uploaded file with size=0" do
+          @file.stub!(:size).and_return(0)
+          @asset.uploaded_data = @file
+          @asset.content_type.should be_nil
+        end
+      end
+    end
 
     describe "setting temp_path" do
       describe "with a String" do

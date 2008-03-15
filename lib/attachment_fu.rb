@@ -21,16 +21,25 @@ module AttachmentFu
 
   def self.setup(klass)
     class << klass
-      def is_attachment(options = {})
+      def is_attachment(options = {}, &block)
         include AttachmentFu
-        self.root_path       = options[:root] || AttachmentFu.root_path
-        self.attachment_path = options[:path] || File.join("public", table_name)
+        self.root_path        = options[:root] || root_path || AttachmentFu.root_path
+        self.attachment_path  = options[:path] || attachment_path || File.join("public", table_name)
+        self.attachment_tasks
+        attachment_tasks.instance_eval &block if block
       end
     end
   end
   
   def self.included(base)
-    base.send :attr_reader, :temp_path
+    class << base
+      attr_writer :attachment_tasks
+      
+      def attachment_tasks
+        @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.dup : AttachmentFu::Tasks.new(self)
+      end
+    end
+    base.send :attr_reader,   :temp_path
     base.send :class_inheritable_accessor, :attachment_path
     base.send :class_inheritable_accessor, :root_path
     base.after_save    :save_attachment
@@ -38,14 +47,7 @@ module AttachmentFu
   end
   
   def filename=(value)
-    if value
-      value.strip!
-      # NOTE: File.basename doesn't work right with Windows paths on Unix
-      # get only the filename, not the whole path
-      value.gsub! /^.*(\\|\/)/, ''
-      # Finally, replace all non alphanumeric, underscore or periods with underscore
-      value.gsub! /[^\w\.\-]/, '_'
-    end
+    strip_filename value if value
     write_attribute :filename, value
   end
 
@@ -62,20 +64,19 @@ module AttachmentFu
   #
   #   @attachment = Attachment.create! params[:attachment]
   #
-  # HIDDEN until we have specs
-  #def uploaded_data=(file_data)
-  #  return nil if file_data.nil? || file_data.size == 0 
-  #  self.content_type = file_data.content_type
-  #  self.filename     = file_data.original_filename
-  #  if file_data.is_a?(StringIO)
-  #    file_data.rewind
-  #    self.temp_path = Tempfile.open filename do |f|
-  #      f << file_data.read
-  #    end
-  #  else
-  #    self.temp_path = file_data
-  #  end
-  #end
+  def uploaded_data=(file_data)
+    return nil if file_data.nil? || file_data.size == 0 
+    self.content_type = file_data.content_type
+    self.filename     = file_data.original_filename
+    if file_data.respond_to?(:rewind) # it's an IO object
+      file_data.rewind
+      self.temp_path = Tempfile.new filename do |f|
+        f << file_data.read
+      end
+    else
+      self.temp_path = file_data
+    end
+  end
 
   # The attachment ID used in the full path of a file
   def attachment_path_id
@@ -143,5 +144,14 @@ protected
     else
       File.basename(path.respond_to?(:path) ? path.path : path)
     end
+  end
+  
+  def strip_filename(value)
+    value.strip!
+    # NOTE: File.basename doesn't work right with Windows paths on Unix
+    # get only the filename, not the whole path
+    value.gsub! /^.*(\\|\/)/, ''
+    # Finally, replace all non alphanumeric, underscore or periods with underscore
+    value.gsub! /[^\w\.\-]/, '_'
   end
 end
