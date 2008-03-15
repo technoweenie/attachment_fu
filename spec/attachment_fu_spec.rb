@@ -209,13 +209,25 @@ module AttachmentFu
     end
     
     describe "being subclassed" do
-      before :all do
-        @class = Class.new(BasicAsset)
+      before do
+        @sub = Class.new(BasicAsset)
       end
       
-      it "inherits superclass #root_path" do
-        @sub = Class.new(@class)
-        @sub.root_path.should == @class.root_path
+      {:attachment => :path, :root => :root}.each do |prefix, option|
+        it "inherits superclass ##{prefix}_path" do
+          @sub.send("#{prefix}_path").should == BasicAsset.send("#{prefix}_path")
+        end
+
+        it "inherits superclass ##{prefix}_path after explicit #is_attachment call" do
+          @sub.is_attachment
+          @sub.send("#{prefix}_path").should == BasicAsset.send("#{prefix}_path")
+        end
+        
+        it "overwrites superclass ##{prefix}_path with #{option.inspect}" do
+          @sub.is_attachment option => 'foobar'
+          @sub.send("#{prefix}_path").should_not == BasicAsset.send("#{prefix}_path")
+          @sub.send("#{prefix}_path").should == 'foobar'
+        end
       end
     end
 
