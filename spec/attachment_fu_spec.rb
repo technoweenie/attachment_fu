@@ -207,6 +207,17 @@ module AttachmentFu
         end
       end
     end
+    
+    describe "being subclassed" do
+      before :all do
+        @class = Class.new(BasicAsset)
+      end
+      
+      it "inherits superclass #root_path" do
+        @sub = Class.new(@class)
+        @sub.root_path.should == @class.root_path
+      end
+    end
 
     before :all do
       BasicAsset.setup_spec_env
