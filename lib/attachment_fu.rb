@@ -25,8 +25,7 @@ module AttachmentFu
         include AttachmentFu
         self.root_path        = options[:root] || root_path || AttachmentFu.root_path
         self.attachment_path  = options[:path] || attachment_path || File.join("public", table_name)
-        self.attachment_tasks
-        attachment_tasks.instance_eval &block if block
+        self.attachment_tasks(&block)
       end
     end
   end
@@ -35,8 +34,8 @@ module AttachmentFu
     class << base
       attr_writer :attachment_tasks
       
-      def attachment_tasks
-        @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.dup : AttachmentFu::Tasks.new(self)
+      def attachment_tasks(&block)
+        @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.copy(&block) : AttachmentFu::Tasks.new(self, &block)
       end
     end
     base.send :attr_reader,   :temp_path

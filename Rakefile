@@ -18,7 +18,7 @@ desc "Run all examples with RCov"
 Spec::Rake::SpecTask.new(:rcov) do |t|
   t.spec_files = FileList['spec/**/*.rb']
   t.rcov = true
-  t.rcov_opts = ['--exclude', 'spec']
+  t.rcov_opts = %w(--exclude spec --exclude activesupport --exclude activerecord)
   t.rcov_dir = "doc/rcov"
 end
 
