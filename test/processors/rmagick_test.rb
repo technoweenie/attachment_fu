@@ -157,8 +157,10 @@ class RmagickTest < Test::Unit::TestCase
         assert_valid attachment
       end
       assert_kind_of ImageThumbnail,  attachment.thumbnails.first
-      assert_equal attachment.id,     attachment.thumbnails.first.parent.id
-      assert_kind_of FileAttachment,  attachment.thumbnails.first.parent
+      if attachment.thumbnails.first.respond_to?(:parent)
+        assert_equal attachment.id,     attachment.thumbnails.first.parent.id
+        assert_kind_of FileAttachment,  attachment.thumbnails.first.parent
+      end
       assert_equal 'rails_thumb.png', attachment.thumbnails.first.filename
       assert_equal attachment.thumbnails.first.full_filename, attachment.full_filename(attachment.thumbnails.first.thumbnail),
         "#full_filename does not use thumbnail class' path."
