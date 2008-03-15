@@ -23,6 +23,7 @@ module AttachmentFu
     class << klass
       def is_attachment(options = {})
         include AttachmentFu
+        self.root_path       = options[:root] || AttachmentFu.root_path
         self.attachment_path = options[:path] || File.join("public", table_name)
       end
     end
@@ -31,6 +32,7 @@ module AttachmentFu
   def self.included(base)
     base.send :attr_reader, :temp_path
     base.send :class_inheritable_accessor, :attachment_path
+    base.send :class_inheritable_accessor, :root_path
     base.after_save    :save_attachment
     base.after_destroy :delete_attachment
   end
@@ -90,7 +92,7 @@ module AttachmentFu
 
   def full_filename
     return nil if new_record?
-    File.join(AttachmentFu.root_path, attachment_path, *partitioned_path(filename))
+    File.join(root_path, attachment_path, *partitioned_path(filename))
   end
   
   def temp_path=(value)
@@ -101,6 +103,16 @@ module AttachmentFu
   
   def delete_attachment
     FileUtils.rm full_filename if File.exist?(full_filename)
+    dir_name = File.dirname(full_filename)
+    default  = %w(. ..)
+    while dir_name != root_path
+      if (Dir.entries(dir_name) - default).empty?
+        FileUtils.rm_rf dir_name
+        dir_name.sub! /\/\w+$/, ''
+      else
+        dir_name = root_path
+      end
+    end
   end
 
 protected

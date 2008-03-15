@@ -56,20 +56,42 @@ module AttachmentFu
     end
     
     describe "being deleted" do
-      before :all do
+      before do
         @file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
         FileUtils.cp __FILE__, @file
 
-        @asset  = BasicAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
-        @asset.destroy
+        @asset = BasicAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
+        @dir   = File.dirname(@asset.full_filename)
+      end
+      
+      after do
+        FileUtils.rm_rf AttachmentFu.root_path
       end
       
       it "removes the file" do
+        @asset.destroy
         File.exist?(@asset.full_filename).should == false
       end
       
-      it "clears empty directory tree" do
-        pending "should test that empty directories are deleted, like assets/table_name/0000/0001, etc"
+      (1..4).each do |i|
+        it "deletes empty path ##{i}" do
+          @asset.destroy
+          dir_to_check = @dir.split("/")[0..-i] * "/"
+          fail "#{dir_to_check.inspect} still exists" if File.directory?(dir_to_check)
+        end
+
+        it "keeps non-empty path ##{i}" do
+          dir_to_check = @dir.split("/")[0..-i] * "/"
+          FileUtils.touch File.join(dir_to_check, 'savior')
+          @asset.destroy
+          fail "#{dir_to_check.inspect} is deleted" unless File.directory?(dir_to_check)
+        end
+      end
+      
+      it "keeps Attachment.root_path" do
+        @asset.destroy
+        dir_to_check = @dir.split("/")[0..-5] * "/"
+        fail "#{dir_to_check.inspect} is deleted" unless File.directory?(dir_to_check)
       end
     end
 
