@@ -60,12 +60,27 @@ module AttachmentFu
     end
     
     def process(attachment)
+      has_progress = attachment.respond_to?(:task_progress)
       @stack.each do |stack_item|
         if attachment.process_task?(stack_item)
-          task, options = stack_item
-          task.call attachment, options
+          begin
+            task, options = stack_item
+            task.call attachment, options
+            if has_progress then attachment.task_progress[stack_item] = true end
+          rescue Object
+            if has_progress
+              attachment.task_progress[stack_item] = $!
+              return
+            else
+              raise $!
+            end
+          end
         end
       end
+      if has_progress
+        attachment.task_progress = {:complete => true}
+      end
+      attachment.processed_at = Time.now.utc if attachment.respond_to?(:processed_at)
     end
   end
 end

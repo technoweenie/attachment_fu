@@ -114,7 +114,7 @@ module AttachmentFu
 
 protected
   def processed_task?(stack)
-    task_progress == true || task_progress[stack]
+    task_progress[:complete] || task_progress[stack]
   end
     
   def delete_attachment
@@ -136,6 +136,7 @@ protected
     FileUtils.mkdir_p(File.dirname(full_filename))
     FileUtils.mv(old_path, full_filename)
     File.chmod(0644, full_filename)
+    self.class.attachment_tasks.process(self)
     @temp_path = @new_attachment = nil
   end
   

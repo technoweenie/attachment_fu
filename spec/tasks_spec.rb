@@ -11,6 +11,12 @@ module AttachmentFu
         task :bar, :a => 2
         task :foo, :a => 3
       end
+      @err = Tasks.new self do
+        task :foo, :a => 1
+        task :bar, :a => 2
+        task :foo, :err => true
+        task :foo, :a => 3
+      end
     end
     
     it "allows tasks to be copied" do
@@ -65,6 +71,11 @@ module AttachmentFu
           @tasks.process @asset
           @asset.filename.should == 'original'
         end
+        
+        it "does not rescue exceptions" do
+          @asset = ProcessableAsset.new 'original'
+          lambda { @err.process @asset }.should raise_error(RuntimeError)
+        end
       end
       
       describe "with just processed_at attribute" do
@@ -74,10 +85,21 @@ module AttachmentFu
           @asset.filename.should == 'foo-3-bar-2-foo-1-original'
         end
         
+        it "completes tasks" do
+          @asset = OnlyTimestampedAsset.new 'original'
+          @tasks.process @asset
+          @asset.processed_at.should_not be_nil
+        end
+        
         it "does not run them if the record has been created" do
           @asset = OnlyTimestampedAsset.new 'original', nil, Time.now.utc
           @tasks.process @asset
           @asset.filename.should == 'original'
+        end
+        
+        it "does not rescue exceptions" do
+          @asset = OnlyTimestampedAsset.new 'original'
+          lambda { @err.process @asset }.should raise_error(RuntimeError)
         end
       end
       
@@ -88,6 +110,12 @@ module AttachmentFu
           @asset.filename.should == 'foo-3-bar-2-foo-1-original'
         end
         
+        it "completes tasks" do
+          @asset = TrackedAsset.new 'original'
+          @tasks.process @asset
+          @asset.task_progress.should == {:complete => true}
+        end
+        
         it "skips processed tasks" do
           @asset = TrackedAsset.new 'original', {@tasks.stack.first => true}
           @tasks.process @asset
@@ -95,9 +123,18 @@ module AttachmentFu
         end
         
         it "does not run them if the record has been created" do
-          @asset = TrackedAsset.new 'original', true, Time.now.utc
+          @asset = TrackedAsset.new 'original', {:complete => true}, Time.now.utc
           @tasks.process @asset
           @asset.filename.should == 'original'
+        end
+        
+        it "rescues exceptions" do
+          @asset = TrackedAsset.new 'original'
+          lambda { @err.process @asset }.should_not raise_error(RuntimeError)
+          @asset.task_progress.size.should == 3
+          @asset.task_progress[@err[0]].should == true
+          @asset.task_progress[@err[1]].should == true
+          @asset.task_progress[@err[2]].should be_instance_of(RuntimeError)
         end
       end
       
@@ -106,6 +143,13 @@ module AttachmentFu
           @asset = TimestampedAsset.new 'original'
           @tasks.process @asset
           @asset.filename.should == 'foo-3-bar-2-foo-1-original'
+        end
+        
+        it "completes tasks" do
+          @asset = TimestampedAsset.new 'original'
+          @tasks.process @asset
+          @asset.processed_at.should_not be_nil
+          @asset.task_progress.should == {:complete => true}
         end
         
         it "skips processed tasks" do
@@ -118,6 +162,15 @@ module AttachmentFu
           @asset = TimestampedAsset.new 'original', {@tasks.stack.first => true}, Time.now.utc
           @tasks.process @asset
           @asset.filename.should == 'original'
+        end
+        
+        it "rescues exceptions" do
+          @asset = TimestampedAsset.new 'original'
+          lambda { @err.process @asset }.should_not raise_error(RuntimeError)
+          @asset.task_progress.size.should == 3
+          @asset.task_progress[@err[0]].should == true
+          @asset.task_progress[@err[1]].should == true
+          @asset.task_progress[@err[2]].should be_instance_of(RuntimeError)
         end
       end
     end
