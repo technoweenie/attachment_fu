@@ -4,6 +4,7 @@ module AttachmentFu
   describe Tasks do
     describe "with inline proc task" do
       before :all do
+        @asset_class = Struct.new(:filename)
         Tasks.all[:inline] = lambda { |attachment, options| attachment.filename = "inline-#{attachment.filename}" }
       end
       
@@ -26,7 +27,7 @@ module AttachmentFu
       end
       
       it "processes attachment" do
-        @asset = BasicAsset.new :filename => 'snarf'
+        @asset = @asset_class.new 'snarf'
         @tasks[:inline].call @asset, nil
         @asset.filename.should == 'inline-snarf'
       end
