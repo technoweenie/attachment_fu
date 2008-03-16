@@ -35,6 +35,19 @@ module AttachmentFu
     #
     # See individual tasks for what options they take.  See AttachmentFu::Tasks to see how tasks are processed.
     #
+    # The \table schema should look like this:
+    #
+    #   create_table :foo do |t|
+    #     t.string  :filename
+    #     t.string  :content_type
+    #     t.integer :size
+    #
+    #     # OPTIONAL
+    #     t.text :task_progress
+    #     t.datetime :processed_at
+    #
+    #     # PLUS any fields that your tasks may use.
+    #   end
     def is_attachment(options = {}, &block)
       include AttachmentFu
       self.queued_attachment = options[:queued]
