@@ -56,8 +56,7 @@ module AttachmentFu
       case key_or_index
         when Symbol then @all[key_or_index]
         when Fixnum then @stack[key_or_index]
-        else raise(ArgumentError, "Invalid Key: #{key_or_index.inspect}")
-      end
+      end || raise(ArgumentError, "Invalid Key: #{key_or_index.inspect}")
     end
     
     def process(attachment)

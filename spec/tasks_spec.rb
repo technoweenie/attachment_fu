@@ -38,6 +38,14 @@ module AttachmentFu
       @copied.size.should == 1
       @tasks.size.should  == 3
     end
+    
+    it "raises ArgumentError for bad key names" do
+      lambda { @tasks[:snarf] }.should raise_error(ArgumentError)
+    end
+    
+    it "raises ArgumentError for bad index" do
+      lambda { @tasks[23] }.should raise_error(ArgumentError)
+    end
       
     describe "processing an attachment" do
       it "stores the same FlakyTask instance in the stack" do
