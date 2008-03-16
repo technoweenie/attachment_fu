@@ -10,15 +10,50 @@ Tempfile.class_eval do
 end
 
 module AttachmentFu
+  module SetupMethods
+    # Sets up this class's instances to be treated as attachments.  The options define only the core
+    # attachment functions: storing an attachment on the filesystem.  Any external processing 
+    # should be done with custom tasks.
+    # 
+    #   class Attachment < ActiveRecord::Base
+    #     is_attachment \
+    #       :queued => [true, false] # Sets whether this attachment should be queued or not.  Default: false
+    #       :path   => '...'         # Sets the relative path for saved files.  Defaults to public/#{table_name}
+    #   end
+    #
+    # Attachments are saved in partitioned paths created by the ID. A typical path might look like:
+    #
+    #   RAILS_ROOT/public/photos/0000/0101/shake_and_bake.jpg
+    #
+    # Tasks are where you can customize AttachmentFu behavior:
+    #
+    #   class Attachment < ActiveRecord::Base
+    #     is_attachment :queued => true do
+    #       task :convert_to_flv, :audio => :mp3
+    #       task :store_in_s3, :bucket => 'assets.techno-weenie.net'
+    #     end
+    #
+    # See individual tasks for what options they take.  See AttachmentFu::Tasks to see how tasks are processed.
+    #
+    def is_attachment(options = {}, &block)
+      include AttachmentFu
+      self.queued_attachment = options[:queued]
+      self.attachment_path   = options[:path] || attachment_path || File.join("public", table_name)
+      self.attachment_tasks(&block)
+    end
+  end
+
   # joined with #attachment_path to get the full path
   def self.root_path
     @root_path ||= File.expand_path(defined?(RAILS_ROOT) ? RAILS_ROOT : File.dirname(__FILE__))
   end
   
+  # Sets the default root_path for all attachment models.
   def self.root_path=(value)
     @root_path = value
   end
 
+  # Sets up a class for attachment_fu.  By default, this sets ActiveRecord up with an #is_attachment method.
   def self.setup(klass)
     klass.extend SetupMethods
   end
@@ -34,12 +69,12 @@ module AttachmentFu
     base.send :attr_reader,   :temp_path
     base.send :class_inheritable_accessor, :queued_attachment
     base.send :class_inheritable_accessor, :attachment_path
-    base.send :class_inheritable_accessor, :root_path
     base.before_create :set_new_attachment
     base.after_save    :save_attachment
     base.after_destroy :delete_attachment
   end
   
+  # Strips filename of any funny characters.
   def filename=(value)
     strip_filename value if value
     write_attribute :filename, value
@@ -85,23 +120,39 @@ module AttachmentFu
     ("%08d" % attachment_path_id).scan(/..../) + args
   end
 
+  # Returns the full path for an attachment
   def full_filename
     return nil if new_record?
-    File.join(root_path, attachment_path, *partitioned_path(filename))
+    File.join(AttachmentFu.root_path, attachment_path, *partitioned_path(filename))
   end
   
+  # Sets the path to the attachment about to be saved.  Could be a string path to a file, 
+  # a Pathname referencing a file, or a Tempfile.
   def temp_path=(value)
     self.size       = value.is_a?(String) || !value.respond_to?(:size) ? File.size(value) : value.size
     self.filename ||= basename_for value
     @temp_path      = value
   end
   
-  # overwrite this if you want
+  # Overwrite this if you want.  This is called when AttachmentFu processing is delayed for a queue.
   def queue_processing
   end
   
+  # Processes an attachment with its current stack of tasks.  Optionally, it stores
+  # the process time in #processed_at when finished, or the progress of which tasks 
+  # have run in #task_progress.
+  #
+  # If #processed_at is available, this will set it to a current timestamp when all processing
+  # has been complete.
+  #
+  # If #task_progress is available, it will track the progress of the stack of tasks.  Either
+  # a true value or an exception is used as a key.  When all processing is done, the #task_progress
+  # hash is set to a static value of {:complete => true}
+  #
   def process
-    has_progress = respond_to?(:task_progress)
+    if has_progress = respond_to?(:task_progress)
+      self.task_progress ||= {}
+    end
     self.class.attachment_tasks.each do |stack_item|
       if process_task?(stack_item)
         begin
@@ -124,6 +175,7 @@ module AttachmentFu
     self.processed_at = Time.now.utc if respond_to?(:processed_at)
   end
   
+  # Returns true/false if an attachment has been processed.
   def processed?
     return true if respond_to?(:processed_at)  && processed_at
     return true if respond_to?(:task_progress) && task_progress[:complete]
@@ -131,6 +183,8 @@ module AttachmentFu
   end
 
 protected
+  # Checks to see if the given 'stack' (see AttachmentFu::Tasks) needs to be
+  # run.  
   def process_task?(stack)
     has_progress  = respond_to?(:task_progress)
     if respond_to?(:processed_at)
@@ -141,25 +195,31 @@ protected
     end
   end
 
+  # Checks an individual 'stack' against #task_progress
   def check_task_progress(stack)
     task_progress[:complete] || task_progress[stack]
   end
-    
+
+  # Deletes the attachment from tbhe file system, and attempts
+  # to clean up the empty asset paths.
   def delete_attachment
     FileUtils.rm full_filename if File.exist?(full_filename)
     dir_name = File.dirname(full_filename)
     default  = %w(. ..)
-    while dir_name != root_path
+    while dir_name != AttachmentFu.root_path
       if (Dir.entries(dir_name) - default).empty?
         FileUtils.rm_rf dir_name
         dir_name.sub! /\/\w+$/, ''
       else
-        dir_name = root_path
+        dir_name = AttachmentFu.root_path
       end
     end
   end
 
+  # Saves the attachment to the file system. It also processes
+  # or queues the attachment for processing.
   def save_attachment
+    return if @temp_path.nil?
     old_path = full_path_for @temp_path
     return if old_path.nil?
     FileUtils.mkdir_p(File.dirname(full_filename))
@@ -197,19 +257,10 @@ protected
     # Finally, replace all non alphanumeric, underscore or periods with underscore
     value.gsub! /[^\w\.\-]/, '_'
   end
-  
+
+  # Needed to tell the difference between an attachment that has just been saved, 
+  # vs one saved in a previous request or object instantiation.
   def set_new_attachment
     @new_attachment = true
-  end
-
-public
-  module SetupMethods
-    def is_attachment(options = {}, &block)
-      include AttachmentFu
-      self.queued_attachment = options[:queued]
-      self.root_path         = options[:root] || root_path || AttachmentFu.root_path
-      self.attachment_path   = options[:path] || attachment_path || File.join("public", table_name)
-      self.attachment_tasks(&block)
-    end
   end
 end

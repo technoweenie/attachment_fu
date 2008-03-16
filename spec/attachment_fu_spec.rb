@@ -111,7 +111,7 @@ module AttachmentFu
         end
       end
       
-      it "keeps Attachment.root_path" do
+      it "keeps AttachmentFu.root_path" do
         @asset.destroy
         dir_to_check = @dir.split("/")[0..-5] * "/"
         fail "#{dir_to_check.inspect} is deleted" unless File.directory?(dir_to_check)
@@ -235,22 +235,20 @@ module AttachmentFu
       before do
         @sub = Class.new(BasicAsset)
       end
-      
-      {:attachment => :path, :root => :root}.each do |prefix, option|
-        it "inherits superclass ##{prefix}_path" do
-          @sub.send("#{prefix}_path").should == BasicAsset.send("#{prefix}_path")
-        end
 
-        it "inherits superclass ##{prefix}_path after explicit #is_attachment call" do
-          @sub.is_attachment
-          @sub.send("#{prefix}_path").should == BasicAsset.send("#{prefix}_path")
-        end
-        
-        it "overwrites superclass ##{prefix}_path with #{option.inspect}" do
-          @sub.is_attachment option => 'foobar'
-          @sub.send("#{prefix}_path").should_not == BasicAsset.send("#{prefix}_path")
-          @sub.send("#{prefix}_path").should == 'foobar'
-        end
+      it "inherits superclass #attachment_path" do
+        @sub.attachment_path.should == BasicAsset.attachment_path
+      end
+
+      it "inherits superclass #attachment_path after explicit #is_attachment call" do
+        @sub.is_attachment
+        @sub.attachment_path.should == BasicAsset.attachment_path
+      end
+      
+      it "overwrites superclass #attachment_path with :path" do
+        @sub.is_attachment :path => 'foobar'
+        @sub.attachment_path.should_not == BasicAsset.attachment_path
+        @sub.attachment_path.should == 'foobar'
       end
     end
 
