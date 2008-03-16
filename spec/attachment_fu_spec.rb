@@ -2,8 +2,12 @@ require File.dirname(__FILE__) + '/spec_helper'
 
 module AttachmentFu
   class BasicAsset < ActiveRecord::Base
-    extend FauxAsset
-    is_attachment
+    is_faux_attachment
+    include FauxAsset
+  end
+  
+  class QueuedAsset  < ActiveRecord::Base
+    is_faux_attachment :queued => true
   end
 
   describe "AttachmentFu" do
@@ -18,6 +22,25 @@ module AttachmentFu
       
       it "has nil #partitioned_path" do
         @asset.partitioned_path.should == nil
+      end
+    end
+    
+    describe "being processed" do
+      before do
+        @file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
+        FileUtils.cp __FILE__, @file
+      end
+      
+      after { @asset.destroy }
+      
+      it "attempts to process the attachment" do
+        @asset = BasicAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
+        @asset.should_not be_queued
+      end
+      
+      it "skips processing the queued attachment" do
+        @asset = QueuedAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
+        @asset.should be_queued
       end
     end
     

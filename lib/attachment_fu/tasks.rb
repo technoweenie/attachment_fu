@@ -41,6 +41,14 @@ module AttachmentFu
       @stack.size
     end
     
+    def each(&block)
+      @stack.each(&block)
+    end
+    
+    def any?(&block)
+      @stack.any?(&block)
+    end
+    
     def copy(&block)
       self.class.new(@klass, @stack.dup, @all.dup, &block)
     end
@@ -57,30 +65,6 @@ module AttachmentFu
         when Symbol then @all[key_or_index]
         when Fixnum then @stack[key_or_index]
       end || raise(ArgumentError, "Invalid Key: #{key_or_index.inspect}")
-    end
-    
-    def process(attachment)
-      has_progress = attachment.respond_to?(:task_progress)
-      @stack.each do |stack_item|
-        if attachment.process_task?(stack_item)
-          begin
-            task, options = stack_item
-            task.call attachment, options
-            if has_progress then attachment.task_progress[stack_item] = true end
-          rescue Object
-            if has_progress
-              attachment.task_progress[stack_item] = $!
-              return
-            else
-              raise $!
-            end
-          end
-        end
-      end
-      if has_progress
-        attachment.task_progress = {:complete => true}
-      end
-      attachment.processed_at = Time.now.utc if attachment.respond_to?(:processed_at)
     end
   end
 end

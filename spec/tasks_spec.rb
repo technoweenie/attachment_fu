@@ -19,6 +19,10 @@ module AttachmentFu
       end
     end
     
+    before do
+      [ProcessableAsset, OnlyTimestampedAsset, TrackedAsset, TimestampedAsset].each { |klass| klass.tasks = @tasks }
+    end
+    
     it "allows tasks to be copied" do
       @copied = @tasks.copy do
         task :bar, :a => 4
@@ -62,75 +66,109 @@ module AttachmentFu
       describe "with no task tracking attributes" do
         it "runs them in order" do
           @asset = ProcessableAsset.new 'original'
-          @tasks.process @asset
+          @asset.process
           @asset.filename.should == 'foo-3-bar-2-foo-1-original'
+        end
+        
+        it "only processes if its unsaved" do
+          @asset = ProcessableAsset.new 'original'
+          @asset.should_not be_processed
         end
         
         it "does not run them if the record has been created" do
           @asset = ProcessableAsset.new 'original', nil, Time.now.utc
-          @tasks.process @asset
+          @asset.process
           @asset.filename.should == 'original'
+        end
+        
+        it "does not processes if its saved" do
+          @asset = ProcessableAsset.new 'original', nil, Time.now.utc
+          @asset.should be_processed
         end
         
         it "does not rescue exceptions" do
           @asset = ProcessableAsset.new 'original'
-          lambda { @err.process @asset }.should raise_error(RuntimeError)
+          ProcessableAsset.tasks = @err
+          @asset.should_not be_processed
+          lambda { @asset.process }.should raise_error(RuntimeError)
         end
       end
       
       describe "with just processed_at attribute" do
         it "runs them in order" do
           @asset = OnlyTimestampedAsset.new 'original'
-          @tasks.process @asset
+          @asset.process
           @asset.filename.should == 'foo-3-bar-2-foo-1-original'
+        end
+        
+        it "only processes if its unsaved" do
+          @asset = OnlyTimestampedAsset.new 'original'
+          @asset.should_not be_processed
         end
         
         it "completes tasks" do
           @asset = OnlyTimestampedAsset.new 'original'
-          @tasks.process @asset
+          @asset.process
           @asset.processed_at.should_not be_nil
         end
         
         it "does not run them if the record has been created" do
           @asset = OnlyTimestampedAsset.new 'original', nil, Time.now.utc
-          @tasks.process @asset
+          @asset.process
           @asset.filename.should == 'original'
         end
         
+        it "does not processes if its saved" do
+          @asset = OnlyTimestampedAsset.new 'original', nil, Time.now.utc
+          @asset.should be_processed
+        end
+        
         it "does not rescue exceptions" do
+          OnlyTimestampedAsset.tasks = @err
           @asset = OnlyTimestampedAsset.new 'original'
-          lambda { @err.process @asset }.should raise_error(RuntimeError)
+          lambda { @asset.process }.should raise_error(RuntimeError)
         end
       end
       
       describe "with just task_progress hash" do
         it "runs them in order" do
           @asset = TrackedAsset.new 'original'
-          @tasks.process @asset
+          @asset.process
           @asset.filename.should == 'foo-3-bar-2-foo-1-original'
+        end
+        
+        it "only processes if its unsaved" do
+          @asset = TrackedAsset.new 'original'
+          @asset.should_not be_processed
         end
         
         it "completes tasks" do
           @asset = TrackedAsset.new 'original'
-          @tasks.process @asset
+          @asset.process
           @asset.task_progress.should == {:complete => true}
         end
         
         it "skips processed tasks" do
           @asset = TrackedAsset.new 'original', {@tasks.stack.first => true}
-          @tasks.process @asset
+          @asset.process
           @asset.filename.should == 'foo-3-bar-2-original'
         end
         
         it "does not run them if the record has been created" do
           @asset = TrackedAsset.new 'original', {:complete => true}, Time.now.utc
-          @tasks.process @asset
+          @asset.process
           @asset.filename.should == 'original'
         end
         
+        it "does not processes if its saved" do
+          @asset = TrackedAsset.new 'original', {:complete => true}, Time.now.utc
+          @asset.should be_processed
+        end
+        
         it "rescues exceptions" do
+          TrackedAsset.tasks = @err
           @asset = TrackedAsset.new 'original'
-          lambda { @err.process @asset }.should_not raise_error(RuntimeError)
+          lambda { @asset.process }.should_not raise_error(RuntimeError)
           @asset.task_progress.size.should == 3
           @asset.task_progress[@err[0]].should == true
           @asset.task_progress[@err[1]].should == true
@@ -141,32 +179,43 @@ module AttachmentFu
       describe "with both processed_at and task_progress hash" do
         it "runs them in order" do
           @asset = TimestampedAsset.new 'original'
-          @tasks.process @asset
+          @asset.process
           @asset.filename.should == 'foo-3-bar-2-foo-1-original'
+        end
+        
+        it "only processes if its unsaved" do
+          @asset = TimestampedAsset.new 'original'
+          @asset.should_not be_processed
         end
         
         it "completes tasks" do
           @asset = TimestampedAsset.new 'original'
-          @tasks.process @asset
+          @asset.process
           @asset.processed_at.should_not be_nil
           @asset.task_progress.should == {:complete => true}
         end
         
         it "skips processed tasks" do
           @asset = TimestampedAsset.new 'original', {@tasks.stack.first => true}
-          @tasks.process @asset
+          @asset.process
           @asset.filename.should == 'foo-3-bar-2-original'
         end
         
         it "does not run them if the record has been created" do
           @asset = TimestampedAsset.new 'original', {@tasks.stack.first => true}, Time.now.utc
-          @tasks.process @asset
+          @asset.process
           @asset.filename.should == 'original'
         end
         
+        it "does not processes if its saved" do
+          @asset = TimestampedAsset.new 'original', {@tasks.stack.first => true}, Time.now.utc
+          @asset.should be_processed
+        end
+        
         it "rescues exceptions" do
+          TimestampedAsset.tasks = @err
           @asset = TimestampedAsset.new 'original'
-          lambda { @err.process @asset }.should_not raise_error(RuntimeError)
+          lambda { @asset.process }.should_not raise_error(RuntimeError)
           @asset.task_progress.size.should == 3
           @asset.task_progress[@err[0]].should == true
           @asset.task_progress[@err[1]].should == true
@@ -270,11 +319,18 @@ module AttachmentFu
   
   # simulates asset class with no task tracking attributes
   class ProcessableAsset
-    def self.before_create(*args) end
-    def self.after_save(*args)    end
-    def self.after_destroy(*args) end
+    class << self
+      def before_create(*args) end
+      def after_save(*args)    end
+      def after_destroy(*args) end
+    end
 
     include AttachmentFu
+
+    class << self
+      attr_accessor :tasks
+      def attachment_tasks() @tasks end
+    end
 
     attr_accessor :filename
     

@@ -20,14 +20,7 @@ module AttachmentFu
   end
 
   def self.setup(klass)
-    class << klass
-      def is_attachment(options = {}, &block)
-        include AttachmentFu
-        self.root_path        = options[:root] || root_path || AttachmentFu.root_path
-        self.attachment_path  = options[:path] || attachment_path || File.join("public", table_name)
-        self.attachment_tasks(&block)
-      end
-    end
+    klass.extend SetupMethods
   end
   
   def self.included(base)
@@ -39,6 +32,7 @@ module AttachmentFu
       end
     end
     base.send :attr_reader,   :temp_path
+    base.send :class_inheritable_accessor, :queued_attachment
     base.send :class_inheritable_accessor, :attachment_path
     base.send :class_inheritable_accessor, :root_path
     base.before_create :set_new_attachment
@@ -101,19 +95,53 @@ module AttachmentFu
     self.filename ||= basename_for value
     @temp_path      = value
   end
+  
+  # overwrite this if you want
+  def queue_processing
+  end
+  
+  def process
+    has_progress = respond_to?(:task_progress)
+    self.class.attachment_tasks.each do |stack_item|
+      if process_task?(stack_item)
+        begin
+          task, options = stack_item
+          task.call self, options
+          if has_progress then task_progress[stack_item] = true end
+        rescue Object
+          if has_progress
+            task_progress[stack_item] = $!
+            return
+          else
+            raise $!
+          end
+        end
+      end
+    end
+    if has_progress
+      self.task_progress = {:complete => true}
+    end
+    self.processed_at = Time.now.utc if respond_to?(:processed_at)
+  end
+  
+  def processed?
+    return true if respond_to?(:processed_at)  && processed_at
+    return true if respond_to?(:task_progress) && task_progress[:complete]
+    !self.class.attachment_tasks.any? { |s| process_task?(s) }
+  end
 
+protected
   def process_task?(stack)
     has_progress  = respond_to?(:task_progress)
     if respond_to?(:processed_at)
       return false if processed_at
-      !has_progress || !processed_task?(stack)\
+      !has_progress || !check_task_progress(stack)\
     else
-      has_progress ? !processed_task?(stack) : (@new_attachment || new_record?)
+      has_progress ? !check_task_progress(stack) : (@new_attachment || new_record?)
     end
   end
 
-protected
-  def processed_task?(stack)
+  def check_task_progress(stack)
     task_progress[:complete] || task_progress[stack]
   end
     
@@ -130,13 +158,14 @@ protected
       end
     end
   end
+
   def save_attachment
     old_path = full_path_for @temp_path
     return if old_path.nil?
     FileUtils.mkdir_p(File.dirname(full_filename))
     FileUtils.mv(old_path, full_filename)
     File.chmod(0644, full_filename)
-    self.class.attachment_tasks.process(self)
+    queued_attachment ? queue_processing : process
     @temp_path = @new_attachment = nil
   end
   
@@ -171,5 +200,16 @@ protected
   
   def set_new_attachment
     @new_attachment = true
+  end
+
+public
+  module SetupMethods
+    def is_attachment(options = {}, &block)
+      include AttachmentFu
+      self.queued_attachment = options[:queued]
+      self.root_path         = options[:root] || root_path || AttachmentFu.root_path
+      self.attachment_path   = options[:path] || attachment_path || File.join("public", table_name)
+      self.attachment_tasks(&block)
+    end
   end
 end

@@ -28,7 +28,7 @@ module AttachmentFu
     def self.extended(base)
       base.set_table_name :afu_spec_assets
     end
-    
+
     def setup_spec_env
       connection.create_table :afu_spec_assets, :force => true do |t|
         t.integer :size
@@ -36,9 +36,27 @@ module AttachmentFu
         t.string  :content_type
       end
     end
-    
+  
     def drop_spec_env
       connection.drop_table :afu_spec_assets
+    end
+    
+    module InstanceMethods
+      def queued?
+        @queued
+      end
+    
+      def queue_processing
+        @queued = true
+      end
+    end
+  end
+  
+  module SetupMethods
+    def is_faux_attachment(*args)
+      extend AttachmentFu::FauxAsset
+      is_attachment(*args)
+      send :include, AttachmentFu::FauxAsset::InstanceMethods
     end
   end
 end
