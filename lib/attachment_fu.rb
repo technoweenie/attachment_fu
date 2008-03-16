@@ -162,30 +162,27 @@ module AttachmentFu
   # a true value or an exception is used as a key.  When all processing is done, the #task_progress
   # hash is set to a static value of {:complete => true}
   #
-  def process
+  # You can also process a loaded task with the given set of options, but #task_progress and #processed_at
+  # are ignored.
+  #
+  #   # process the Photo instance's queued tasks
+  #   @photo.process
+  #
+  #   # process a single task directly
+  #   @photo.process(:resize, :size => '75x75')
+  #
+  def process(task_key = true, options = {})
     if has_progress = respond_to?(:task_progress)
       self.task_progress ||= {}
     end
-    self.class.attachment_tasks.each do |stack_item|
-      if process_task?(stack_item)
-        begin
-          task, options = stack_item
-          task.call self, options
-          if has_progress then task_progress[stack_item] = true end
-        rescue Object
-          if has_progress
-            task_progress[stack_item] = $!
-            return
-          else
-            raise $!
-          end
-        end
+    case task_key
+      when Symbol
+        task = self.class.attachment_tasks[task_key]
+        process_single_task(task, options, false)
+      else
+        process_all_tasks(has_progress)
       end
-    end
-    if has_progress
-      self.task_progress = {:complete => true}
-    end
-    self.processed_at = Time.now.utc if respond_to?(:processed_at)
+    save unless task_key == false
   end
   
   # Returns true/false if an attachment has been processed.
@@ -196,6 +193,32 @@ module AttachmentFu
   end
 
 protected
+  def process_all_tasks(has_progress = respond_to?(:task_progress))
+    self.class.attachment_tasks.each do |stack_item|
+      if process_task?(stack_item)
+        task, options = stack_item
+        return unless process_single_task(task, options, has_progress)
+      end
+    end
+    if has_progress
+      self.task_progress = {:complete => true}
+    end
+    self.processed_at = Time.now.utc if respond_to?(:processed_at)
+  end
+  
+  def process_single_task(task, options, has_progress = respond_to?(:task_progress))
+    task.call self, options
+    if has_progress then task_progress[[task, options]] = true end
+    true
+  rescue Object
+    if has_progress
+      task_progress[[task, options]] = $!
+      return
+    else
+      raise $!
+    end
+  end
+
   # Checks to see if the given 'stack' (see AttachmentFu::Tasks) needs to be
   # run.  
   def process_task?(stack)
@@ -238,7 +261,7 @@ protected
     FileUtils.mkdir_p(File.dirname(full_filename))
     FileUtils.mv(old_path, full_filename)
     File.chmod(0644, full_filename)
-    queued_attachment ? queue_processing : process
+    queued_attachment ? queue_processing : process(false)
     @temp_path = @new_attachment = nil
   end
   

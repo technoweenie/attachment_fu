@@ -23,6 +23,18 @@ module AttachmentFu
       [ProcessableAsset, OnlyTimestampedAsset, TrackedAsset, TimestampedAsset].each { |klass| klass.tasks = @tasks }
     end
     
+    it "allows tasks to be queued or just loaded" do
+      t = Tasks.new self do
+        load :foo
+        task :bar
+      end
+      
+      t[:foo].should be_instance_of(FlakyTask)
+      t[:bar].should be_instance_of(Proc)
+      t.size.should == 1
+      t[0].should == [t[:bar], {}]
+    end
+    
     it "allows tasks to be copied" do
       @copied = @tasks.copy do
         task :bar, :a => 4
@@ -47,6 +59,15 @@ module AttachmentFu
       end
       @copied.size.should == 1
       @tasks.size.should  == 3
+    end
+    
+    it "allows processing of single tasks" do
+      @asset = ProcessableAsset.new 'original', nil, Time.now.utc
+      @asset.should be_processed
+      @asset.should_not be_saved
+      @asset.process :foo, :a => 5
+      @asset.filename.should == 'foo-5-original'
+      @asset.should be_saved
     end
     
     it "raises ArgumentError for bad key names" do
@@ -341,6 +362,15 @@ module AttachmentFu
     
     def new_record?
       @processed_at.nil?
+    end
+    
+    def saved?
+      @saved
+    end
+    
+    def save
+      @saved = true
+      @processed_at = Time.now.utc
     end
   end
   

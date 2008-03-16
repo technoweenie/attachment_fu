@@ -27,6 +27,25 @@ module AttachmentFu
   #
   #   AttachmentFu.create_task :do_work, "path/to/sample_object_task" # loads example task from above.
   #
+  # After these tasks are created, you can load them for an attachment model in the #is_attachment block.
+  # This block gives you access to all the Tasks instance methods:
+  #
+  #   # keep in mind these are sample tasks
+  #   class Photo < ActiveRecord::Base
+  #     is_attachment do
+  #       # this task runs during Photo#process
+  #       task :thumbnail, :size => '75x75'
+  #       # this task is loaded, but not run during #process
+  #       load :resize
+  #     end
+  #   end
+  #
+  #   # create the photo, call the :thumbnail task
+  #   @photo = Photo.create!(:uploaded_data => params[:uploaded_data])
+  #
+  #   # okay, let's just call :resize
+  #   @photo.process(:resize, :size => '50x50)
+  
   def self.create_task(key, lib = nil, &block)
     Tasks.all[key] = block || lib || raise(ArgumentError, "Need either a (lib path or class), or a task proc.")
   end
@@ -102,9 +121,14 @@ module AttachmentFu
     # retrieved task from the global Tasks.all collection is a class
     # it is instantiated.
     def task(key, options = {})
+      @stack << [load(key), options]
+    end
+    
+    # Loads a new task to this Tasks instance, but does not put it
+    # in the stack to be called during processing.
+    def load(key)
       t = @all[key] || self.class[key]
       if t.is_a?(Class) then t = t.new(@klass) end
-      @stack << [t, options]
       @all[key] = t
     end
     
