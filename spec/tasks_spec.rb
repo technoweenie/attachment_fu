@@ -25,6 +25,12 @@ module AttachmentFu
         @tasks[0].should == [@tasks[:inline], {:foo => :bar}]
       end
       
+      it "processes attachment" do
+        @asset = BasicAsset.new :filename => 'snarf'
+        @tasks[:inline].call @asset, nil
+        @asset.filename.should == 'inline-snarf'
+      end
+      
       after :all do
         Tasks.all.delete :inline
       end
