@@ -41,6 +41,7 @@ module AttachmentFu
     base.send :attr_reader,   :temp_path
     base.send :class_inheritable_accessor, :attachment_path
     base.send :class_inheritable_accessor, :root_path
+    base.before_create :set_new_attachment
     base.after_save    :save_attachment
     base.after_destroy :delete_attachment
   end
@@ -101,11 +102,21 @@ module AttachmentFu
     @temp_path      = value
   end
 
-  def processed_task?(task, options)
-    
+  def process_task?(stack)
+    has_progress  = respond_to?(:task_progress)
+    if respond_to?(:processed_at)
+      return false if processed_at
+      !has_progress || !processed_task?(stack)\
+    else
+      has_progress ? !processed_task?(stack) : (@new_attachment || new_record?)
+    end
   end
 
 protected
+  def processed_task?(stack)
+    task_progress == true || task_progress[stack]
+  end
+    
   def delete_attachment
     FileUtils.rm full_filename if File.exist?(full_filename)
     dir_name = File.dirname(full_filename)
@@ -125,7 +136,7 @@ protected
     FileUtils.mkdir_p(File.dirname(full_filename))
     FileUtils.mv(old_path, full_filename)
     File.chmod(0644, full_filename)
-    @temp_path = nil
+    @temp_path = @new_attachment = nil
   end
   
   # Could be a string, Pathname, Tempfile, who knows?
@@ -155,5 +166,9 @@ protected
     value.gsub! /^.*(\\|\/)/, ''
     # Finally, replace all non alphanumeric, underscore or periods with underscore
     value.gsub! /[^\w\.\-]/, '_'
+  end
+  
+  def set_new_attachment
+    @new_attachment = true
   end
 end

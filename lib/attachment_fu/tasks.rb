@@ -27,12 +27,26 @@ module AttachmentFu
       instance_eval(&block) if block
     end
     
+    def delete(key)
+      if task = @all[key]
+        @stack.delete_if { |s| s.first == task }
+      end
+    end
+    
+    def clear
+      @stack, @all = [], {}
+    end
+    
+    def size
+      @stack.size
+    end
+    
     def copy(&block)
       self.class.new(@klass, @stack.dup, @all.dup, &block)
     end
     
     def task(key, options = {})
-      t = self.class[key]
+      t = @all[key] || self.class[key]
       if t.is_a?(Class) then t = t.new(@klass) end
       @stack << [t, options]
       @all[key] = t
@@ -47,8 +61,11 @@ module AttachmentFu
     end
     
     def process(attachment)
-      @stack.each do |task, options|
-        task.call attachment, options
+      @stack.each do |stack_item|
+        if attachment.process_task?(stack_item)
+          task, options = stack_item
+          task.call attachment, options
+        end
       end
     end
   end

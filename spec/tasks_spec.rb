@@ -2,22 +2,115 @@ require File.dirname(__FILE__) + '/spec_helper'
 
 module AttachmentFu
   describe Tasks do
+    before :all do
+      Tasks.all.update \
+        :foo => FlakyTask,
+        :bar => lambda { |a, o| a.filename = "bar-#{o[:a]}-#{a.filename}" }
+      @tasks = Tasks.new self do
+        task :foo, :a => 1
+        task :bar, :a => 2
+        task :foo, :a => 3
+      end
+    end
+    
+    it "allows tasks to be copied" do
+      @copied = @tasks.copy do
+        task :bar, :a => 4
+      end
+      @copied.size.should == 4
+      @tasks.size.should  == 3
+    end
+    
+    it "allows copied tasks to be delete specific tasks" do
+      @copied = @tasks.copy do
+        delete :foo
+        task :bar, :a => 4
+      end
+      @copied.size.should == 2
+      @tasks.size.should  == 3
+    end
+    
+    it "allows copied tasks to clear inherited tasks" do
+      @copied = @tasks.copy do
+        clear
+        task :bar, :a => 4
+      end
+      @copied.size.should == 1
+      @tasks.size.should  == 3
+    end
+      
     describe "processing an attachment" do
-      before :all do
-        Tasks.all.update \
-          :foo => lambda { |a, o| a.filename = "foo-#{o[:a]}-#{a.filename}" },
-          :bar => lambda { |a, o| a.filename = "bar-#{o[:a]}-#{a.filename}" }
-        @tasks = Tasks.new self do
-          task :foo, :a => 1
-          task :bar, :a => 2
-          task :foo, :a => 3
+      it "stores the same FlakyTask instance in the stack" do
+        @tasks[0].should == [@tasks[:foo], {:a => 1}]
+        @tasks[2].should == [@tasks[:foo], {:a => 3}]
+      end
+
+      describe "with no task tracking attributes" do
+        it "runs them in order" do
+          @asset = ProcessableAsset.new 'original'
+          @tasks.process @asset
+          @asset.filename.should == 'foo-3-bar-2-foo-1-original'
+        end
+        
+        it "does not run them if the record has been created" do
+          @asset = ProcessableAsset.new 'original', nil, Time.now.utc
+          @tasks.process @asset
+          @asset.filename.should == 'original'
         end
       end
       
-      it "runs them in order" do
-        @asset = ProcessableAsset.new 'original'
-        @tasks.process @asset
-        @asset.filename.should == 'foo-3-bar-2-foo-1-original'
+      describe "with just processed_at attribute" do
+        it "runs them in order" do
+          @asset = OnlyTimestampedAsset.new 'original'
+          @tasks.process @asset
+          @asset.filename.should == 'foo-3-bar-2-foo-1-original'
+        end
+        
+        it "does not run them if the record has been created" do
+          @asset = OnlyTimestampedAsset.new 'original', nil, Time.now.utc
+          @tasks.process @asset
+          @asset.filename.should == 'original'
+        end
+      end
+      
+      describe "with just task_progress hash" do
+        it "runs them in order" do
+          @asset = TrackedAsset.new 'original'
+          @tasks.process @asset
+          @asset.filename.should == 'foo-3-bar-2-foo-1-original'
+        end
+        
+        it "skips processed tasks" do
+          @asset = TrackedAsset.new 'original', {@tasks.stack.first => true}
+          @tasks.process @asset
+          @asset.filename.should == 'foo-3-bar-2-original'
+        end
+        
+        it "does not run them if the record has been created" do
+          @asset = TrackedAsset.new 'original', true, Time.now.utc
+          @tasks.process @asset
+          @asset.filename.should == 'original'
+        end
+      end
+      
+      describe "with both processed_at and task_progress hash" do
+        it "runs them in order" do
+          @asset = TimestampedAsset.new 'original'
+          @tasks.process @asset
+          @asset.filename.should == 'foo-3-bar-2-foo-1-original'
+        end
+        
+        it "skips processed tasks" do
+          @asset = TimestampedAsset.new 'original', {@tasks.stack.first => true}
+          @tasks.process @asset
+          @asset.filename.should == 'foo-3-bar-2-original'
+        end
+        
+        it "does not run them if the record has been created" do
+          @asset = TimestampedAsset.new 'original', {@tasks.stack.first => true}, Time.now.utc
+          @tasks.process @asset
+          @asset.filename.should == 'original'
+        end
       end
     end
 
@@ -103,7 +196,20 @@ module AttachmentFu
     end
   end
   
+  # simulates task that just might raise an error
+  class FlakyTask
+    def initialize(whatever)
+    end
+    
+    def call(attachment, options)
+      if options[:err] then raise "Oh Noes!" end
+      attachment.filename = "foo-#{options[:a]}-#{attachment.filename}"
+    end
+  end
+  
+  # simulates asset class with no task tracking attributes
   class ProcessableAsset
+    def self.before_create(*args) end
     def self.after_save(*args)    end
     def self.after_destroy(*args) end
 
@@ -111,15 +217,27 @@ module AttachmentFu
 
     attr_accessor :filename
     
-    def initialize(filename, task_progress = {}, processed_at = nil)
-      @filename, @processed_at, @task_progress = filename, processed_at, task_progress
+    def initialize(filename, task_progress = nil, processed_at = nil)
+      @new_attachment = processed_at.nil?
+      @filename, @processed_at, @task_progress = filename, processed_at, task_progress || {}
+    end
+    
+    def new_record?
+      @processed_at.nil?
     end
   end
   
+  # simulates asset class with only processed_at attribute
+  class OnlyTimestampedAsset < ProcessableAsset
+    attr_accessor :processed_at
+  end
+  
+  # simulates asset class with only task_progress hash attribute
   class TrackedAsset < ProcessableAsset
     attr_accessor :task_progress
   end
   
+  # simulates asset class with both processed_at and task_progress
   class TimestampedAsset < TrackedAsset
     attr_accessor :processed_at
   end
