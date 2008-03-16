@@ -1,11 +1,21 @@
 module AttachmentFu
+  def self.create_task(key, lib = nil, &block)
+    Tasks.all[key] = block || lib || raise(ArgumentError, "Need either a (lib path or class), or a task proc.")
+  end
+
   class Tasks
     def self.all
       @all ||= {}
     end
     
     def self.[](key)
-      all[key]
+      case value = all[key]
+        when String
+          require value
+          if all[key].is_a?(String) then raise(ArgumentError, "loading #{key.inspect} failed.") end
+          all[key]
+        else value
+      end
     end
     
     attr_reader :klass
@@ -23,6 +33,7 @@ module AttachmentFu
     
     def task(key, options = {})
       t = self.class[key]
+      if t.is_a?(Class) then t = t.new(@klass) end
       @stack << [t, options]
       @all[key] = t
     end
@@ -32,6 +43,12 @@ module AttachmentFu
         when Symbol then @all[key_or_index]
         when Fixnum then @stack[key_or_index]
         else raise(ArgumentError, "Invalid Key: #{key_or_index.inspect}")
+      end
+    end
+    
+    def process(attachment)
+      @stack.each do |task, options|
+        task.call attachment, options
       end
     end
   end

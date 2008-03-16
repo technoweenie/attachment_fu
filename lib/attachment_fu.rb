@@ -100,7 +100,12 @@ module AttachmentFu
     self.filename ||= basename_for value
     @temp_path      = value
   end
-  
+
+  def processed_task?(task, options)
+    
+  end
+
+protected
   def delete_attachment
     FileUtils.rm full_filename if File.exist?(full_filename)
     dir_name = File.dirname(full_filename)
@@ -114,8 +119,6 @@ module AttachmentFu
       end
     end
   end
-
-protected
   def save_attachment
     old_path = full_path_for @temp_path
     return if old_path.nil?
