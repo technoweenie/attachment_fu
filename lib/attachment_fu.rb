@@ -1,3 +1,5 @@
+$LOAD_PATH << File.join(File.dirname(__FILE__), '..', 'vendor')
+
 require 'tempfile'
 require 'pathname'
 

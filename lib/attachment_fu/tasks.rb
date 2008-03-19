@@ -145,3 +145,6 @@ module AttachmentFu
     end
   end
 end
+
+# default tasks
+AttachmentFu.create_task :resize, "attachment_fu/tasks/resize"
