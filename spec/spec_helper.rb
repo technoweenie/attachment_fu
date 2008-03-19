@@ -53,9 +53,9 @@ module AttachmentFu
   end
   
   module SetupMethods
-    def is_faux_attachment(*args)
+    def is_faux_attachment(*args, &block)
       extend AttachmentFu::FauxAsset
-      is_attachment(*args)
+      is_attachment(*args, &block)
       send :include, AttachmentFu::FauxAsset::InstanceMethods
     end
   end

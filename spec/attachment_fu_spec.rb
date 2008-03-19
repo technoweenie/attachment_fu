@@ -3,7 +3,6 @@ require File.dirname(__FILE__) + '/spec_helper'
 module AttachmentFu
   class BasicAsset < ActiveRecord::Base
     is_faux_attachment
-    include FauxAsset
   end
   
   class QueuedAsset  < ActiveRecord::Base

@@ -2,8 +2,13 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 
 describe AttachmentFu::Pixels::CoreImage do
   before :all do
+    FileUtils.mkdir_p AttachmentFu.root_path
     @samples = File.join(File.dirname(__FILE__), 'samples')
     @pixels  = AttachmentFu::Pixels.new :core_image
+  end
+    
+  after :all do
+    FileUtils.rm_rf AttachmentFu.root_path
   end
   
   describe "(for JPG)" do
@@ -20,7 +25,7 @@ describe AttachmentFu::Pixels::CoreImage do
     
     it "resizes image" do
       @pixels.with_image do |image|
-        data = @pixels.resize_image image, '40x40'
+        data = @pixels.resize_image image, :size => '40x40', :to => File.join(AttachmentFu.root_path, 'resized.jpg')
         data.width.should  == 40
         data.height.should == 38
         data.size.should   == 2339

@@ -3,7 +3,9 @@ module AttachmentFu
     def self.[](key)
       @@key_to_class ||= {}
       @@key_to_class[key] ||= begin
-        const_get(key.to_s.classify)
+        path = key.to_s
+        require "attachment_fu/pixels/#{path}"
+        const_get(path.classify)
       end
     end
     
@@ -14,25 +16,27 @@ module AttachmentFu
       extend self.class[processor]
       instance_eval(&block) if block
     end
+    
+    def self.resize_task
+      lambda do |attachment, options|
+        # this is going to change
+        # PDI a simple configurable order
+        #   task :resize, :with => [:core_image, :gd, :image_science, :rmagick]
+        #
+        options[:with] ||= :core_image
+        new options[:with], attachment.full_filename do
+          data = with_image { |img| resize_image img, :size => options[:to] }
+          attachment.width  = data.width  if attachment.respond_to?(:width)
+          attachment.height = data.height if attachment.respond_to?(:height)
+        end
+      end
+    end
 
     class Image
-      attr_accessor :width, :height, :size, :original
+      attr_accessor :width, :height, :size
       
-      def initialize(original)
-        @original = original
+      def initialize
         yield self if block_given?
-      end
-      
-      def path
-        temp.path
-      end
-      
-      def temp
-        @temp ||= begin
-          t = Tempfile.new(File.basename(@original))
-          t.close
-          t
-        end
       end
     end
   end
