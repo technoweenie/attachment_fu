@@ -208,6 +208,10 @@ module Technoweenie # :nodoc:
     end
 
     module InstanceMethods
+      def self.included(base)
+        base.define_callbacks *[:after_resize, :after_attachment_saved, :before_thumbnail_saved] if base.respond_to?(:define_callbacks)
+      end
+
       # Checks whether the attachment's content type is an image content type
       def image?
         self.class.image?(content_type)
@@ -419,35 +423,35 @@ module Technoweenie # :nodoc:
 
         # Yanked from ActiveRecord::Callbacks, modified so I can pass args to the callbacks besides self.
         # Only accept blocks, however
-        def callback_with_args(method, arg = self)
-          notify(method)
+        if ActiveSupport.const_defined?(:Callbacks)
+          # Rails 2.1 and beyond!
+          def callback_with_args(method, arg = self)
+            notify(method)
 
-          result = nil
-          callbacks_for(method).each do |callback|
-            result = callback.call(self, arg)
-            return false if result == false
-          end
-          result
-        end
+            result = run_callbacks(method, { :object => arg }) { |result, object| result == false }
 
-        # Rather ugly monkey-patch of AS::Callbacks to support taking an arg
-        if defined?(::ActiveSupport::Callbacks)
-          def callbacks_for(method) #:nodoc: compatibility method
-            self.class.send("#{method}_callback_chain")
-          end
-          class ::ActiveSupport::Callbacks::Callback
-            # Make callbacks accept arguments, but only pass them along to procs for now
-            def call(object, *args)
-              if should_run_callback?(object)
-                case method
-                when Proc
-                  args = [object, *args].compact
-                  method.call(*args)
-                else
-                  evaluate_method(method, object)
-                end
-              end
+            if result != false && respond_to_without_attributes?(method)
+              result = send(method)
             end
+
+            result
+          end
+
+          def run_callbacks(kind, options = {}, &block)
+            options.reverse_merge!( :object => self )
+            self.class.send("#{kind}_callback_chain").run(options[:object], options, &block)
+          end
+        else
+          # Rails 2.0
+          def callback_with_args(method, arg = self)
+            notify(method)
+
+            result = nil
+            callbacks_for(method).each do |callback|
+              result = callback.call(self, arg)
+              return false if result == false
+            end
+            result
           end
         end
 
