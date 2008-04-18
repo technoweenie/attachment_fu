@@ -1,3 +1,6 @@
+* Apr 17 2008 *
+* amazon_s3.yml is now passed through ERB before being passed to AWS::S3 [François Beausoleil]
+
 * Mar 22 2008 *
 * Some tweaks to support Rails 2.0 and Rails 2.1 due to ActiveSupport::Callback changes.  
   Thanks to http://blog.methodmissing.com/2008/1/19/edge-callback-refactorings-attachment_fu/
