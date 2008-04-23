@@ -47,7 +47,7 @@ module AttachmentFu
       before :all do
         @file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
         FileUtils.cp __FILE__, @file
-  
+
         @asset = BasicAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
       end
       
@@ -162,7 +162,7 @@ module AttachmentFu
         
         it "sets temp_path as Tempfile" do
           @asset.uploaded_data = @file
-          @asset.temp_path.should be_instance_of(Tempfile)
+          @asset.temp_path.class.should == Tempfile
         end
 
         it "sets content_type" do
