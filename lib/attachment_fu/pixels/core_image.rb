@@ -2,10 +2,10 @@ require 'red_artisan/core_image/processor'
 require 'attachment_fu/geometry'
 
 module AttachmentFu # :nodoc:
-  class Pixels
+  module Pixels
     module CoreImage
-      def with_image(&block)
-        block.call OSX::CIImage.from(@file)
+      def with_image(attachment, &block)
+        block.call OSX::CIImage.from(attachment.full_filename)
       end
 
       def get_image_size(image)

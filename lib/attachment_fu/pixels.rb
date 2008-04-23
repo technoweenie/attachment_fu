@@ -1,5 +1,5 @@
 module AttachmentFu
-  class Pixels
+  module Pixels
     def self.[](key)
       @@key_to_class ||= {}
       @@key_to_class[key] ||= begin
@@ -8,38 +8,12 @@ module AttachmentFu
         const_get(path.classify)
       end
     end
-    
-    attr_accessor :file
-    
-    def initialize(processor, file = nil, &block)
-      @file = file
-      extend self.class[processor]
-      instance_eval(&block) if block
-    end
-    
-    def self.resize_task
-      lambda do |attachment, options|
-        # this is going to change
-        # PDI a simple configurable order
-        #   task :resize, :with => [:core_image, :gd, :image_science, :rmagick]
-        #
-        options[:with] ||= :mojo_magick
-        new options[:with], attachment.full_filename do
-          data = with_image { |img| resize_image img, :size => options[:to], :to => options[:destination] }
-          unless options[:skip_size]
-            attachment.width  = data.width  if attachment.respond_to?(:width)
-            attachment.height = data.height if attachment.respond_to?(:height)
-          end
-        end
-      end
-    end
 
-    def self.image_size_task
-      lambda do |attachment, options|
+    # Base class for all Pixel-related tasks
+    class Task
+      def initialize(klass, options)
         options[:with] ||= :mojo_magick
-        new options[:with], attachment.full_filename do
-          attachment.width, attachment.height = with_image { |img| get_image_size(img) }
-        end
+        extend AttachmentFu::Pixels[options[:with]]
       end
     end
 

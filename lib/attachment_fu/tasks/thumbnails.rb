@@ -1,5 +1,5 @@
 module AttachmentFu
-  class Pixels
+  class Tasks
     class Thumbnails
       # Some valid options:
       #
@@ -77,4 +77,4 @@ module AttachmentFu
   end
 end
 
-AttachmentFu.create_task :thumbnails, AttachmentFu::Pixels::Thumbnails
+AttachmentFu.create_task :thumbnails, AttachmentFu::Tasks::Thumbnails

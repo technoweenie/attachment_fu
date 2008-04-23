@@ -3,10 +3,10 @@ require 'mojo_magick/mojo_magick'
 require 'attachment_fu/geometry'
 
 module AttachmentFu # :nodoc:
-  class Pixels
+  module Pixels
     module MojoMagick
-      def with_image(&block)
-        block.call @file
+      def with_image(attachment, &block)
+        block.call attachment.full_filename
       end
 
       def get_image_size(image)
