@@ -70,8 +70,8 @@ module Technoweenie # :nodoc:
         attachment_options[:path_prefix]   = attachment_options[:path_prefix][1..-1] if options[:path_prefix].first == '/'
 
         with_options :foreign_key => 'parent_id' do |m|
-          m.has_many   :thumbnails, :class_name => attachment_options[:thumbnail_class].to_s
-          m.belongs_to :parent, :class_name => base_class.to_s unless options[:thumbnails].empty?
+          m.has_many   :thumbnails, :class_name => "::#{attachment_options[:thumbnail_class]}"
+          m.belongs_to :parent, :class_name => "::#{base_class}" unless options[:thumbnails].empty?
         end
 
         storage_mod = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
