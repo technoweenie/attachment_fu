@@ -28,7 +28,6 @@ describe AttachmentFu::Pixels::CoreImage do
         data = @pixels.resize_image image, :size => '40x40', :to => File.join(AttachmentFu.root_path, 'resized.jpg')
         data.width.should  == 40
         data.height.should == 38
-        data.size.should   == 2339
       end
     end
   end
