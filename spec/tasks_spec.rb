@@ -346,7 +346,7 @@ module AttachmentFu
       def after_destroy(*args) end
     end
 
-    include AttachmentFu
+    include AttachmentFu::InstanceMethods
 
     class << self
       attr_accessor :tasks

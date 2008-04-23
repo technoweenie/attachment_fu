@@ -12,6 +12,7 @@ Tempfile.class_eval do
 end
 
 module AttachmentFu
+  # These methods extend the model base class (usually ActiveRecord::Base).
   module SetupMethods
     # Sets up this class's instances to be treated as attachments.  The options define only the core
     # attachment functions: storing an attachment on the filesystem.  Any external processing 
@@ -51,7 +52,7 @@ module AttachmentFu
     #     # PLUS any fields that your tasks may use.
     #   end
     def is_attachment(options = {}, &block)
-      include AttachmentFu
+      include AttachmentFu::InstanceMethods
       self.queued_attachment = options[:queued]
       self.attachment_path   = options[:path] || attachment_path || File.join("public", table_name)
       self.attachment_tasks(&block)
@@ -72,233 +73,236 @@ module AttachmentFu
   def self.setup(klass)
     klass.extend SetupMethods
   end
-  
-  def self.included(base)
-    class << base
-      attr_writer :attachment_tasks
+
+  # This mixin is included in attachment classes by AttachmentFu::SetupMethods.is_attachment.
+  module InstanceMethods
+    def self.included(base)
+      class << base
+        attr_writer :attachment_tasks
       
-      def attachment_tasks(&block)
-        @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.copy(&block) : AttachmentFu::Tasks.new(self, &block)
+        def attachment_tasks(&block)
+          @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.copy(&block) : AttachmentFu::Tasks.new(self, &block)
+        end
       end
+      base.send :attr_reader,   :temp_path
+      base.send :class_inheritable_accessor, :queued_attachment
+      base.send :class_inheritable_accessor, :attachment_path
+      base.before_create :set_new_attachment
+      base.after_save    :save_attachment
+      base.after_destroy :delete_attachment
     end
-    base.send :attr_reader,   :temp_path
-    base.send :class_inheritable_accessor, :queued_attachment
-    base.send :class_inheritable_accessor, :attachment_path
-    base.before_create :set_new_attachment
-    base.after_save    :save_attachment
-    base.after_destroy :delete_attachment
-  end
   
-  # Strips filename of any funny characters.
-  def filename=(value)
-    strip_filename value if value
-    write_attribute :filename, value
-  end
-
-  # nil placeholder in case this field is used in a form.
-  def uploaded_data() nil; end
-
-  # This method handles the uploaded file object.  If you set the field name to uploaded_data, you don't need
-  # any special code in your controller.
-  #
-  #   <% form_for :attachment, :html => { :multipart => true } do |f| -%>
-  #     <p><%= f.file_field :uploaded_data %></p>
-  #     <p><%= submit_tag :Save %>
-  #   <% end -%>
-  #
-  #   @attachment = Attachment.create! params[:attachment]
-  #
-  def uploaded_data=(file_data)
-    return nil if file_data.nil? || file_data.size == 0 
-    self.content_type = file_data.content_type
-    self.filename     = file_data.original_filename
-    if file_data.respond_to?(:rewind) # it's an IO object
-      file_data.rewind
-      self.temp_path = Tempfile.new filename do |f|
-        f << file_data.read
-      end
-    else
-      self.temp_path = file_data
+    # Strips filename of any funny characters.
+    def filename=(value)
+      strip_filename value if value
+      write_attribute :filename, value
     end
-  end
 
-  # The attachment ID used in the full path of a file
-  def attachment_path_id
-    return nil if new_record?
-    id.to_i
-  end
+    # nil placeholder in case this field is used in a form.
+    def uploaded_data() nil; end
 
-  # overrwrite this to do your own app-specific partitioning. 
-  # you can thank Jamis Buck for this: http://www.37signals.com/svn/archives2/id_partitioning.php
-  def partitioned_path(*args)
-    return nil if new_record?
-    ("%08d" % attachment_path_id).scan(/..../) + args
-  end
-
-  # Returns the full path for an attachment
-  def full_filename
-    return nil if new_record?
-    File.join(AttachmentFu.root_path, attachment_path, *partitioned_path(filename))
-  end
-  
-  # Sets the path to the attachment about to be saved.  Could be a string path to a file, 
-  # a Pathname referencing a file, or a Tempfile.
-  def temp_path=(value)
-    self.size       = value.is_a?(String) || !value.respond_to?(:size) ? File.size(value) : value.size
-    self.filename ||= basename_for value
-    @temp_path      = value
-  end
-  
-  # Overwrite this if you want.  This is called when AttachmentFu processing is delayed for a queue.
-  def queue_processing
-  end
-  
-  # Processes an attachment with its current stack of tasks.  Optionally, it stores
-  # the process time in #processed_at when finished, or the progress of which tasks 
-  # have run in #task_progress.
-  #
-  # If #processed_at is available, this will set it to a current timestamp when all processing
-  # has been complete.
-  #
-  # If #task_progress is available, it will track the progress of the stack of tasks.  Either
-  # a true value or an exception is used as a key.  When all processing is done, the #task_progress
-  # hash is set to a static value of {:complete => true}
-  #
-  # You can also process a loaded task with the given set of options, but #task_progress and #processed_at
-  # are ignored.
-  #
-  #   # process the Photo instance's queued tasks
-  #   @photo.process
-  #
-  #   # process a single task directly
-  #   @photo.process(:resize, :size => '75x75')
-  #
-  def process(task_key = true, options = {})
-    if has_progress = respond_to?(:task_progress)
-      self.task_progress ||= {}
-    end
-    case task_key
-      when Symbol
-        task = self.class.attachment_tasks[task_key]
-        process_single_task(task, options, false)
+    # This method handles the uploaded file object.  If you set the field name to uploaded_data, you don't need
+    # any special code in your controller.
+    #
+    #   <% form_for :attachment, :html => { :multipart => true } do |f| -%>
+    #     <p><%= f.file_field :uploaded_data %></p>
+    #     <p><%= submit_tag :Save %>
+    #   <% end -%>
+    #
+    #   @attachment = Attachment.create! params[:attachment]
+    #
+    def uploaded_data=(file_data)
+      return nil if file_data.nil? || file_data.size == 0 
+      self.content_type = file_data.content_type
+      self.filename     = file_data.original_filename
+      if file_data.respond_to?(:rewind) # it's an IO object
+        file_data.rewind
+        self.temp_path = Tempfile.new filename do |f|
+          f << file_data.read
+        end
       else
-        process_all_tasks(has_progress)
-      end
-    save unless task_key == false
-  end
-  
-  # Returns true/false if an attachment has been processed.
-  def processed?
-    return true if respond_to?(:processed_at)  && processed_at
-    return true if respond_to?(:task_progress) && task_progress[:complete]
-    !self.class.attachment_tasks.any? { |s| process_task?(s) }
-  end
-
-protected
-  def process_all_tasks(has_progress = respond_to?(:task_progress))
-    self.class.attachment_tasks.each do |stack_item|
-      if process_task?(stack_item)
-        task, options = stack_item
-        return unless process_single_task(task, options, has_progress)
+        self.temp_path = file_data
       end
     end
-    if has_progress
-      self.task_progress = {:complete => true}
+
+    # The attachment ID used in the full path of a file
+    def attachment_path_id
+      return nil if new_record?
+      id.to_i
     end
-    self.processed_at = Time.now.utc if respond_to?(:processed_at)
-  end
+
+    # overrwrite this to do your own app-specific partitioning. 
+    # you can thank Jamis Buck for this: http://www.37signals.com/svn/archives2/id_partitioning.php
+    def partitioned_path(*args)
+      return nil if new_record?
+      ("%08d" % attachment_path_id).scan(/..../) + args
+    end
+
+    # Returns the full path for an attachment
+    def full_filename
+      return nil if new_record?
+      File.join(AttachmentFu.root_path, attachment_path, *partitioned_path(filename))
+    end
   
-  def process_single_task(task, options, has_progress = respond_to?(:task_progress))
-    task.call self, options
-    if has_progress then task_progress[[task, options]] = true end
-    true
-  rescue Object
-    if has_progress
-      task_progress[[task, options]] = $!
-      return
-    else
-      raise $!
+    # Sets the path to the attachment about to be saved.  Could be a string path to a file, 
+    # a Pathname referencing a file, or a Tempfile.
+    def temp_path=(value)
+      self.size       = value.is_a?(String) || !value.respond_to?(:size) ? File.size(value) : value.size
+      self.filename ||= basename_for value
+      @temp_path      = value
     end
-  end
-
-  # Checks to see if the given 'stack' (see AttachmentFu::Tasks) needs to be
-  # run.  
-  def process_task?(stack)
-    has_progress  = respond_to?(:task_progress)
-    if respond_to?(:processed_at)
-      return false if processed_at
-      !has_progress || !check_task_progress(stack)\
-    else
-      has_progress ? !check_task_progress(stack) : (@new_attachment || new_record?)
+  
+    # Overwrite this if you want.  This is called when AttachmentFu processing is delayed for a queue.
+    def queue_processing
     end
-  end
+  
+    # Processes an attachment with its current stack of tasks.  Optionally, it stores
+    # the process time in #processed_at when finished, or the progress of which tasks 
+    # have run in #task_progress.
+    #
+    # If #processed_at is available, this will set it to a current timestamp when all processing
+    # has been complete.
+    #
+    # If #task_progress is available, it will track the progress of the stack of tasks.  Either
+    # a true value or an exception is used as a key.  When all processing is done, the #task_progress
+    # hash is set to a static value of {:complete => true}
+    #
+    # You can also process a loaded task with the given set of options, but #task_progress and #processed_at
+    # are ignored.
+    #
+    #   # process the Photo instance's queued tasks
+    #   @photo.process
+    #
+    #   # process a single task directly
+    #   @photo.process(:resize, :size => '75x75')
+    #
+    def process(task_key = true, options = {})
+      if has_progress = respond_to?(:task_progress)
+        self.task_progress ||= {}
+      end
+      case task_key
+        when Symbol
+          task = self.class.attachment_tasks[task_key]
+          process_single_task(task, options, false)
+        else
+          process_all_tasks(has_progress)
+        end
+      save unless task_key == false
+    end
+  
+    # Returns true/false if an attachment has been processed.
+    def processed?
+      return true if respond_to?(:processed_at)  && processed_at
+      return true if respond_to?(:task_progress) && task_progress[:complete]
+      !self.class.attachment_tasks.any? { |s| process_task?(s) }
+    end
 
-  # Checks an individual 'stack' against #task_progress
-  def check_task_progress(stack)
-    task_progress[:complete] || task_progress[stack]
-  end
-
-  # Deletes the attachment from tbhe file system, and attempts
-  # to clean up the empty asset paths.
-  def delete_attachment
-    FileUtils.rm full_filename if File.exist?(full_filename)
-    dir_name = File.dirname(full_filename)
-    default  = %w(. ..)
-    while dir_name != AttachmentFu.root_path
-      if (Dir.entries(dir_name) - default).empty?
-        FileUtils.rm_rf dir_name
-        dir_name.sub! /\/\w+$/, ''
+  protected
+    def process_all_tasks(has_progress = respond_to?(:task_progress))
+      self.class.attachment_tasks.each do |stack_item|
+        if process_task?(stack_item)
+          task, options = stack_item
+          return unless process_single_task(task, options, has_progress)
+        end
+      end
+      if has_progress
+        self.task_progress = {:complete => true}
+      end
+      self.processed_at = Time.now.utc if respond_to?(:processed_at)
+    end
+  
+    def process_single_task(task, options, has_progress = respond_to?(:task_progress))
+      task.call self, options
+      if has_progress then task_progress[[task, options]] = true end
+      true
+    rescue Object
+      if has_progress
+        task_progress[[task, options]] = $!
+        return
       else
-        dir_name = AttachmentFu.root_path
+        raise $!
       end
     end
-  end
 
-  # Saves the attachment to the file system. It also processes
-  # or queues the attachment for processing.
-  def save_attachment
-    return if @temp_path.nil?
-    old_path = full_path_for @temp_path
-    return if old_path.nil?
-    FileUtils.mkdir_p(File.dirname(full_filename))
-    FileUtils.mv(old_path, full_filename)
-    File.chmod(0644, full_filename)
-    queued_attachment ? queue_processing : process(false)
-    @temp_path = @new_attachment = nil
-  end
-  
-  # Could be a string, Pathname, Tempfile, who knows?
-  def full_path_for(path)
-    if path.respond_to?(:path)
-      path.path
-    elsif path.respond_to?(:realpath)
-      path.realpath.to_s
-    elsif path
-      path.to_s
+    # Checks to see if the given 'stack' (see AttachmentFu::Tasks) needs to be
+    # run.  
+    def process_task?(stack)
+      has_progress  = respond_to?(:task_progress)
+      if respond_to?(:processed_at)
+        return false if processed_at
+        !has_progress || !check_task_progress(stack)\
+      else
+        has_progress ? !check_task_progress(stack) : (@new_attachment || new_record?)
+      end
     end
-  end
-  
-  # Could be a string, Pathname, Tempfile, who knows?
-  def basename_for(path)
-    if path.respond_to?(:basename)
-      path.basename.to_s
-    else
-      File.basename(path.respond_to?(:path) ? path.path : path)
-    end
-  end
-  
-  def strip_filename(value)
-    value.strip!
-    # NOTE: File.basename doesn't work right with Windows paths on Unix
-    # get only the filename, not the whole path
-    value.gsub! /^.*(\\|\/)/, ''
-    # Finally, replace all non alphanumeric, underscore or periods with underscore
-    value.gsub! /[^\w\.\-]/, '_'
-  end
 
-  # Needed to tell the difference between an attachment that has just been saved, 
-  # vs one saved in a previous request or object instantiation.
-  def set_new_attachment
-    @new_attachment = true
+    # Checks an individual 'stack' against #task_progress
+    def check_task_progress(stack)
+      task_progress[:complete] || task_progress[stack]
+    end
+
+    # Deletes the attachment from tbhe file system, and attempts
+    # to clean up the empty asset paths.
+    def delete_attachment
+      FileUtils.rm full_filename if File.exist?(full_filename)
+      dir_name = File.dirname(full_filename)
+      default  = %w(. ..)
+      while dir_name != AttachmentFu.root_path
+        if (Dir.entries(dir_name) - default).empty?
+          FileUtils.rm_rf dir_name
+          dir_name.sub! /\/\w+$/, ''
+        else
+          dir_name = AttachmentFu.root_path
+        end
+      end
+    end
+
+    # Saves the attachment to the file system. It also processes
+    # or queues the attachment for processing.
+    def save_attachment
+      return if @temp_path.nil?
+      old_path = full_path_for @temp_path
+      return if old_path.nil?
+      FileUtils.mkdir_p(File.dirname(full_filename))
+      FileUtils.mv(old_path, full_filename)
+      File.chmod(0644, full_filename)
+      queued_attachment ? queue_processing : process(false)
+      @temp_path = @new_attachment = nil
+    end
+  
+    # Could be a string, Pathname, Tempfile, who knows?
+    def full_path_for(path)
+      if path.respond_to?(:path)
+        path.path
+      elsif path.respond_to?(:realpath)
+        path.realpath.to_s
+      elsif path
+        path.to_s
+      end
+    end
+  
+    # Could be a string, Pathname, Tempfile, who knows?
+    def basename_for(path)
+      if path.respond_to?(:basename)
+        path.basename.to_s
+      else
+        File.basename(path.respond_to?(:path) ? path.path : path)
+      end
+    end
+  
+    def strip_filename(value)
+      value.strip!
+      # NOTE: File.basename doesn't work right with Windows paths on Unix
+      # get only the filename, not the whole path
+      value.gsub! /^.*(\\|\/)/, ''
+      # Finally, replace all non alphanumeric, underscore or periods with underscore
+      value.gsub! /[^\w\.\-]/, '_'
+    end
+
+    # Needed to tell the difference between an attachment that has just been saved, 
+    # vs one saved in a previous request or object instantiation.
+    def set_new_attachment
+      @new_attachment = true
+    end
   end
 end
