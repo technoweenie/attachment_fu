@@ -147,4 +147,6 @@ module AttachmentFu
 end
 
 # default tasks
-AttachmentFu.create_task :resize, "attachment_fu/tasks/resize"
+[:resize, :thumbnails].each do |task|
+  AttachmentFu.create_task task, "attachment_fu/tasks/#{task}"
+end

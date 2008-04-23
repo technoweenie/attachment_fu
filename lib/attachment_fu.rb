@@ -140,10 +140,13 @@ module AttachmentFu
 
     # Returns the full path for an attachment
     def full_filename
-      return nil if new_record?
-      File.join(AttachmentFu.root_path, attachment_path, *partitioned_path(filename))
+      new_record? ? nil : full_path(filename)
     end
-  
+
+    def full_path(*args)
+      File.expand_path(File.join(AttachmentFu.root_path, attachment_path, partitioned_path(*args)))
+    end
+
     # Sets the path to the attachment about to be saved.  Could be a string path to a file, 
     # a Pathname referencing a file, or a Tempfile.
     def temp_path=(value)
@@ -261,10 +264,12 @@ module AttachmentFu
     # or queues the attachment for processing.
     def save_attachment
       return if @temp_path.nil?
-      old_path = full_path_for @temp_path
+      old_path = File.expand_path(full_path_for(@temp_path))
       return if old_path.nil?
-      FileUtils.mkdir_p(File.dirname(full_filename))
-      FileUtils.mv(old_path, full_filename)
+      unless old_path == full_filename
+        FileUtils.mkdir_p(File.dirname(full_filename))
+        FileUtils.mv(old_path, full_filename)
+      end
       File.chmod(0644, full_filename)
       queued_attachment ? queue_processing : process(false)
       @temp_path = @new_attachment = nil

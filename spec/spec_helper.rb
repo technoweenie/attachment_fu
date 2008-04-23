@@ -31,21 +31,25 @@ module AttachmentFu
 
     def setup_spec_env
       connection.create_table :afu_spec_assets, :force => true do |t|
+        t.belongs_to :parent
         t.integer :size
+        t.integer :width
+        t.integer :height
         t.string  :filename
         t.string  :content_type
+        t.string  :thumbnail
       end
     end
-  
+
     def drop_spec_env
       connection.drop_table :afu_spec_assets
     end
-    
+
     module InstanceMethods
       def queued?
         @queued
       end
-    
+
       def queue_processing
         @queued = true
       end

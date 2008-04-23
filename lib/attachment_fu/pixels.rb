@@ -25,7 +25,7 @@ module AttachmentFu
         #
         options[:with] ||= :mojo_magick
         new options[:with], attachment.full_filename do
-          data = with_image { |img| resize_image img, :size => options[:to] }
+          data = with_image { |img| resize_image img, :size => options[:to], :to => options[:destination] }
           attachment.width  = data.width  if attachment.respond_to?(:width)
           attachment.height = data.height if attachment.respond_to?(:height)
         end

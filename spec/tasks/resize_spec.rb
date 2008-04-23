@@ -24,11 +24,9 @@ module AttachmentFu
     end
     
     it "resizes image" do
-      @pixels  = AttachmentFu::Pixels.new :core_image, @asset.full_filename
-      @pixels.with_image do |image|
-        image.extent.size.width.should  == 40
-        image.extent.size.height.should == 38
-      end
+      @pixels  = AttachmentFu::Pixels.new :mojo_magick, @asset.full_filename
+      @asset.width.should  == 40
+      @asset.height.should == 38
     end
 
     before :all do
