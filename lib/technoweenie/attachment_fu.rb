@@ -173,7 +173,8 @@ module Technoweenie # :nodoc:
         #
         #   class Foo < ActiveRecord::Base
         #     acts_as_attachment
-        #     before_thumbnail_saved do |record, thumbnail|
+        #     before_thumbnail_saved do |thumbnail|
+        #       record = thumbnail.parent
         #       ...
         #     end
         #   end
