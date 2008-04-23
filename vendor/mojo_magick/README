@@ -1,0 +1,32 @@
+MojoMagick
+==========
+
+MojoMagick is a "dog simple, do very little" image library. It is basically a couple of stateless
+module methods that make it somewhat more convenient than calling ImageScience by hand.
+
+The main reason to use MojoMagick is that you should consolidate your ImageScience calls into
+one place, so why not do it here? If you improve on this tool, send me the patch.
+
+This tool came about because I wanted a fast, simple, lightweight, nothing-goes-wrong-with-it-
+because-it's-too-simple-to-break image tool.
+
+Examples
+========
+
+# Obtain the size of an image (assuming image is "120wx222h")
+dimensions = MojoMagick::get_image_size(test_image)
+ # ==> dimensions now holds a hash: {:height => 120, :width => 222}
+
+# Resize an image so that it fits within a 100w x 200h bounding box
+# (Note: this will scale an image either up or down to fit these dimensions
+#        which may not be what you want.)
+# In this example, we overwrite our image, but if you pass in a different file for the
+# second file name, a new file will be created with the resized dimensions
+MojoMagick::resize('/img/test.jpg', '/img/test.jpg', {:width=>100, :height=>200})
+
+Availablility
+=============
+SVN Repo here: http://trac.misuse.org/science/wiki/MojoMagick
+Contact author or discuss MojoMagick here: http://www.misuse.org/science/2008/01/30/mojomagick-ruby-image-library-for-imagemagick/
+
+Copyright (c) 2008 Steve Midgley, released under the MIT license

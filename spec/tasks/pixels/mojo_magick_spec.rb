@@ -1,10 +1,10 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
 
-describe AttachmentFu::Pixels::CoreImage do
+describe AttachmentFu::Pixels::MojoMagick do
   before :all do
     FileUtils.mkdir_p AttachmentFu.root_path
     @samples = File.join(File.dirname(__FILE__), 'samples')
-    @pixels  = AttachmentFu::Pixels.new :core_image
+    @pixels  = AttachmentFu::Pixels.new :mojo_magick
   end
     
   after :all do
@@ -18,8 +18,7 @@ describe AttachmentFu::Pixels::CoreImage do
 
     it "gets accurate dimensions" do
       @pixels.with_image do |image|
-        image.extent.size.width.should  == 80
-        image.extent.size.height.should == 75
+        ::MojoMagick.get_image_size(image).should == {:width => 80, :height => 75}
       end
     end
     
@@ -36,7 +35,7 @@ describe AttachmentFu::Pixels::CoreImage do
       @pixels.with_image do |image|
         data = @pixels.resize_image image, :size => 40, :to => File.join(AttachmentFu.root_path, 'resized.jpg')
         data.width.should  == 40
-        data.height.should == 37
+        data.height.should == 38
         data.size.should satisfy { |s| s > 0 }
       end
     end
@@ -45,7 +44,7 @@ describe AttachmentFu::Pixels::CoreImage do
       @pixels.with_image do |image|
         data = @pixels.resize_image image, :size => [40, 40], :to => File.join(AttachmentFu.root_path, 'resized.jpg')
         data.width.should  == 40
-        data.height.should == 40
+        data.height.should == 38
         data.size.should satisfy { |s| s > 0 }
       end
     end

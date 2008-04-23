@@ -1,5 +1,5 @@
-require 'attachment_fu/geometry'
 require 'red_artisan/core_image/processor'
+require 'attachment_fu/geometry'
 
 module AttachmentFu # :nodoc:
   class Pixels
@@ -31,12 +31,11 @@ module AttachmentFu # :nodoc:
         end
         
         destination = options[:to] || @file
-        AttachmentFu::Pixels::Image.new do |img|
+        AttachmentFu::Pixels::Image.new destination do |img|
           processor.render do |result|
             img.width  = result.extent.size.width 
             img.height = result.extent.size.height
             result.save destination, OSX::NSJPEGFileType
-            img.size = File.size(destination)
           end
         end
       end

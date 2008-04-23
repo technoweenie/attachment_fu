@@ -23,7 +23,7 @@ module AttachmentFu
         # PDI a simple configurable order
         #   task :resize, :with => [:core_image, :gd, :image_science, :rmagick]
         #
-        options[:with] ||= :core_image
+        options[:with] ||= :mojo_magick
         new options[:with], attachment.full_filename do
           data = with_image { |img| resize_image img, :size => options[:to] }
           attachment.width  = data.width  if attachment.respond_to?(:width)
@@ -33,10 +33,12 @@ module AttachmentFu
     end
 
     class Image
-      attr_accessor :width, :height, :size
+      attr_accessor :filename, :width, :height, :size
       
-      def initialize
+      def initialize(filename = nil)
+        @filename = filename
         yield self if block_given?
+        @size     = File.size(filename) if filename && File.exist?(filename)
       end
     end
   end
