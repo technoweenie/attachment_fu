@@ -50,28 +50,38 @@ module AttachmentFu
 
         @asset = BasicAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
       end
-      
+
       after :all do
         @asset.destroy
       end
-      
+
       it "stores asset in AttachmentFu root_path" do
         @asset.full_filename.should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/guinea_pig.rb"))
       end
-      
+
+      it "creates full_path from record id and attachment_path" do
+        @asset.full_path.should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}"))
+        @asset.full_path("foo", "bar").should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/foo/bar"))
+      end
+
+      it "creates public_path from record id and attachment_path" do
+        @asset.public_path.should == "public/afu_spec_assets/#{@asset.partitioned_path * '/'}"
+        @asset.public_path("foo", "bar").should == "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/foo/bar"
+      end
+
       it "creates partitioned path from the record id" do
         @asset.partitioned_path.each { |piece| piece.should match(/^\d{4}$/) }
         @asset.partitioned_path.join.to_i.should == @asset.id
       end
-      
+
       it "moves temp_path to new location" do
         File.exist?(@asset.full_filename).should == true
       end
-      
+
       it "removes old temp_path location" do
         File.exist?(@file).should == false
       end
-      
+
       it "clears #temp_path" do
         @asset.temp_path.should be_nil
       end

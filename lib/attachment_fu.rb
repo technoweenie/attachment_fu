@@ -145,9 +145,13 @@ module AttachmentFu
       full_path(filename)
     end
 
+    def public_path(*args)
+      File.join(attachment_path, *partitioned_path(*args))
+    end
+
     def full_path(*args)
       return nil if attachment_path_id.nil?
-      File.expand_path(File.join(AttachmentFu.root_path, attachment_path, partitioned_path(*args)))
+      File.expand_path(File.join(AttachmentFu.root_path, public_path(*args)))
     end
 
     # Sets the path to the attachment about to be saved.  Could be a string path to a file, 
