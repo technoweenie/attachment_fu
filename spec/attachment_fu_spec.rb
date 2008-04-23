@@ -4,7 +4,7 @@ module AttachmentFu
   class BasicAsset < ActiveRecord::Base
     is_faux_attachment
   end
-  
+
   class QueuedAsset  < ActiveRecord::Base
     is_faux_attachment :queued => true
   end
@@ -18,20 +18,20 @@ module AttachmentFu
       it "has nil #full_filename" do
         @asset.full_filename.should be_nil
       end
-      
+
       it "has nil #partitioned_path" do
         @asset.partitioned_path.should == nil
       end
     end
-    
+
     describe "being processed" do
       before do
         @file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
         FileUtils.cp __FILE__, @file
       end
-      
+
       after { @asset.destroy }
-      
+
       it "attempts to process the attachment" do
         @asset = BasicAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
         @asset.should_not be_queued
@@ -56,7 +56,7 @@ module AttachmentFu
       end
       
       it "stores asset in AttachmentFu root_path" do
-        @asset.full_filename.should == File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/guinea_pig.rb")
+        @asset.full_filename.should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/guinea_pig.rb"))
       end
       
       it "creates partitioned path from the record id" do

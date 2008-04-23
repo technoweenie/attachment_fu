@@ -9,6 +9,11 @@ module AttachmentFu # :nodoc:
         block.call @file
       end
 
+      def get_image_size(image)
+        size = ::MojoMagick.get_image_size(image)
+        [size[:width], size[:height]]
+      end
+
       # Performs the actual resizing operation for a thumbnail.
       # Returns a AttachmentFu::Pixels::Image object.
       #
@@ -17,18 +22,15 @@ module AttachmentFu # :nodoc:
       #  - :to   - Final location of the saved image.  Defaults to the pixel instance's location.
       #
       def resize_image(image, options = {})
-        dimensions = ::MojoMagick.get_image_size(image)
         size = options[:size]
         case size
           when Fixnum then size = [size, size]
-          when String then size = [dimensions[:width], dimensions[:height]] / size
+          when String then size = get_image_size(image) / size
         end
         destination = options[:to] || image
         AttachmentFu::Pixels::Image.new destination do |img|
           ::MojoMagick.resize(image, destination, :width => size[0], :height => size[1])
-          new_dimensions = ::MojoMagick.get_image_size(destination)
-          img.width      = new_dimensions[:width]
-          img.height     = new_dimensions[:height]
+          img.width, img.height = get_image_size(destination)
         end
       end
     end

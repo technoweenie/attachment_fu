@@ -1,5 +1,5 @@
 class SampleObjectTask
-  def initialize(klass)
+  def initialize(klass, options)
   end
   
   def call(attachment, options)

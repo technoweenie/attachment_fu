@@ -5,8 +5,6 @@ module AttachmentFu
     is_faux_attachment do
       task :thumbnails, :sizes => {:small => '40x40', :tiny => '10x10'}
     end
-    belongs_to :parent, :class_name => "AttachmentFu::ThumbnailsTaskAsset", :foreign_key => 'parent_id'
-    has_many :thumbnails, :class_name => "AttachmentFu::ThumbnailsTaskAsset", :foreign_key => 'parent_id'
   end
   
   describe "Thumbnails Task" do
@@ -15,23 +13,30 @@ module AttachmentFu
       @original = File.join(@samples, 'casshern.jpg')
       @sample   = File.join(@samples, 'sample.jpg')
     end
-    
+
     before do
       FileUtils.cp @original, @sample
       @asset = ThumbnailsTaskAsset.create! :content_type => 'image/jpg', :temp_path => @sample
     end
-    
+
     it "saves attachment" do
       File.exist? @asset.full_filename
     end
-    
-    #it "resizes image" do
-    #  @pixels  = AttachmentFu::Pixels.new :core_image, @asset.full_filename
-    #  @pixels.with_image do |image|
-    #    image.extent.size.width.should  == 40
-    #    image.extent.size.height.should == 38
-    #  end
-    #end
+
+    it "creates correct number of thumbnails with matching thumbnail keys" do
+      @asset.should have(2).thumbnails
+      @asset.thumbnails.sort_by { |t| t.thumbnail }.map(&:thumbnail).should == %w(small tiny)
+    end
+
+    it "keeps the attachment's original width" do
+      @asset.width.should == 80
+    end
+
+    it "resizes thumbnails to the resized width" do
+      @asset.thumbnails.each do |thumb|
+        thumb.width.should  == (thumb.thumbnail == 'small' ? 40 : 10)
+      end
+    end
 
     before :all do
       ThumbnailsTaskAsset.setup_spec_env

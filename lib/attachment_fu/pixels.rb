@@ -26,15 +26,26 @@ module AttachmentFu
         options[:with] ||= :mojo_magick
         new options[:with], attachment.full_filename do
           data = with_image { |img| resize_image img, :size => options[:to], :to => options[:destination] }
-          attachment.width  = data.width  if attachment.respond_to?(:width)
-          attachment.height = data.height if attachment.respond_to?(:height)
+          unless options[:skip_size]
+            attachment.width  = data.width  if attachment.respond_to?(:width)
+            attachment.height = data.height if attachment.respond_to?(:height)
+          end
+        end
+      end
+    end
+
+    def self.image_size_task
+      lambda do |attachment, options|
+        options[:with] ||= :mojo_magick
+        new options[:with], attachment.full_filename do
+          attachment.width, attachment.height = with_image { |img| get_image_size(img) }
         end
       end
     end
 
     class Image
       attr_accessor :filename, :width, :height, :size
-      
+
       def initialize(filename = nil)
         @filename = filename
         yield self if block_given?

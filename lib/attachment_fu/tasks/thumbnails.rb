@@ -1,31 +1,68 @@
 module AttachmentFu
   class Pixels
     class Thumbnails
-      def initialize(klass)
-        klass.attachment_tasks.load :resize
-        puts "#{klass.name} #{klass.object_id} #{klass.attachment_tasks.all.keys}"
-        @thumbnail_class = nil
+      # Some valid options:
+      #
+      #   :parent_association => :parent
+      #   :parent_foreign_key => parent_association.to_s.foreign_key
+      #   :thumbnails_association => :thumbnails
+      #
+      def initialize(klass, options)
+        options[:parent_association]     ||= :parent
+        options[:parent_foreign_key]     ||= options[:parent_association].to_s.foreign_key
+        options[:thumbnails_association] ||= :thumbnails
+
+        @thumbnail_class = options[:thumbnail_class] || thumbnail_class_for(klass, options)
+
+        @thumbnail_class.attachment_tasks do
+          task :get_image_size, :with => options[:with] unless queued?(:get_image_size)
+        end
+        klass.attachment_tasks do
+          load :resize
+          task :get_image_size, :with => options[:with] unless queued?(:get_image_size)
+        end
+
+        unless klass.reflect_on_association(:parent)
+          klass.belongs_to options[:parent_association], :class_name => "::#{@thumbnail_class.name}", :foreign_key => options[:parent_foreign_key]
+        end
+        
+        unless klass.reflect_on_association(:thumbnails)
+          klass.has_many options[:thumbnails_association], :class_name => "::#{@thumbnail_class.name}", :foreign_key => options[:parent_foreign_key]
+        end
       end
 
       # task :thumbnails, :sizes => {:thumb => '50x50', :tiny => [10, 10]}
       #
       def call(attachment, options)
-        if @thumbnail_class.nil?
-          @thumbnail_class = options[:thumbnail_class] || Class.new(attachment.class)
-          @thumbnail_class.attachment_tasks.clear
-        end
-        puts "#{attachment.class.name} #{attachment.class.object_id} #{attachment.class.attachment_tasks.all.keys}"
         options[:sizes].each do |name, size|
           thumb_name = thumbnail_name_for(attachment, name)
-          attachment.process :resize, :with => options[:with], :to => size, :destination => attachment.full_path(thumb_name)
+          attachment.process :resize, :with => options[:with], :to => size, :destination => attachment.full_path(thumb_name), :skip_save => true, :skip_size => true
           thumb = @thumbnail_class.new do |thumb|
+            thumb.send("#{options[:parent_foreign_key]}=", attachment.id)
             thumb.thumbnail    = name.to_s
             thumb.filename     = thumb_name
             thumb.content_type = attachment.content_type
             thumb.temp_path    = attachment.full_path(thumb_name)
-            puts thumb.inspect
+          end
+          thumb.save!
+        end
+      end
+
+      # Creates a default thumbnail class, which is just a subclass
+      # of the attachment with no tasks, and a modified #attachment_path_id 
+      # to use #parent_id instead of #id
+      def thumbnail_class_for(klass, options)
+        thumb_class = Class.new klass do
+          attachment_tasks.clear
+
+          validates_presence_of options[:parent_foreign_key]
+
+          # The attachment ID used in the full path of a file
+          def attachment_path_id
+            parent_id
           end
         end
+        klass.const_set(:Thumbnail, thumb_class)
       end
 
       def thumbnail_name_for(attachment, thumbnail = nil)

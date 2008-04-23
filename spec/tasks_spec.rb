@@ -329,7 +329,7 @@ module AttachmentFu
   
   # simulates task that just might raise an error
   class FlakyTask
-    def initialize(whatever)
+    def initialize(whatever, options)
     end
     
     def call(attachment, options)

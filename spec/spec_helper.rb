@@ -65,6 +65,6 @@ module AttachmentFu
   end
 end
 
-AttachmentFu.root_path = File.join(File.dirname(__FILE__), 'assets')
+AttachmentFu.root_path = File.expand_path(File.join(File.dirname(__FILE__), 'assets'))
 
 Debugger.start

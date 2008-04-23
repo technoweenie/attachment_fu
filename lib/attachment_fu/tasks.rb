@@ -11,7 +11,7 @@ module AttachmentFu
   # an instance of the class is created.  The #call method is then used to process.
   #
   #   class SampleObjectTask
-  #     def initialize(klass)
+  #     def initialize(klass, options)
   #     end
   #     
   #     def call(attachment, options)
@@ -121,17 +121,31 @@ module AttachmentFu
     # retrieved task from the global Tasks.all collection is a class
     # it is instantiated.
     def task(key, options = {})
-      @stack << [load(key), options]
+      @stack << [load(key, options), options]
     end
     
     # Loads a new task to this Tasks instance, but does not put it
     # in the stack to be called during processing.
-    def load(key)
+    def load(key, options = {})
       t = @all[key] || self.class[key]
-      if t.is_a?(Class) then t = t.new(@klass) end
+      if t.is_a?(Class) then t = t.new(@klass, options) end
       @all[key] = t
     end
-    
+
+    def key?(key_or_index)
+      case key_or_index
+        when Symbol then @all.key?(key_or_index)
+        when Fixnum then @stack.key?(key_or_index)
+      end
+    end
+
+    def queued?(key_or_index)
+      case key_or_index
+        when Symbol then false
+        when Fixnum then @stack.key?(key_or_index)
+      end
+    end
+
     # Gets either a task instance by key, or a stack item by index.
     #
     #   @tasks[:foo] # => <#FooTaskInstance>
@@ -150,3 +164,4 @@ end
 [:resize, :thumbnails].each do |task|
   AttachmentFu.create_task task, "attachment_fu/tasks/#{task}"
 end
+AttachmentFu.create_task :get_image_size, "attachment_fu/tasks/resize"

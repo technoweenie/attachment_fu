@@ -8,6 +8,10 @@ module AttachmentFu # :nodoc:
         block.call OSX::CIImage.from(@file)
       end
 
+      def get_image_size(image)
+        [image.extent.size.width, image.extent.size.height]
+      end
+
       # Performs the actual resizing operation for a thumbnail.
       # Returns a AttachmentFu::Pixels::Image object.
       #
@@ -26,15 +30,14 @@ module AttachmentFu # :nodoc:
             processor.resize(size[0], size[1])
           end
         else
-          new_size = [image.extent.size.width, image.extent.size.height] / size.to_s
+          new_size = get_image_size(image) / size.to_s
           processor.resize(new_size[0], new_size[1])
         end
         
         destination = options[:to] || @file
         AttachmentFu::Pixels::Image.new destination do |img|
           processor.render do |result|
-            img.width  = result.extent.size.width 
-            img.height = result.extent.size.height
+            img.width, img.height = get_image_size(result)
             result.save destination, OSX::NSJPEGFileType
           end
         end

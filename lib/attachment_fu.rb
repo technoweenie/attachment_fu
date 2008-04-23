@@ -38,7 +38,7 @@ module AttachmentFu
     #
     # See individual tasks for what options they take.  See AttachmentFu::Tasks to see how tasks are processed.
     #
-    # The \table schema should look like this:
+    # The table schema should look like this:
     #
     #   create_table :foo do |t|
     #     t.string  :filename
@@ -81,7 +81,9 @@ module AttachmentFu
         attr_writer :attachment_tasks
       
         def attachment_tasks(&block)
-          @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.copy(&block) : AttachmentFu::Tasks.new(self, &block)
+          @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.copy : AttachmentFu::Tasks.new(self)
+          @attachment_tasks.instance_eval(&block) if block
+          @attachment_tasks
         end
       end
       base.send :attr_reader,   :temp_path
@@ -134,16 +136,17 @@ module AttachmentFu
     # overrwrite this to do your own app-specific partitioning. 
     # you can thank Jamis Buck for this: http://www.37signals.com/svn/archives2/id_partitioning.php
     def partitioned_path(*args)
-      return nil if new_record?
+      return nil if attachment_path_id.nil?
       ("%08d" % attachment_path_id).scan(/..../) + args
     end
 
     # Returns the full path for an attachment
     def full_filename
-      new_record? ? nil : full_path(filename)
+      full_path(filename)
     end
 
     def full_path(*args)
+      return nil if attachment_path_id.nil?
       File.expand_path(File.join(AttachmentFu.root_path, attachment_path, partitioned_path(*args)))
     end
 
@@ -189,8 +192,8 @@ module AttachmentFu
           process_single_task(task, options, false)
         else
           process_all_tasks(has_progress)
-        end
-      save unless task_key == false
+      end
+      save unless options[:skip_save]
     end
   
     # Returns true/false if an attachment has been processed.
@@ -271,8 +274,9 @@ module AttachmentFu
         FileUtils.mv(old_path, full_filename)
       end
       File.chmod(0644, full_filename)
-      queued_attachment ? queue_processing : process(false)
-      @temp_path = @new_attachment = nil
+      @temp_path = nil # if a task tries to re-save, we don't want to re-store the attachment
+      queued_attachment ? queue_processing : process
+      @new_attachment = nil
     end
   
     # Could be a string, Pathname, Tempfile, who knows?
