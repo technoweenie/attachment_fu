@@ -4,7 +4,7 @@ module AttachmentFu
       @@key_to_class ||= {}
       @@key_to_class[key] ||= begin
         path = key.to_s
-        require "attachment_fu/pixels/#{path}"
+        send respond_to?(:require_dependency) ? :require_dependency : :require, "attachment_fu/pixels/#{path}"
         const_get(path.classify)
       end
     end
