@@ -63,7 +63,7 @@ module AttachmentFu
     def self.[](key)
       case value = all[key]
         when String
-          require value
+          send respond_to?(:require_dependency) ? :require_dependency : :require, value
           if all[key].is_a?(String) then raise(ArgumentError, "loading #{key.inspect} failed.") end
           all[key]
         else value
@@ -159,9 +159,3 @@ module AttachmentFu
     end
   end
 end
-
-# default tasks
-[:resize, :thumbnails].each do |task|
-  AttachmentFu.create_task task, "attachment_fu/tasks/#{task}"
-end
-AttachmentFu.create_task :get_image_size, "attachment_fu/tasks/resize"

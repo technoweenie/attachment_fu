@@ -74,6 +74,15 @@ module AttachmentFu
     klass.extend SetupMethods
   end
 
+  # Sets default tasks
+  def self.reset
+    Tasks
+    [:resize, :thumbnails].each do |task|
+      create_task task, "attachment_fu/tasks/#{task}"
+    end
+    create_task :get_image_size, "attachment_fu/tasks/resize"
+  end
+
   # This mixin is included in attachment classes by AttachmentFu::SetupMethods.is_attachment.
   module InstanceMethods
     def self.included(base)
