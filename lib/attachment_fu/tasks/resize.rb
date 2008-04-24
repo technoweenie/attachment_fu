@@ -1,5 +1,3 @@
-require 'attachment_fu/pixels'
-
 module AttachmentFu
   class Tasks
     class Resize < AttachmentFu::Pixels::Task

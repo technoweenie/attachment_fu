@@ -1,6 +1,5 @@
 require 'mojo_magick/image_resources'
 require 'mojo_magick/mojo_magick'
-require 'attachment_fu/geometry'
 
 module AttachmentFu # :nodoc:
   module Pixels

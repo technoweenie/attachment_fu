@@ -1,5 +1,4 @@
 require 'red_artisan/core_image/processor'
-require 'attachment_fu/geometry'
 
 module AttachmentFu # :nodoc:
   module Pixels
