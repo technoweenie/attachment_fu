@@ -128,9 +128,10 @@ module AttachmentFu
       self.filename     = file_data.original_filename
       if file_data.respond_to?(:rewind) # it's an IO object
         file_data.rewind
-        self.temp_path = Tempfile.new filename do |f|
-          f << file_data.read
-        end
+        self.temp_path = Tempfile.new(filename)
+        temp_path.binmode
+        temp_path << file_data.read
+        temp_path.rewind
       else
         self.temp_path = file_data
       end

@@ -141,6 +141,7 @@ module AttachmentFu
         it "sets temp_path as string path to file" do
           @asset.uploaded_data = @file
           @asset.temp_path.should == __FILE__
+          @asset.temp_path.size.should == File.size(__FILE__)
         end
 
         it "sets content_type" do
@@ -173,6 +174,7 @@ module AttachmentFu
         it "sets temp_path as Tempfile" do
           @asset.uploaded_data = @file
           @asset.temp_path.class.should == Tempfile
+          @asset.temp_path.size.should == File.size(__FILE__)
         end
 
         it "sets content_type" do

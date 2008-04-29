@@ -28,3 +28,5 @@ module AttachmentFu
     end
   end
 end
+
+send respond_to?(:require_dependency) ? :require_dependency : :require, "attachment_fu/geometry"
