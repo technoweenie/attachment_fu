@@ -65,8 +65,8 @@ module AttachmentFu
       end
 
       it "creates public_path from record id and attachment_path" do
-        @asset.public_path.should == "afu_spec_assets/#{@asset.partitioned_path * '/'}"
-        @asset.public_path("foo", "bar").should == "afu_spec_assets/#{@asset.partitioned_path * '/'}/foo/bar"
+        @asset.public_path.should == "/afu_spec_assets/#{@asset.partitioned_path * '/'}"
+        @asset.public_path("foo", "bar").should == "/afu_spec_assets/#{@asset.partitioned_path * '/'}/foo/bar"
       end
 
       it "creates partitioned path from the record id" do

@@ -156,7 +156,7 @@ module AttachmentFu
     end
 
     def public_path(*args)
-      File.join(attachment_path, *partitioned_path(*args)).sub(/^public\//, '')
+      File.join(attachment_path, *partitioned_path(*args)).sub(/^public\//, '/')
     end
 
     def full_path(*args)
