@@ -5,7 +5,7 @@ module AttachmentFu # :nodoc:
   module Pixels
     module MojoMagick
       def with_image(attachment, &block)
-        block.call attachment.full_filename
+        block.call attachment.full_path
       end
 
       def get_image_size(image)

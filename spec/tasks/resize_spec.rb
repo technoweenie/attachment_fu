@@ -20,7 +20,7 @@ module AttachmentFu
     end
     
     it "saves attachment" do
-      File.exist? @asset.full_filename
+      File.exist? @asset.full_path
     end
     
     it "resizes image" do

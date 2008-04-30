@@ -14,7 +14,7 @@ describe AttachmentFu::Pixels::MojoMagick do
   describe "(for JPG)" do
     before do
       @attachment = mock("Attachment")
-      @attachment.stub!(:full_filename).and_return(File.join(@samples, 'casshern.jpg'))
+      @attachment.stub!(:full_path).and_return(File.join(@samples, 'casshern.jpg'))
     end
 
     it "gets accurate dimensions" do

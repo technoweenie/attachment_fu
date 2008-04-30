@@ -150,17 +150,14 @@ module AttachmentFu
       ("%08d" % attachment_path_id).scan(/..../) + args
     end
 
-    # Returns the full path for an attachment
-    def full_filename
-      full_path(filename)
-    end
-
     def public_path(*args)
+      args = [filename] if args.empty?
       File.join(attachment_path, *partitioned_path(*args)).sub(/^public\//, '/')
     end
 
     def full_path(*args)
       return nil if attachment_path_id.nil?
+      args = [filename] if args.empty?
       File.expand_path(File.join(AttachmentFu.root_path, attachment_path, *partitioned_path(*args)))
     end
 
@@ -264,8 +261,8 @@ module AttachmentFu
     # Deletes the attachment from tbhe file system, and attempts
     # to clean up the empty asset paths.
     def delete_attachment
-      FileUtils.rm full_filename if File.exist?(full_filename)
-      dir_name = File.dirname(full_filename)
+      FileUtils.rm full_path if File.exist?(full_path)
+      dir_name = File.dirname(full_path)
       default  = %w(. ..)
       while dir_name != AttachmentFu.root_path
         if (Dir.entries(dir_name) - default).empty?
@@ -283,11 +280,11 @@ module AttachmentFu
       return if @temp_path.nil?
       old_path = File.expand_path(full_path_for(@temp_path))
       return if old_path.nil?
-      unless old_path == full_filename
-        FileUtils.mkdir_p(File.dirname(full_filename))
-        FileUtils.mv(old_path, full_filename)
+      unless old_path == full_path
+        FileUtils.mkdir_p(File.dirname(full_path))
+        FileUtils.mv(old_path, full_path)
       end
-      File.chmod(0644, full_filename)
+      File.chmod(0644, full_path)
       @temp_path = nil # if a task tries to re-save, we don't want to re-store the attachment
       queued_attachment ? queue_processing : process
       @new_attachment = nil

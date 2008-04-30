@@ -4,7 +4,7 @@ module AttachmentFu # :nodoc:
   module Pixels
     module CoreImage
       def with_image(attachment, &block)
-        block.call OSX::CIImage.from(attachment.full_filename)
+        block.call OSX::CIImage.from(attachment.full_path)
       end
 
       def get_image_size(image)

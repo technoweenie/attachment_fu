@@ -15,8 +15,8 @@ module AttachmentFu
         @asset = BasicAsset.new(:content_type => 'application/x-ruby', :temp_path => __FILE__)
       end
 
-      it "has nil #full_filename" do
-        @asset.full_filename.should be_nil
+      it "has nil #full_path" do
+        @asset.full_path.should be_nil
       end
 
       it "has nil #partitioned_path" do
@@ -56,16 +56,16 @@ module AttachmentFu
       end
 
       it "stores asset in AttachmentFu root_path" do
-        @asset.full_filename.should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/guinea_pig.rb"))
+        @asset.full_path.should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/guinea_pig.rb"))
       end
 
       it "creates full_path from record id and attachment_path" do
-        @asset.full_path.should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}"))
+        @asset.full_path.should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/#{@asset.filename}"))
         @asset.full_path("foo", "bar").should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/foo/bar"))
       end
 
       it "creates public_path from record id and attachment_path" do
-        @asset.public_path.should == "/afu_spec_assets/#{@asset.partitioned_path * '/'}"
+        @asset.public_path.should == "/afu_spec_assets/#{@asset.partitioned_path * '/'}/#{@asset.filename}"
         @asset.public_path("foo", "bar").should == "/afu_spec_assets/#{@asset.partitioned_path * '/'}/foo/bar"
       end
 
@@ -75,7 +75,7 @@ module AttachmentFu
       end
 
       it "moves temp_path to new location" do
-        File.exist?(@asset.full_filename).should == true
+        File.exist?(@asset.full_path).should == true
       end
 
       it "removes old temp_path location" do
@@ -93,7 +93,7 @@ module AttachmentFu
         FileUtils.cp __FILE__, @file
 
         @asset = BasicAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
-        @dir   = File.dirname(@asset.full_filename)
+        @dir   = File.dirname(@asset.full_path)
       end
       
       after do
@@ -102,7 +102,7 @@ module AttachmentFu
       
       it "removes the file" do
         @asset.destroy
-        File.exist?(@asset.full_filename).should == false
+        File.exist?(@asset.full_path).should == false
       end
       
       (1..4).each do |i|
