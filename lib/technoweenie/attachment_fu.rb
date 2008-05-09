@@ -295,7 +295,7 @@ module Technoweenie # :nodoc:
           self.content_type = file_data.content_type
           self.filename     = file_data.original_filename if respond_to?(:filename)
         else
-          return nil if file_data.nil? || file_data['size'] == 0
+          return nil if file_data.blank? || file_data['size'] == 0
           self.content_type = file_data['content_type']
           self.filename =  file_data['filename']
           file_data = file_data['tempfile']

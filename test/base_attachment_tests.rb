@@ -67,4 +67,11 @@ module BaseAttachmentTests
     assert !attachment.save_attachment?
     assert_nothing_raised { attachment.save! }
   end
+  
+  def test_should_handle_nil_file_upload
+    attachment = attachment_model.create :uploaded_data => ''
+    assert_raise ActiveRecord::RecordInvalid do
+      attachment.save!
+    end
+  end
 end
