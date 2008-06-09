@@ -34,10 +34,10 @@ module Technoweenie # :nodoc:
         # by default paritions files into directories e.g. 0000/0001/image.jpg
         # to turn this off set :partition => false
         def partitioned_path(*args)
-	  if respond_to?(:attachment_options) && attachment_options[:partition] == false 
-		args
-	  else 
-	          ("%08d" % attachment_path_id).scan(/..../) + args
+          if respond_to?(:attachment_options) && attachment_options[:partition] == false 
+            args
+          else 
+            ("%08d" % attachment_path_id).scan(/..../) + args
           end
         end
       
