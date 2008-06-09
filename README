@@ -173,12 +173,13 @@ The following example shows how to upload a file from a script.
 require 'action_controller'
 require 'action_controller/test_process.rb'
 
+path = "./public/images/x.jpg"
+
+# mimetype is a string like "image/jpeg". One way to get the mimetype for a given file on a UNIX system
+# mimetype = `file -ib #{path}`.gsub(/\n/,"")
+
+mimetype = "image/jpeg"
+
+# This will "upload" the file at path and create the new model.
 @attachable = AttachmentMetadataModel.new(:uploaded_data => ActionController::TestUploadedFile.new(path, mimetype))
 @attachable.save
-
-This will "upload" the file at path and create the new model.
-
-mimetype is a string like "image/jpeg". One way to get the mimetype for a given file on a UNIX system
-
-mimetype = `file -ib #{path}`.gsub(/\n/,"")
-
