@@ -3,7 +3,6 @@ require "rake/rdoctask"
 require 'rake/gempackagetask'
 require 'spec/rake/spectask'
 require 'spec/rake/verify_rcov'
-require 'fileutils'
 
 Rake::RDocTask.new do |rd|
   rd.main = "README"
