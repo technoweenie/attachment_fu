@@ -1,3 +1,5 @@
 test/amazon_s3.yml
 test/debug.log
 .DS_Store
+html
+doc
