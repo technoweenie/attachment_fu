@@ -1,17 +1,13 @@
 require 'rake'
 require "rake/rdoctask"
 require 'rake/gempackagetask'
-require File.join(File.dirname(__FILE__), 'spec', 'spec_helper')
 require 'spec/rake/spectask'
 require 'spec/rake/verify_rcov'
-
-rdoc_files = FileList["{bin,lib,example_configs}/**/*"].to_a
-extra_rdoc_files = %w(README COPYRIGHT RELEASES CHANGELOG)
+require 'fileutils'
 
 Rake::RDocTask.new do |rd|
   rd.main = "README"
-  rd.rdoc_files.include(rdoc_files, extra_rdoc_files)
-  rd.rdoc_dir = "doc/rdoc/"
+  rd.rdoc_files.include("README", "CHANGELOG", "lib/**/*.rb")
 end
 
 desc "Run all examples with RCov"
