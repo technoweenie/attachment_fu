@@ -61,12 +61,30 @@ module AttachmentFu
 
       it "creates full_path from record id and attachment_path" do
         @asset.full_path.should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/#{@asset.filename}"))
-        @asset.full_path("foo", "bar").should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/foo/bar"))
+      end
+
+      it "creates thumbnailed full_path from record id and attachment_path" do
+        @asset.full_path(:foo).should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/guinea_pig_foo.rb"))
+        begin
+          @asset.filename = 'guinea_pig'
+          @asset.full_path(:foo).should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/guinea_pig_foo"))
+        ensure
+          @asset.filename = 'guinea_pig.rb'
+        end
       end
 
       it "creates public_path from record id and attachment_path" do
         @asset.public_path.should == "/afu_spec_assets/#{@asset.partitioned_path * '/'}/#{@asset.filename}"
-        @asset.public_path("foo", "bar").should == "/afu_spec_assets/#{@asset.partitioned_path * '/'}/foo/bar"
+      end
+
+      it "creates thumbnailed public_path from record id and attachment_path" do
+        @asset.public_path(:foo).should == "/afu_spec_assets/#{@asset.partitioned_path * '/'}/guinea_pig_foo.rb"
+        begin
+          @asset.filename = 'guinea_pig'
+          @asset.public_path(:foo).should == "/afu_spec_assets/#{@asset.partitioned_path * '/'}/guinea_pig_foo"
+        ensure
+          @asset.filename = 'guinea_pig.rb'
+        end
       end
 
       it "creates partitioned path from the record id" do

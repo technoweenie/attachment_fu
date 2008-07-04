@@ -150,15 +150,13 @@ module AttachmentFu
       ("%08d" % attachment_path_id).scan(/..../) + args
     end
 
-    def public_path(*args)
-      args = [filename] if args.empty?
-      File.join(attachment_path, *partitioned_path(*args)).sub(/^public\//, '/')
+    def public_path(thumbnail = nil)
+      File.join(attachment_path, *partitioned_path(thumbnailed_filename(thumbnail))).sub(/^public\//, '/')
     end
 
-    def full_path(*args)
+    def full_path(thumbnail = nil)
       return nil if attachment_path_id.nil?
-      args = [filename] if args.empty?
-      File.expand_path(File.join(AttachmentFu.root_path, attachment_path, *partitioned_path(*args)))
+      File.expand_path(File.join(AttachmentFu.root_path, attachment_path, *partitioned_path(thumbnailed_filename(thumbnail))))
     end
 
     # Sets the path to the attachment about to be saved.  Could be a string path to a file, 
@@ -215,6 +213,16 @@ module AttachmentFu
     end
 
   protected
+    def thumbnailed_filename(thumbnail)
+      if thumbnail
+        pieces = filename.split('.')
+        pieces[pieces.size > 1 ? -2 : -1] << "_#{thumbnail}"
+        pieces * "."
+      else
+        filename
+      end
+    end
+
     def process_all_tasks(has_progress = respond_to?(:task_progress))
       self.class.attachment_tasks.each do |stack_item|
         if process_task?(stack_item)
@@ -247,7 +255,7 @@ module AttachmentFu
       has_progress  = respond_to?(:task_progress)
       if respond_to?(:processed_at)
         return false if processed_at
-        !has_progress || !check_task_progress(stack)\
+        !has_progress || !check_task_progress(stack)
       else
         has_progress ? !check_task_progress(stack) : (@new_attachment || new_record?)
       end
