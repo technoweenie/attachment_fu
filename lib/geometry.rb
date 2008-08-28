@@ -25,7 +25,7 @@ class Geometry
   end
 
   # Construct an object from a geometry string
-  RE = /\A(\d*)(?:x(\d+))?([-+]\d+)?([-+]\d+)?([%!<>@]?)\Z/
+  RE = /\A(\d*)(?:x(\d+)?)?([-+]\d+)?([-+]\d+)?([%!<>@]?)\Z/
 
   def self.from_s(str)
     raise(ArgumentError, "no geometry string specified") unless str
