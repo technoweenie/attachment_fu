@@ -2,7 +2,36 @@ module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     @@default_processors = %w(ImageScience Rmagick MiniMagick Gd2 CoreImage)
     @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
-    @@content_types      = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png', 'image/jpg']
+    @@content_types      = [
+      'image/jpeg',
+      'image/pjpeg',
+      'image/jpg',
+      'image/gif',
+      'image/png',
+      'image/x-png',
+      'image/jpg',
+      'image/x-ms-bmp',
+      'image/bmp',
+      'image/x-bmp',
+      'image/x-bitmap',
+      'image/x-xbitmap',
+      'image/x-win-bitmap',
+      'image/x-windows-bmp',
+      'image/ms-bmp',
+      'application/bmp',
+      'application/x-bmp',
+      'application/x-win-bitmap',
+      'application/preview',
+      'image/jp_',
+      'application/jpg',
+      'application/x-jpg',
+      'image/pipeg',
+      'image/vnd.swiftview-jpeg',
+      'image/x-xbitmap',
+      'application/png',
+      'application/x-png',
+      'image/gi_'
+    ]
     mattr_reader :content_types, :tempfile_path, :default_processors
     mattr_writer :tempfile_path
 
