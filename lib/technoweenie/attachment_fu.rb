@@ -103,7 +103,11 @@ module Technoweenie # :nodoc:
         end
         attachment_options[:path_prefix]   = attachment_options[:path_prefix][1..-1] if options[:path_prefix].first == '/'
 
-        with_options :foreign_key => 'parent_id' do |m|
+        association_options = { :foreign_key => 'parent_id' }
+        if attachment_options[:association_options]
+          association_options.merge!(attachment_options[:association_options])
+        end
+        with_options(association_options) do |m|
           m.has_many   :thumbnails, :class_name => "::#{attachment_options[:thumbnail_class]}"
           m.belongs_to :parent, :class_name => "::#{base_class}" unless options[:thumbnails].empty?
         end

@@ -50,6 +50,7 @@ has_attachment(options = {})
     :processor        # Sets the image processor to use for resizing of the attached image.
                       # Options include ImageScience, Rmagick, and MiniMagick.  Default is whatever is installed.
     :uuid_primary_key # If your model's primary key is a 128-bit UUID in hexadecimal format, then set this to true.
+    :association_options  # attachment_fu automatically defines associations with thumbnails with has_many and belongs_to. If there are any additional options that you want to pass to these methods, then specify them here.
     
 
   Examples:
