@@ -49,6 +49,7 @@ has_attachment(options = {})
                       # Defaults to :db_file.  Options are :file_system, :db_file, and :s3.
     :processor        # Sets the image processor to use for resizing of the attached image.
                       # Options include ImageScience, Rmagick, and MiniMagick.  Default is whatever is installed.
+    :uuid_primary_key # If your model's primary key is a 128-bit UUID in hexadecimal format, then set this to true.
     
 
   Examples:

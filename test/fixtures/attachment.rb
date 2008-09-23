@@ -44,6 +44,38 @@ class FileAttachment < ActiveRecord::Base
   validates_as_attachment
 end
 
+class FileAttachmentWithStringId < ActiveRecord::Base
+  set_table_name 'file_attachments_with_string_id'
+  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
+  validates_as_attachment
+  
+  before_validation :auto_generate_id
+  before_save :auto_generate_id
+  @@last_id = 0
+  
+  private
+    def auto_generate_id
+      @@last_id += 1
+      self.id = "id_#{@@last_id}"
+    end
+end
+
+class FileAttachmentWithUuid < ActiveRecord::Base
+  set_table_name 'file_attachments_with_string_id'
+  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick, :uuid_primary_key => true
+  validates_as_attachment
+  
+  before_validation :auto_generate_id
+  before_save :auto_generate_id
+  @@last_id = 0
+  
+  private
+    def auto_generate_id
+      @@last_id += 1
+      self.id = "%0127dx" % @@last_id
+    end
+end
+
 class ImageFileAttachment < FileAttachment
   has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
     :content_type => :image, :resize_to => [50,50]
