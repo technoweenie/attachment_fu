@@ -41,10 +41,10 @@ has_attachment(options = {})
                       # This option need only be included if you want thumbnailing.
     :thumbnail_class  # Set which model class to use for thumbnails.
                       # This current attachment class is used by default.
-    :path_prefix      # path to store the uploaded files.
+    :path_prefix      # Path to store the uploaded files in.
                       # Uses public/#{table_name} by default for the filesystem, and just #{table_name} for the S3 backend.  
                       # Setting this sets the :storage to :file_system.
-    :partition        # Partiton files in directories like /0000/0001/image.jpg. Default is true. 
+    :partition        # Whether to partiton files in directories like /0000/0001/image.jpg. Default is true. Only applicable to the :file_system backend.
     :storage          # Specifies the storage system to use..
                       # Defaults to :db_file.  Options are :file_system, :db_file, and :s3.
     :processor        # Sets the image processor to use for resizing of the attached image.
