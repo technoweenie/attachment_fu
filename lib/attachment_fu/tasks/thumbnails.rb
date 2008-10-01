@@ -1,6 +1,13 @@
 module AttachmentFu
   class Tasks
     class Thumbnails
+      module ModelMethods
+        # The attachment ID used in the full path of a file
+        def attachment_path_id
+          parent_id
+        end
+      end
+
       # Some valid options:
       #
       #   :parent_association => :parent
@@ -14,9 +21,15 @@ module AttachmentFu
 
         @thumbnail_class = options[:thumbnail_class] || thumbnail_class_for(klass, options)
 
-        @thumbnail_class.attachment_tasks do
-          task :get_image_size, :with => options[:with] unless queued?(:get_image_size)
+        @thumbnail_class.class_eval do
+          include ModelMethods
+          attachment_tasks.clear
+          validates_presence_of options[:parent_foreign_key]
+          attachment_tasks do
+            task :get_image_size, :with => options[:with] unless queued?(:get_image_size)
+          end
         end
+
         klass.attachment_tasks do
           load :resize
           task :get_image_size, :with => options[:with] unless queued?(:get_image_size)
@@ -52,17 +65,7 @@ module AttachmentFu
       # of the attachment with no tasks, and a modified #attachment_path_id 
       # to use #parent_id instead of #id
       def thumbnail_class_for(klass, options)
-        thumb_class = Class.new klass do
-          attachment_tasks.clear
-
-          validates_presence_of options[:parent_foreign_key]
-
-          # The attachment ID used in the full path of a file
-          def attachment_path_id
-            parent_id
-          end
-        end
-        klass.const_set(:Thumbnail, thumb_class)
+        klass.const_set(:Thumbnail, Class.new(klass))
       end
 
       def thumbnail_name_for(attachment, thumbnail = nil)
