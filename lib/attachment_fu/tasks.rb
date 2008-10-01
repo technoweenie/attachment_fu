@@ -113,8 +113,8 @@ module AttachmentFu
     end
     
     # Creates a copy of this Tasks instance.
-    def copy(&block)
-      self.class.new(@klass, @stack.dup, @all.dup, &block)
+    def copy_for(klass, &block)
+      self.class.new(klass, @stack.dup, @all.dup, &block)
     end
     
     # Adds a new task to this Tasks instance.  If the

@@ -1,5 +1,6 @@
 $LOAD_PATH << File.join(File.dirname(__FILE__), '..', 'vendor')
 
+require 'set'
 require 'tempfile'
 require 'pathname'
 
@@ -12,6 +13,41 @@ Tempfile.class_eval do
 end
 
 module AttachmentFu
+  @@image_content_types = Set.new [
+      'image/jpeg',
+      'image/pjpeg',
+      'image/jpg',
+      'image/gif',
+      'image/png',
+      'image/x-png',
+      'image/jpg',
+      'image/x-ms-bmp',
+      'image/bmp',
+      'image/x-bmp',
+      'image/x-bitmap',
+      'image/x-xbitmap',
+      'image/x-win-bitmap',
+      'image/x-windows-bmp',
+      'image/ms-bmp',
+      'application/bmp',
+      'application/x-bmp',
+      'application/x-win-bitmap',
+      'application/preview',
+      'image/jp_',
+      'application/jpg',
+      'application/x-jpg',
+      'image/pipeg',
+      'image/vnd.swiftview-jpeg',
+      'image/x-xbitmap',
+      'application/png',
+      'application/x-png',
+      'image/gi_'
+    ]
+
+  def self.image_type?(content_type)
+    @@image_content_types.include?(content_type)
+  end
+
   # These methods extend the model base class (usually ActiveRecord::Base).
   module SetupMethods
     # Sets up this class's instances to be treated as attachments.  The options define only the core
@@ -63,7 +99,7 @@ module AttachmentFu
         attr_writer :attachment_tasks
 
         def attachment_tasks(&block)
-          @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.copy : AttachmentFu::Tasks.new(self)
+          @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.copy_for(self) : AttachmentFu::Tasks.new(self)
           @attachment_tasks.instance_eval(&block) if block
           @attachment_tasks
         end
@@ -171,7 +207,11 @@ module AttachmentFu
       self.filename ||= basename_for value
       @temp_path      = value
     end
-  
+
+    def image?
+      AttachmentFu.image_type?(content_type)
+    end
+
     # Overwrite this if you want.  This is called when AttachmentFu processing is delayed for a queue.
     def queue_processing
     end
