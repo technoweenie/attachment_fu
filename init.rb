@@ -9,3 +9,9 @@ config.to_prepare do
   AttachmentFu.setup ActiveRecord::Base
   AttachmentFu.reset
 end
+
+class ActionController::TestUploadedFile
+  def respond_to?(*args)
+    super || @tempfile.respond_to?(*args)
+  end
+end
