@@ -52,10 +52,32 @@ module AttachmentFu
     #     # PLUS any fields that your tasks may use.
     #   end
     def is_attachment(options = {}, &block)
-      include AttachmentFu::InstanceMethods
+      setup_attachment_fu_on(self)
       self.queued_attachment = options[:queued]
       self.attachment_path   = options[:path] || attachment_path || File.join("public", table_name)
       self.attachment_tasks(&block)
+    end
+
+    def setup_attachment_fu_on(klass)
+      class << klass
+        attr_writer :attachment_tasks
+
+        def attachment_tasks(&block)
+          @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.copy : AttachmentFu::Tasks.new(self)
+          @attachment_tasks.instance_eval(&block) if block
+          @attachment_tasks
+        end
+      end
+
+      klass.class_eval do
+        include AttachmentFu::InstanceMethods
+        attr_reader :temp_path
+        class_inheritable_accessor :queued_attachment
+        class_inheritable_accessor :attachment_path
+        before_create :set_new_attachment
+        after_save    :save_attachment
+        after_destroy :delete_attachment
+      end
     end
   end
 
@@ -85,24 +107,6 @@ module AttachmentFu
 
   # This mixin is included in attachment classes by AttachmentFu::SetupMethods.is_attachment.
   module InstanceMethods
-    def self.included(base)
-      class << base
-        attr_writer :attachment_tasks
-      
-        def attachment_tasks(&block)
-          @attachment_tasks ||= superclass.respond_to?(:attachment_tasks) ? superclass.attachment_tasks.copy : AttachmentFu::Tasks.new(self)
-          @attachment_tasks.instance_eval(&block) if block
-          @attachment_tasks
-        end
-      end
-      base.send :attr_reader,   :temp_path
-      base.send :class_inheritable_accessor, :queued_attachment
-      base.send :class_inheritable_accessor, :attachment_path
-      base.before_create :set_new_attachment
-      base.after_save    :save_attachment
-      base.after_destroy :delete_attachment
-    end
-  
     # Strips filename of any funny characters.
     def filename=(value)
       strip_filename value if value
@@ -128,10 +132,11 @@ module AttachmentFu
       self.filename     = file_data.original_filename
       if file_data.respond_to?(:rewind) # it's an IO object
         file_data.rewind
-        self.temp_path = Tempfile.new(filename)
-        temp_path.binmode
-        temp_path << file_data.read
-        temp_path.rewind
+        tmp = Tempfile.new(filename)
+        tmp.binmode
+        tmp << file_data.read
+        tmp.rewind
+        self.temp_path = tmp
       else
         self.temp_path = file_data
       end
