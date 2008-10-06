@@ -36,7 +36,7 @@ module AttachmentFu
     end
     
     it "allows tasks to be copied" do
-      @copied = @tasks.copy do
+      @copied = @tasks.copy_for ProcessableAsset do
         task :bar, :a => 4
       end
       @copied.size.should == 4
@@ -44,7 +44,7 @@ module AttachmentFu
     end
     
     it "allows copied tasks to be delete specific tasks" do
-      @copied = @tasks.copy do
+      @copied = @tasks.copy_for ProcessableAsset do
         delete :foo
         task :bar, :a => 4
       end
@@ -53,7 +53,7 @@ module AttachmentFu
     end
     
     it "allows copied tasks to clear inherited tasks" do
-      @copied = @tasks.copy do
+      @copied = @tasks.copy_for ProcessableAsset do
         clear
         task :bar, :a => 4
       end
