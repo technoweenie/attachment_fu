@@ -46,7 +46,7 @@ module Technoweenie # :nodoc:
               self.height = result.extent.size.height if respond_to?(:height)
               
               # Get a new temp_path for the image before saving
-              self.temp_path = Tempfile.new(random_tempfile_filename, Technoweenie::AttachmentFu.tempfile_path).path
+              temp_paths.unshift Tempfile.new(random_tempfile_filename, Technoweenie::AttachmentFu.tempfile_path).path
               result.save self.temp_path, OSX::NSJPEGFileType
               self.size = File.size(self.temp_path)
             end

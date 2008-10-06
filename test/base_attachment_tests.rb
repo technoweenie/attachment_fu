@@ -31,7 +31,7 @@ module BaseAttachmentTests
       assert_valid attachment
       assert attachment.size > 0, "no data was set"
       
-      attachment.temp_data = 'wtf'
+      attachment.set_temp_data 'wtf'
       assert attachment.save_attachment?
       attachment.save!
       
@@ -45,7 +45,7 @@ module BaseAttachmentTests
       assert_valid attachment
       assert attachment.size > 0, "no data was set"
       
-      attachment.temp_data = nil
+      attachment.set_temp_data nil
       assert !attachment.save_attachment?
     end
   end
@@ -55,7 +55,7 @@ module BaseAttachmentTests
     assert_not_created do # no new db_file records
       use_temp_file 'files/rails.png' do |file|
         attachment.filename = 'rails2.png'
-        attachment.temp_path = File.join(fixture_path, file)
+        attachment.temp_paths.unshift File.join(fixture_path, file)
         attachment.save!
       end
     end

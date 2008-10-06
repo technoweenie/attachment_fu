@@ -51,7 +51,7 @@ module Technoweenie # :nodoc:
               commands.resize(size.to_s)
             end
           end
-          self.temp_path = img
+          temp_paths.unshift img
         end
       end
     end

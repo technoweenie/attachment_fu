@@ -167,6 +167,7 @@ module Technoweenie # :nodoc:
         base.after_save :after_process_attachment
         base.after_destroy :destroy_file
         base.after_validation :process_attachment
+        base.attr_accessible 
         if defined?(::ActiveSupport::Callbacks)
           base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
         end
@@ -331,9 +332,9 @@ module Technoweenie # :nodoc:
         end
         if file_data.is_a?(StringIO)
           file_data.rewind
-          self.temp_data = file_data.read
+          set_temp_data file_data.read
         else
-          self.temp_path = file_data
+          self.temp_paths.unshift file_data
         end
       end
 
@@ -352,22 +353,14 @@ module Technoweenie # :nodoc:
           [] : [copy_to_temp_file(full_filename)])
       end
 
-      # Adds a new temp_path to the array.  This should take a string or a Tempfile.  This class makes no
-      # attempt to remove the files, so Tempfiles should be used.  Tempfiles remove themselves when they go out of scope.
-      # You can also use string paths for temporary files, such as those used for uploaded files in a web server.
-      def temp_path=(value)
-        temp_paths.unshift value
-        temp_path
-      end
-
       # Gets the data from the latest temp file.  This will read the file into memory.
       def temp_data
         save_attachment? ? File.read(temp_path) : nil
       end
 
       # Writes the given data to a Tempfile and adds it to the collection of temp files.
-      def temp_data=(data)
-        self.temp_path = write_to_temp_file data unless data.nil?
+      def set_temp_data(data)
+        temp_paths.unshift write_to_temp_file data unless data.nil?
       end
 
       # Copies the given file to a randomly named Tempfile.

@@ -46,7 +46,7 @@ module Technoweenie # :nodoc:
             img.change_geometry(size.to_s) { |cols, rows, image| image.resize!(cols<1 ? 1 : cols, rows<1 ? 1 : rows) }
           end
           img.strip! unless attachment_options[:keep_profile]
-          self.temp_path = write_to_temp_file(img.to_blob)
+          temp_paths.unshift write_to_temp_file(img.to_blob)
         end
       end
     end
