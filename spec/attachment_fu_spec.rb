@@ -12,7 +12,8 @@ module AttachmentFu
   describe "AttachmentFu" do
     describe "pending creation" do
       before do
-        @asset = BasicAsset.new(:content_type => 'application/x-ruby', :temp_path => __FILE__)
+        @asset = BasicAsset.new(:content_type => 'application/x-ruby')
+        @asset.set_temp_path __FILE__
       end
 
       it "has nil #full_path" do
@@ -33,12 +34,16 @@ module AttachmentFu
       after { @asset.destroy }
 
       it "attempts to process the attachment" do
-        @asset = BasicAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
+        @asset = BasicAsset.new(:content_type => 'application/x-ruby')
+        @asset.set_temp_path @file
+        @asset.save!
         @asset.should_not be_queued
       end
       
       it "skips processing the queued attachment" do
-        @asset = QueuedAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
+        @asset = QueuedAsset.new(:content_type => 'application/x-ruby')
+        @asset.set_temp_path @file
+        @asset.save!
         @asset.should be_queued
       end
     end
@@ -48,7 +53,9 @@ module AttachmentFu
         @file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
         FileUtils.cp __FILE__, @file
 
-        @asset = BasicAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
+        @asset = BasicAsset.new(:content_type => 'application/x-ruby')
+        @asset.set_temp_path @file
+        @asset.save!
       end
 
       after :all do
@@ -110,7 +117,9 @@ module AttachmentFu
         @file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
         FileUtils.cp __FILE__, @file
 
-        @asset = BasicAsset.create!(:content_type => 'application/x-ruby', :temp_path => @file)
+        @asset = BasicAsset.new(:content_type => 'application/x-ruby')
+        @asset.set_temp_path @file
+        @asset.save!
         @dir   = File.dirname(@asset.full_path)
       end
       
@@ -220,7 +229,11 @@ module AttachmentFu
 
     describe "setting temp_path" do
       describe "with a String" do
-        before { @asset = BasicAsset.new(:temp_path => __FILE__) }
+        before do
+          @asset = BasicAsset.new
+          @asset.set_temp_path __FILE__
+        end
+
         it "guesses filename" do
           @asset.filename.should == File.basename(__FILE__)
         end
@@ -231,7 +244,11 @@ module AttachmentFu
       end
 
       describe "with a Pathname" do
-        before { @asset = BasicAsset.new(:temp_path => Pathname.new(__FILE__)) }
+        before  do
+          @asset = BasicAsset.new
+          @asset.set_temp_path Pathname.new(__FILE__)
+        end
+
         it "guesses filename" do
           @asset.filename.should == File.basename(__FILE__)
         end
@@ -245,7 +262,8 @@ module AttachmentFu
         before do
           @tmp = Tempfile.new File.basename(__FILE__)
           @tmp.write IO.read(__FILE__)
-          @asset = BasicAsset.new(:temp_path => @tmp)
+          @asset = BasicAsset.new
+          @asset.set_temp_path @tmp
         end
 
         it "guesses filename" do

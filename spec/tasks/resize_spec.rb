@@ -16,7 +16,9 @@ module AttachmentFu
     
     before do
       FileUtils.cp @original, @sample
-      @asset = ResizeTaskAsset.create! :content_type => 'image/jpg', :temp_path => @sample
+      @asset = ResizeTaskAsset.new :content_type => 'image/jpg'
+      @asset.set_temp_path @sample
+      @asset.save!
     end
     
     it "saves attachment" do

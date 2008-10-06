@@ -172,9 +172,9 @@ module AttachmentFu
         tmp.binmode
         tmp << file_data.read
         tmp.rewind
-        self.temp_path = tmp
+        set_temp_path tmp
       else
-        self.temp_path = file_data
+        set_temp_path file_data
       end
     end
 
@@ -202,7 +202,7 @@ module AttachmentFu
 
     # Sets the path to the attachment about to be saved.  Could be a string path to a file, 
     # a Pathname referencing a file, or a Tempfile.
-    def temp_path=(value)
+    def set_temp_path(value)
       self.size       = value.is_a?(String) || !value.respond_to?(:size) ? File.size(value) : value.size
       self.filename ||= basename_for value
       @temp_path      = value

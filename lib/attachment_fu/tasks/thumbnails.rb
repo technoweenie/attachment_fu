@@ -55,7 +55,7 @@ module AttachmentFu
             thumb.thumbnail    = name.to_s
             thumb.filename     = thumb_name
             thumb.content_type = attachment.content_type
-            thumb.temp_path    = attachment.full_path(thumb_name)
+            thumb.set_temp_path  attachment.full_path(thumb_name)
           end
           thumb.save!
         end
