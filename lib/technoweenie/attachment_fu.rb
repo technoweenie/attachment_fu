@@ -167,7 +167,7 @@ module Technoweenie # :nodoc:
         base.after_save :after_process_attachment
         base.after_destroy :destroy_file
         base.after_validation :process_attachment
-        base.attr_accessible 
+        base.attr_accessible :uploaded_data
         if defined?(::ActiveSupport::Callbacks)
           base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
         end
@@ -274,12 +274,12 @@ module Technoweenie # :nodoc:
       def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
         thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
         returning find_or_initialize_thumbnail(file_name_suffix) do |thumb|
-          thumb.attributes = {
+          thumb.temp_paths.unshift temp_file
+          thumb.send(:'attributes=', {
             :content_type             => content_type,
             :filename                 => thumbnail_name_for(file_name_suffix),
-            :temp_path                => temp_file,
             :thumbnail_resize_options => size
-          }
+          }, false)
           callback_with_args :before_thumbnail_saved, thumb
           thumb.save!
         end
