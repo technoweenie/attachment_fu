@@ -311,15 +311,16 @@ module AttachmentFu
       task_progress[:complete] || task_progress[stack]
     end
 
-    # Deletes the attachment from tbhe file system, and attempts
-    # to clean up the empty asset paths.
+    # Deletes the attachment from the file system, and attempts to clean up 
+    # the empty asset paths.
     def delete_attachment
       FileUtils.rm full_path if File.exist?(full_path)
       dir_name = File.dirname(full_path)
       default  = %w(. ..)
       while dir_name != AttachmentFu.root_path
-        if (Dir.entries(dir_name) - default).empty?
-          FileUtils.rm_rf dir_name
+        dir_exists = File.exists?(dir_name)
+        if !dir_exists || (Dir.entries(dir_name) - default).empty?
+          FileUtils.rm_rf(dir_name) if dir_exists
           dir_name.sub! /\/\w+$/, ''
         else
           dir_name = AttachmentFu.root_path
