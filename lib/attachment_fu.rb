@@ -168,11 +168,7 @@ module AttachmentFu
       self.filename     = file_data.original_filename
       if file_data.respond_to?(:rewind) # it's an IO object
         file_data.rewind
-        tmp = Tempfile.new(filename)
-        tmp.binmode
-        tmp << file_data.read
-        tmp.rewind
-        set_temp_path tmp
+        set_temp_data filename, file_data.read
       else
         set_temp_path file_data
       end
@@ -206,6 +202,14 @@ module AttachmentFu
       self.size       = value.is_a?(String) || !value.respond_to?(:size) ? File.size(value) : value.size
       self.filename ||= basename_for value
       @temp_path      = value
+    end
+
+    def set_temp_data(filename, data)
+      tmp = Tempfile.new(filename)
+      tmp.binmode
+      tmp << data
+      tmp.rewind
+      set_temp_path tmp
     end
 
     def image?
