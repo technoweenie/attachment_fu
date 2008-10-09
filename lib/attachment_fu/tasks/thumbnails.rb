@@ -23,7 +23,7 @@ module AttachmentFu
 
         @thumbnail_class.class_eval do
           include ModelMethods
-          attachment_tasks.clear
+          attachment_tasks.delete(:thumbnail)
           validates_presence_of options[:parent_foreign_key]
           attachment_tasks do
             task :get_image_size, :with => options[:with] unless queued?(:get_image_size)

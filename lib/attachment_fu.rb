@@ -135,7 +135,7 @@ module AttachmentFu
   # Sets default tasks
   def self.reset
     Tasks
-    [:resize, :thumbnails].each do |task|
+    [:resize, :thumbnails, :s3].each do |task|
       create_task task, "attachment_fu/tasks/#{task}"
     end
     create_task :get_image_size, "attachment_fu/tasks/resize"

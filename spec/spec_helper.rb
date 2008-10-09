@@ -1,5 +1,6 @@
 require 'rubygems'
 
+RAILS_ENV = 'test'
 dir = File.dirname(__FILE__)
 rails_app      = "#{dir}/../../../../config/environment.rb"
 vendor_rspec   = "#{dir}/../../rspec/lib"

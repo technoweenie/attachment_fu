@@ -1,0 +1,18 @@
+attachment_fu
+=============
+
+S3 Tests
+========
+
+By default, the s3 tests get skipped unless your config file exists.  Create
+a spec/s3.yml file resembling this:
+
+# Running a local s3 clone called Parkplace
+# http://redhanded.hobix.com/inspect/parkPlaceTheS3CloneYouVeBeenAlwaysAlmostWantingToSaveFifteenCentsWith.html
+# Works with amazon if you want to be charged for running specs.  Yikes!
+test:
+  bucket_name: attachment_fu_s3_test
+  access_key_id: B07D777734E4A61DA96C
+  secret_access_key: FEhsQiQ9LDj1Vs61aBHJs6ObXhAsfmHDXqoP136G
+  server: localhost
+  port: 3002
