@@ -122,7 +122,9 @@ module AttachmentFu
     
     # Creates a copy of this Tasks instance.
     def copy_for(klass, &block)
-      self.class.new(klass, @stack.dup, @all.dup, &block)
+      copy = self.class.new(klass, @stack.dup, @all.dup, &block)
+      copy.set_pixel_adapter(@default_pixel_adapter)
+      copy
     end
     
     # Adds a new task to this Tasks instance.  If the
