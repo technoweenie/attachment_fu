@@ -4,6 +4,8 @@ require 'mojo_magick/mojo_magick'
 module AttachmentFu # :nodoc:
   module Pixels
     module MojoMagick
+      extend self
+
       def with_image(attachment, &block)
         block.call attachment.full_path
       end
