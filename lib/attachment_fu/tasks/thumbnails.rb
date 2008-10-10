@@ -15,6 +15,7 @@ module AttachmentFu
       #   :thumbnails_association => :thumbnails
       #
       def initialize(klass, options)
+        options[:with]                   ||= klass.attachment_tasks.default_pixel_adapter
         options[:parent_association]     ||= :parent
         options[:parent_foreign_key]     ||= options[:parent_association].to_s.foreign_key
         options[:thumbnails_association] ||= :thumbnails
