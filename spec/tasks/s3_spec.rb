@@ -42,12 +42,6 @@ module AttachmentFu
     def s3_loaded?
       S3TaskAsset.attachment_tasks[:s3].config
     end
-
-    def uploaded(asset)
-      asset.id = 1000
-      asset.stub!(:new_record?).and_return(false)
-      asset
-    end
     
     after :all do
       S3TaskAsset.drop_spec_env if s3_loaded?
