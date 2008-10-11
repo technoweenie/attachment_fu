@@ -38,6 +38,7 @@ module AttachmentFu
         t.string  :filename
         t.string  :content_type
         t.string  :thumbnail
+        t.string  :type
       end
     end
 
