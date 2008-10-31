@@ -76,7 +76,7 @@ class Geometry
         new_height = orig_height if @flag && orig_height.send(@flag, new_height)
     end
 
-    [new_width, new_height].collect! { |v| v.round }
+    [new_width, new_height].collect! { |v| [v.round, 1].max }
   end
 end
 
