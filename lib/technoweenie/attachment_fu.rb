@@ -112,8 +112,8 @@ module Technoweenie # :nodoc:
           processors = Technoweenie::AttachmentFu.default_processors.dup
           begin
             if processors.any?
-              attachment_options[:processor] = "#{processors.first}Processor"
-              processor_mod = Technoweenie::AttachmentFu::Processors.const_get(attachment_options[:processor])
+              attachment_options[:processor] = processors.first
+              processor_mod = Technoweenie::AttachmentFu::Processors.const_get("#{attachment_options[:processor].to_s.classify}Processor")
               include processor_mod unless included_modules.include?(processor_mod)
             end
           rescue Object, Exception
