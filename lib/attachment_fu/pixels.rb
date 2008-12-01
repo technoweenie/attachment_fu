@@ -12,8 +12,19 @@ module AttachmentFu
     # Base class for all Pixel-related tasks
     class Task
       def initialize(klass, options)
-        options[:with] ||= :mojo_magick
-        extend AttachmentFu::Pixels[options[:with]]
+        @pixel_adapter = options[:with] || klass.attachment_tasks.default_pixel_adapter
+      end
+
+      def with_image(adapter, attachment, &block)
+        AttachmentFu::Pixels[adapter || @pixel_adapter].with_image(attachment, &block)
+      end
+
+      def get_image_size(adapter, image)
+        AttachmentFu::Pixels[adapter || @pixel_adapter].get_image_size(image)
+      end
+
+      def resize_image(adapter, image, options = {})
+        AttachmentFu::Pixels[adapter || @pixel_adapter].resize_image(image, options)
       end
     end
 

@@ -19,6 +19,7 @@ module AttachmentFu
       @asset = ThumbnailsTaskAsset.new :content_type => 'image/jpg'
       @asset.set_temp_path @sample
       @asset.save!
+      @asset.reload
     end
 
     it "saves attachment" do
@@ -32,6 +33,10 @@ module AttachmentFu
 
     it "keeps the attachment's original width" do
       @asset.width.should == 80
+    end
+
+    it "sets the thumbnail parent" do
+      @asset.thumbnails.each { |th| th.parent.should == @asset }
     end
 
     it "resizes thumbnails to the resized width" do

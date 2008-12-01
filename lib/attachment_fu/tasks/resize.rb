@@ -2,7 +2,7 @@ module AttachmentFu
   class Tasks
     class Resize < AttachmentFu::Pixels::Task
       def call(attachment, options)
-        data = with_image(attachment) { |img| resize_image img, :size => options[:to], :to => options[:destination] }
+        data = with_image(options[:with], attachment) { |img| resize_image options[:with], img, :size => options[:to], :to => options[:destination] }
         unless options[:skip_size]
           attachment.width  = data.width  if attachment.respond_to?(:width)
           attachment.height = data.height if attachment.respond_to?(:height)
@@ -12,7 +12,7 @@ module AttachmentFu
 
     class ImageSize < AttachmentFu::Pixels::Task
       def call(attachment, options)
-        attachment.width, attachment.height = with_image(attachment) { |img| get_image_size(img) }
+        attachment.width, attachment.height = with_image(options[:with], attachment) { |img| get_image_size(options[:with], img) }
       end
     end
   end

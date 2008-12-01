@@ -18,14 +18,14 @@ describe AttachmentFu::Pixels::MojoMagick do
     end
 
     it "gets accurate dimensions" do
-      @pixels.with_image(@attachment) do |image|
+      @pixels.with_image(nil, @attachment) do |image|
         ::MojoMagick.get_image_size(image).should == {:width => 80, :height => 75}
       end
     end
     
     it "resizes image with geometry string" do
-      @pixels.with_image(@attachment) do |image|
-        data = @pixels.resize_image image, :size => '40x40', :to => File.join(AttachmentFu.root_path, 'resized.jpg')
+      @pixels.with_image(nil, @attachment) do |image|
+        data = @pixels.resize_image nil, image, :size => '40x40', :to => File.join(AttachmentFu.root_path, 'resized.jpg')
         data.width.should  == 40
         data.height.should == 38
         data.size.should satisfy { |s| s > 0 }
@@ -33,8 +33,8 @@ describe AttachmentFu::Pixels::MojoMagick do
     end
     
     it "resizes image with integer" do
-      @pixels.with_image(@attachment) do |image|
-        data = @pixels.resize_image image, :size => 40, :to => File.join(AttachmentFu.root_path, 'resized.jpg')
+      @pixels.with_image(nil, @attachment) do |image|
+        data = @pixels.resize_image nil, image, :size => 40, :to => File.join(AttachmentFu.root_path, 'resized.jpg')
         data.width.should  == 40
         data.height.should == 38
         data.size.should satisfy { |s| s > 0 }
@@ -42,8 +42,8 @@ describe AttachmentFu::Pixels::MojoMagick do
     end
     
     it "resizes image with array" do
-      @pixels.with_image(@attachment) do |image|
-        data = @pixels.resize_image image, :size => [40, 40], :to => File.join(AttachmentFu.root_path, 'resized.jpg')
+      @pixels.with_image(nil, @attachment) do |image|
+        data = @pixels.resize_image nil, image, :size => [40, 40], :to => File.join(AttachmentFu.root_path, 'resized.jpg')
         data.width.should  == 40
         data.height.should == 38
         data.size.should satisfy { |s| s > 0 }

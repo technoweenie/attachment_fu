@@ -3,6 +3,8 @@ require 'red_artisan/core_image/processor'
 module AttachmentFu # :nodoc:
   module Pixels
     module CoreImage
+      extend self
+
       def with_image(attachment, &block)
         block.call OSX::CIImage.from(attachment.full_path)
       end

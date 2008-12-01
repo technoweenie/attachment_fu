@@ -57,7 +57,7 @@ module AttachmentFu
     def self.all
       @all ||= {}
     end
-    
+
     # Gets a task by key.  This loads a task's lib if given a path.  This should replace the same 
     # task with a Class for future accesses.
     def self.[](key)
@@ -69,7 +69,7 @@ module AttachmentFu
         else value
       end
     end
-    
+
     # Reference to the AttachmentFu model.
     attr_reader :klass
     
@@ -79,13 +79,21 @@ module AttachmentFu
     
     # Index of task key => task instance.
     attr_reader :all
-    
+
+    # Default AttachmentFu::Pixels adapter
+    attr_reader :default_pixel_adapter
+
     # Initializes the task for a single AttachmentFu model.  
     def initialize(klass, stack = [], all = {}, &block)
       @klass, @stack, @all = klass, stack, all
+      set_pixel_adapter nil
       instance_eval(&block) if block
     end
-    
+
+    def set_pixel_adapter(value)
+      @default_pixel_adapter = value || :mojo_magick
+    end
+
     # Deletes all instances of the task this Tasks instance.
     def delete(key)
       if task = @all[key]
@@ -114,7 +122,9 @@ module AttachmentFu
     
     # Creates a copy of this Tasks instance.
     def copy_for(klass, &block)
-      self.class.new(klass, @stack.dup, @all.dup, &block)
+      copy = self.class.new(klass, @stack.dup, @all.dup, &block)
+      copy.set_pixel_adapter(@default_pixel_adapter)
+      copy
     end
     
     # Adds a new task to this Tasks instance.  If the

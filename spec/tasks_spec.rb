@@ -7,6 +7,7 @@ module AttachmentFu
         :foo => FlakyTask,
         :bar => lambda { |a, o| a.filename = "bar-#{o[:a]}-#{a.filename}" }
       @tasks = Tasks.new self do
+        set_pixel_adapter :core_image
         task :foo, :a => 1
         task :bar, :a => 2
         task :foo, :a => 3
@@ -42,7 +43,12 @@ module AttachmentFu
       @copied.size.should == 4
       @tasks.size.should  == 3
     end
-    
+
+    it "copies pixel adapter" do
+      @copied = @tasks.copy_for(ProcessableAsset)
+      @copied.default_pixel_adapter.should == @tasks.default_pixel_adapter
+    end
+
     it "allows copied tasks to be delete specific tasks" do
       @copied = @tasks.copy_for ProcessableAsset do
         delete :foo
