@@ -81,7 +81,6 @@ if !File.exist?(config_rb)
 #AttachmentFu::Tasks::S3.connect(
 #  :server            => "localhost", 
 #  :port              => 3002,
-#  :bucket_name       => "attachment_fu_s3_test", 
 #  :access_key_id     => "ACCESS", 
 #  :secret_access_key => "SECRET")
     END_CONFIG
