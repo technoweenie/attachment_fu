@@ -24,7 +24,10 @@ module AttachmentFu
 
         @thumbnail_class.class_eval do
           include ModelMethods
-          attachment_tasks.delete(:thumbnail)
+          attachment_tasks.clear
+          unless reflect_on_association(:parent)
+            belongs_to options[:parent_association], :class_name => "::#{klass.name}", :foreign_key => options[:parent_foreign_key]
+          end
           validates_presence_of options[:parent_foreign_key]
           attachment_tasks do
             task :get_image_size, :with => options[:with] unless queued?(:get_image_size)
@@ -36,10 +39,6 @@ module AttachmentFu
           task :get_image_size, :with => options[:with] unless queued?(:get_image_size)
         end
 
-        unless klass.reflect_on_association(:parent)
-          klass.belongs_to options[:parent_association], :class_name => "::#{klass.name}", :foreign_key => options[:parent_foreign_key]
-        end
-        
         unless klass.reflect_on_association(:thumbnails)
           klass.has_many options[:thumbnails_association], :class_name => "::#{@thumbnail_class.name}", :foreign_key => options[:parent_foreign_key], :dependent => :destroy
         end
