@@ -2,3 +2,4 @@ test/amazon_s3.yml
 test/debug.log
 .DS_Store
 spec/s3.yml
+spec/config.rb
