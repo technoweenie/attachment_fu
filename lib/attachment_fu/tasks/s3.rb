@@ -57,8 +57,6 @@ module AttachmentFu
         self.class.connect(@options) unless self.class.connected?
       end
 
-      # task :s3
-      #
       def call(attachment, options = {})
         options = @options.merge(options)
         attachment.s3.store
@@ -203,4 +201,7 @@ module AttachmentFu
   end
 end
 
+# AttachmentFu::Tasks::S3.connect(:access_key_id => '...', :secret_key => '...', ...)
+# task :s3, :bucket_name => 'snarf', :access => :authenticated_read
+#
 AttachmentFu.create_task :s3, AttachmentFu::Tasks::S3
