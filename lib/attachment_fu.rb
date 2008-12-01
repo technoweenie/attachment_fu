@@ -112,6 +112,7 @@ module AttachmentFu
         class_inheritable_accessor :attachment_path
         before_create :set_new_attachment
         after_save    :save_attachment
+        after_update  :rename_attachment
         after_destroy :delete_attachment
       end
     end
@@ -329,6 +330,18 @@ module AttachmentFu
         else
           dir_name = AttachmentFu.root_path
         end
+      end
+    end
+
+    def renamed_filename
+      (new_record? || !filename_changed? || filename.nil? || filename_was.nil?) ? nil : File.join(File.dirname(full_path), filename_was)
+    end
+
+    def rename_attachment
+      if old_path = renamed_filename
+        FileUtils.rm(full_path) if File.exist?(full_path)
+        FileUtils.mv(old_path, full_path)
+        File.chmod(0644, full_path)
       end
     end
 

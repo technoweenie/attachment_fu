@@ -111,7 +111,34 @@ module AttachmentFu
         @asset.temp_path.should be_nil
       end
     end
-    
+
+    describe "being renamed" do
+      before :all do
+        @file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
+        FileUtils.cp __FILE__, @file
+
+        @asset = BasicAsset.new(:content_type => 'application/x-ruby')
+        @asset.set_temp_path @file
+        @asset.save!
+        @old_path = @asset.full_path
+        @asset.filename = "hedgehog.rb"
+        @asset.save!
+      end
+
+      after :all do
+        @asset.destroy
+      end
+
+      it "removes traces of old filename" do
+        File.exist?(@old_path).should == false
+      end
+
+      it "moves file contents to new filename" do
+        File.exist?(@asset.full_path).should == true
+        IO.read(@asset.full_path).should == IO.read(__FILE__)
+      end
+    end
+
     describe "being deleted" do
       before do
         @file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
