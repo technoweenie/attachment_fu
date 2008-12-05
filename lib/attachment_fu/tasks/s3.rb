@@ -18,7 +18,7 @@ module AttachmentFu
         #   :proxy             => http proxy for accessing S3
         def connect(options)
           o = options.slice(:access_key_id, :secret_access_key, :server, :port, :use_ssl, :persistent, :proxy)
-          AWS::S3::Base.establish_connection!(o)
+          AWS::S3::Base.establish_connection!(o.dup) # establish_connection! modifies the hash
           @connection_options = o
         end
 
@@ -53,6 +53,7 @@ module AttachmentFu
         end
 
         @options = options
+        @options.update(self.class.connection_options) if self.class.connected?
         @options[:access] ||= :authenticated_read
         self.class.connect(@options) unless self.class.connected?
       end
@@ -192,9 +193,17 @@ module AttachmentFu
           !task.nil?
         end
 
+        def options
+          task.options
+        end
+
         def task
           @asset.class.attachment_tasks[:s3]
         rescue ArgumentError
+        end
+
+        def inspect
+          "<#{@asset.class} S3: #{path.inspect}, #{options.inspect}>"
         end
       end
     end
