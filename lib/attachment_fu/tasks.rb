@@ -133,7 +133,12 @@ module AttachmentFu
     def task(key, options = {})
       @stack << [load(key, options), options]
     end
-    
+
+    # Adds a new task to the top of this Tasks instance.
+    def prepend(key, options = {})
+      @stack.unshift([load(key, options), options])
+    end
+
     # Loads a new task to this Tasks instance, but does not put it
     # in the stack to be called during processing.
     def load(key, options = {})

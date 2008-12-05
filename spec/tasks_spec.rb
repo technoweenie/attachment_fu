@@ -5,7 +5,8 @@ module AttachmentFu
     before :all do
       Tasks.all.update \
         :foo => FlakyTask,
-        :bar => lambda { |a, o| a.filename = "bar-#{o[:a]}-#{a.filename}" }
+        :bar => lambda { |a, o| a.filename = "bar-#{o[:a]}-#{a.filename}" },
+        :baz => lambda { |a, o| }
       @tasks = Tasks.new self do
         set_pixel_adapter :core_image
         task :foo, :a => 1
@@ -28,12 +29,14 @@ module AttachmentFu
       t = Tasks.new self do
         load :foo
         task :bar
+        prepend :baz
       end
       
       t[:foo].should be_instance_of(FlakyTask)
       t[:bar].should be_instance_of(Proc)
-      t.size.should == 1
-      t[0].should == [t[:bar], {}]
+      t.size.should == 2
+      t[0].should == [t[:baz], {}]
+      t[1].should == [t[:bar], {}]
     end
     
     it "allows tasks to be copied" do
