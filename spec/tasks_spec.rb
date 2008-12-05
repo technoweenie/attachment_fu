@@ -49,6 +49,19 @@ module AttachmentFu
       @tasks.queued?(:baz).should == false
     end
 
+    it "allows unqueueuing of tasks" do
+      t = Tasks.new self do
+        load :foo
+        task :bar, :a => 1
+        task :bar, :a => 2
+        prepend :baz
+        unqueue :foo, :bar
+      end
+
+      t.size.should == 1
+      t[0].should == [t[:baz], {}]
+    end
+
     it "allows tasks to be copied" do
       @copied = @tasks.copy_for ProcessableAsset do
         task :bar, :a => 4

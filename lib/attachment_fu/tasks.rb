@@ -147,6 +147,16 @@ module AttachmentFu
       @all[key] = t
     end
 
+    def unqueue(*keys)
+      tasks = keys.map do |key_or_index|
+        case key_or_index
+          when Symbol then @all[key_or_index]
+          when Fixnum then @stack[key_or_index]
+        end
+      end
+      @stack.delete_if { |(task, options)| tasks.include?(task) }
+    end
+
     def key?(key_or_index)
       case key_or_index
         when Symbol then @all.key?(key_or_index)
