@@ -156,8 +156,10 @@ module AttachmentFu
 
     def queued?(key_or_index)
       case key_or_index
-        when Symbol then false
         when Fixnum then @stack.key?(key_or_index)
+        when Symbol
+          queued_task = @all[key_or_index]
+          queued_task && @stack.any? { |(task, options)| task == queued_task }
       end
     end
 

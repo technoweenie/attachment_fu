@@ -8,10 +8,11 @@ module AttachmentFu
         :bar => lambda { |a, o| a.filename = "bar-#{o[:a]}-#{a.filename}" },
         :baz => lambda { |a, o| }
       @tasks = Tasks.new self do
+        load :baz
         set_pixel_adapter :core_image
-        task :foo, :a => 1
         task :bar, :a => 2
         task :foo, :a => 3
+        prepend :foo, :a => 1
       end
       @err = Tasks.new self do
         task :foo, :a => 1
@@ -38,7 +39,16 @@ module AttachmentFu
       t[0].should == [t[:baz], {}]
       t[1].should == [t[:bar], {}]
     end
-    
+
+    it "knows queued tasks are queued?" do
+      @tasks.queued?(:bar).should == true
+      @tasks.queued?(:foo).should == true
+    end
+
+    it "knows loaded tasks are not queued?" do
+      @tasks.queued?(:baz).should == false
+    end
+
     it "allows tasks to be copied" do
       @copied = @tasks.copy_for ProcessableAsset do
         task :bar, :a => 4
