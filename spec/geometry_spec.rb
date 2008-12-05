@@ -1,5 +1,4 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
-require 'attachment_fu/geometry'
 
 describe AttachmentFu::Geometry do
   it "resizes dimensions" do
