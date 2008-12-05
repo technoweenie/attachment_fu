@@ -133,13 +133,28 @@ module AttachmentFu
     def task(key, options = {})
       @stack << [load(key, options), options]
     end
-    
+
+    # Adds a new task to the top of this Tasks instance.
+    def prepend(key, options = {})
+      @stack.unshift([load(key, options), options])
+    end
+
     # Loads a new task to this Tasks instance, but does not put it
     # in the stack to be called during processing.
     def load(key, options = {})
       t = @all[key] || self.class[key]
       if t.is_a?(Class) then t = t.new(@klass, options) end
       @all[key] = t
+    end
+
+    def unqueue(*keys)
+      tasks = keys.map do |key_or_index|
+        case key_or_index
+          when Symbol then @all[key_or_index]
+          when Fixnum then @stack[key_or_index]
+        end
+      end
+      @stack.delete_if { |(task, options)| tasks.include?(task) }
     end
 
     def key?(key_or_index)
@@ -151,8 +166,10 @@ module AttachmentFu
 
     def queued?(key_or_index)
       case key_or_index
-        when Symbol then false
         when Fixnum then @stack.key?(key_or_index)
+        when Symbol
+          queued_task = @all[key_or_index]
+          queued_task && @stack.any? { |(task, options)| task == queued_task }
       end
     end
 
