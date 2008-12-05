@@ -82,6 +82,7 @@ module AttachmentFu
 
       def delete(attachment, options = @options)
         S3Object.delete attachment.s3.path, options[:bucket_name]
+      rescue AWS::S3::NoSuchKey
       end
 
       def object_for(attachment, thumbnail = nil, options = @options)
