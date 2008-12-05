@@ -18,7 +18,7 @@ module AttachmentFu
       #
       #      class Asset
       #        is_attachment do
-      #          task :thumbnails, :sizes => {:thumb => '100x100>'}, :thumbnail_class => nil
+      #          task :thumbnails, :sizes => {:thumb => '100x100>'}
       #        end
       #      end
       #
