@@ -14,7 +14,11 @@ module AttachmentFu
       # 1) Let attachment_fu define YourModel::Thumbnail, a straight subclass of your attachment model
       # 2) give the thumbnails task a class name to use:
       #      task :thumbnails, :sizes => {:thumb => '100x100>'}, :thumbnail_class => Foo::Thumbnail
-      # 3) pass nil, and subclass the current attachment class
+      # 3) give the thumbnails task a class name string to use:
+      #      task :thumbnails, :sizes => {:thumb => '100x100>'}, :thumbnail_class => "Foo::Thumbnail"
+      #    Attachment_fu will prepare the thumbnail class just before processing the first attachment, so the
+      #    Foo::Thumbnail class does not need to exist yet.
+      # 4) pass nil, and subclass the current attachment class
       #
       #      class Asset
       #        is_attachment do
