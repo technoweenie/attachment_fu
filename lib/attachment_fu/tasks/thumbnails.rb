@@ -47,11 +47,15 @@ module AttachmentFu
           end
 
           def self.inherited(klass)
-            if th_task = attachment_tasks[:thumbnails]
-              th_task.thumbnail_class ||= klass
-            end
+            th_task = attachment_tasks[:thumbnails]
+            th_task.thumbnail_class ||= klass
             super
+            th_task.assign_thumbnail_class_to_attachment_class if !th_task.thumbnail_class_processed?
           end
+        end
+
+        if @thumbnail_class = @options[:thumbnail_class]
+          assign_thumbnail_class_to_attachment_class
         end
       end
 
@@ -76,7 +80,7 @@ module AttachmentFu
 
       # Set the given class as the thumbnail class for the current attachment class
       def assign_thumbnail_class_to_attachment_class
-        @thumbnail_class = @options[:thumbnail_class] || @klass.const_set(:Thumbnail, Class.new(@klass))
+        @thumbnail_class ||= @klass.const_set(:Thumbnail, Class.new(@klass))
         if @thumbnail_class.is_a?(String) ; @thumbnail_class = @thumbnail_class.constantize; end
         th_task = self
 
@@ -109,6 +113,10 @@ module AttachmentFu
           end
         end
         @thumbnail_class_processed = true
+      end
+
+      def thumbnail_class_processed?
+        @thumbnail_class_processed
       end
 
       def thumbnail_name_for(attachment, thumbnail = nil)
