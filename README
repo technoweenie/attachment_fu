@@ -1,0 +1,13 @@
+attachment_fu
+=============
+
+Specs
+=====
+
+When running specs for the first time, a spec/config.rb file will be created for you. This file is ignored by git
+and can be used to set any personal settings (such as S3 connection information).
+
+S3 Specs
+========
+
+Modify the AttachmentFu::Tasks::S3.connect call in your spec/config.rb file.

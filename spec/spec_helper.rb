@@ -1,5 +1,6 @@
 require 'rubygems'
 
+RAILS_ENV = 'test'
 dir = File.dirname(__FILE__)
 rails_app      = "#{dir}/../../../../config/environment.rb"
 vendor_rspec   = "#{dir}/../../rspec/lib"
@@ -67,5 +68,26 @@ module AttachmentFu
 end
 
 AttachmentFu.root_path = File.expand_path(File.join(File.dirname(__FILE__), 'assets'))
+
+config_rb = File.join(File.dirname(__FILE__), 'config.rb')
+if !File.exist?(config_rb)
+  open config_rb, 'w' do |f|
+    f.write <<-END_CONFIG
+# Replace this with your custom settings.
+# This file is ignored in .gitignore
+
+# I'd recommend using ParkPlace for local S3 testing.
+# http://code.whytheluckystiff.net/parkplace
+#
+#AttachmentFu::Tasks::S3.connect(
+#  :server            => "localhost", 
+#  :port              => 3002,
+#  :access_key_id     => "ACCESS", 
+#  :secret_access_key => "SECRET")
+    END_CONFIG
+  end
+end
+
+require config_rb
 
 Debugger.start

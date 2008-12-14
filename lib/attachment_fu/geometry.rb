@@ -56,10 +56,10 @@ module AttachmentFu
 
       case @flag
         when :percent
-          scale_x = @width.zero?  ? 100 : @width
-          scale_y = @height.zero? ? @width : @height
-          new_width    = scale_x.to_f * (orig_width.to_f  / 100.0)
-          new_height   = scale_y.to_f * (orig_height.to_f / 100.0)
+          scale_x    = @width.zero?  ? 100 : @width
+          scale_y    = @height.zero? ? @width : @height
+          new_width  = scale_x.to_f * (orig_width.to_f  / 100.0)
+          new_height = scale_y.to_f * (orig_height.to_f / 100.0)
         when :<, :>, nil
           scale_factor =
             if new_width.zero? || new_height.zero?

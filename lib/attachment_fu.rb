@@ -112,6 +112,7 @@ module AttachmentFu
         class_inheritable_accessor :attachment_path
         before_create :set_new_attachment
         after_save    :save_attachment
+        after_update  :rename_attachment
         after_destroy :delete_attachment
       end
     end
@@ -135,7 +136,7 @@ module AttachmentFu
   # Sets default tasks
   def self.reset
     Tasks
-    [:resize, :thumbnails].each do |task|
+    [:resize, :thumbnails, :s3].each do |task|
       create_task task, "attachment_fu/tasks/#{task}"
     end
     create_task :get_image_size, "attachment_fu/tasks/resize"
@@ -261,6 +262,10 @@ module AttachmentFu
       !self.class.attachment_tasks.any? { |s| process_task?(s) }
     end
 
+    def renamed_filename
+      (new_record? || !filename_changed? || filename.nil? || filename_was.nil?) ? nil : filename_was
+    end
+
   protected
     def thumbnailed_filename(thumbnail)
       if thumbnail
@@ -329,6 +334,16 @@ module AttachmentFu
         else
           dir_name = AttachmentFu.root_path
         end
+      end
+    end
+
+    def rename_attachment
+      if old_name = renamed_filename
+        old_path = File.join(File.dirname(full_path), old_name)
+        return unless File.exist?(old_path)
+        FileUtils.rm(full_path) if File.exist?(full_path)
+        FileUtils.mv(old_path, full_path)
+        File.chmod(0644, full_path)
       end
     end
 
