@@ -72,7 +72,7 @@ module AttachmentFu
             t.write chunk
           end
           t.close
-          t.size.should == @asset.size
+          File.size(t.path).should == @asset.size
         rescue EOFError
           pending "AWS::S3 streaming seems to be busted: #{$!.to_s}"
         end
