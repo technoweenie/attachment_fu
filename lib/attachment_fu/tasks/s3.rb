@@ -58,38 +58,50 @@ module AttachmentFu
         self.class.connect(@options) unless self.class.connected?
       end
 
-      def call(attachment, options = {})
-        options = @options.merge(options)
+      def call(attachment, options = nil)
+        options = options ? @options.merge(options) : @options
         attachment.s3.store
       end
 
-      def exist?(attachment, thumbnail = nil, options = @options)
+      def exist?(attachment, thumbnail = nil, options = nil)
+        options = options ? @options.merge(options) : @options
         S3Object.exists?(attachment.s3.path(thumbnail), options[:bucket_name])
       end
 
-      def store(attachment, options = @options)
+      def store(attachment, options = nil)
+        options = options ? @options.merge(options) : @options
+        access  = if options[:access].respond_to?(:call)
+          options[:access]#.call(attachment)
+        else
+          options[:access]
+        end
+
         S3Object.store \
           attachment.s3.path,
           File.open(attachment.full_path),
           options[:bucket_name],
           :content_type => attachment.content_type,
-          :access => options[:access]
+          :access => access
       end
 
-      def rename(attachment, old_path, options = @options)
+      def rename(attachment, old_path, options = nil)
+        options = options ? @options.merge(options) : @options
         S3Object.rename old_path, attachment.s3.path, options[:bucket_name]
       end
 
-      def delete(attachment, options = @options)
+      def delete(attachment, options = nil)
+        options = options ? @options.merge(options) : @options
         S3Object.delete attachment.s3.path, options[:bucket_name]
       rescue AWS::S3::NoSuchKey
       end
 
-      def object_for(attachment, thumbnail = nil, options = @options)
+      def object_for(attachment, thumbnail = nil, options = nil)
+        options = options ? @options.merge(options) : @options
         S3Object.find(attachment.s3.path(thumbnail), options[:bucket_name])
       end
 
-      def stream_for(attachment, thumbnail = nil, options = @options, &block)
+      def stream_for(attachment, thumbnail = nil, options = nil, &block)
+        options = options ? @options.merge(options) : @options
         S3Object.stream(attachment.s3.path(thumbnail), options[:bucket_name], &block)
       end
 
@@ -107,19 +119,23 @@ module AttachmentFu
         end
       end
 
-      def protocol(options = @options)
+      def protocol(options = nil)
+        options = options ? @options.merge(options) : @options
         @protocol ||= options[:use_ssl] ? 'https://' : 'http://'
       end
 
-      def hostname(options = @options)
+      def hostname(options = nil)
+        options = options ? @options.merge(options) : @options
         @hostname ||= options[:server] || AWS::S3::DEFAULT_HOST
       end
 
-      def port_string(options = @options)
+      def port_string(options = nil)
+        options = options ? @options.merge(options) : @options
         @port_string ||= (options[:port].nil? || options[:port] == (options[:use_ssl] ? 443 : 80)) ? '' : ":#{options[:port]}"
       end
 
-      def bucket_name(options = @options)
+      def bucket_name(options = nil)
+        options = options ? @options.merge(options) : @options
         options[:bucket_name]
       end
 
@@ -169,8 +185,8 @@ module AttachmentFu
           task.stream_for(@asset, thumbnail, &block)
         end
 
-        def store
-          task.store(@asset)
+        def store(options = nil)
+          task.store(@asset, options)
           @asset.send(:delete_attachment)
         end
 
@@ -180,8 +196,8 @@ module AttachmentFu
           @object.clear if @object
         end
 
-        def delete
-          task.delete(@asset)
+        def delete(options = nil)
+          task.delete(@asset, options)
           @object.clear if @object
         end
 
