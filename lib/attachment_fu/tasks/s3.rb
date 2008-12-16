@@ -54,7 +54,6 @@ module AttachmentFu
 
         @options = options
         @options.update(self.class.connection_options) if self.class.connected?
-        @options[:access] ||= :authenticated_read
         self.class.connect(@options) unless self.class.connected?
       end
 
@@ -71,7 +70,7 @@ module AttachmentFu
       def store(attachment, options = nil)
         options = options ? @options.merge(options) : @options
         access  = if options[:access].respond_to?(:call)
-          options[:access]#.call(attachment)
+          options[:access].call(attachment)
         else
           options[:access]
         end
@@ -81,7 +80,7 @@ module AttachmentFu
           File.open(attachment.full_path),
           options[:bucket_name],
           :content_type => attachment.content_type,
-          :access => access
+          :access       => access || :authenticated_read
       end
 
       def rename(attachment, old_path, options = nil)
@@ -98,6 +97,11 @@ module AttachmentFu
       def object_for(attachment, thumbnail = nil, options = nil)
         options = options ? @options.merge(options) : @options
         S3Object.find(attachment.s3.path(thumbnail), options[:bucket_name])
+      end
+
+      def acl_for(attachment, thumbnail = nil, options = nil)
+        options = options ? @options.merge(options) : @options
+        S3Object.acl(attachment.s3.path(thumbnail), options[:bucket_name])
       end
 
       def stream_for(attachment, thumbnail = nil, options = nil, &block)
@@ -157,7 +161,7 @@ module AttachmentFu
           task.url_for(@asset, thumbnail, options)
         end
 
-        # Retrieve the S3 metadata for the stored object.
+        # Retrieve the S3 object for the attachment path.
         #
         #   @attachment = Attachment.find 1
         #   open(@attachment.filename, 'wb') do |f|
