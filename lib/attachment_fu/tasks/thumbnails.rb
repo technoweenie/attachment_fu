@@ -1,10 +1,4 @@
 module AttachmentFu
-  module SetupMethods
-    def is_thumbnail_for(class_name)
-      require_dependency class_name.underscore
-    end
-  end
-
   class Tasks
     class Thumbnails
       attr_reader :options, :klass, :thumbnail_class
