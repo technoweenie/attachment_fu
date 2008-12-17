@@ -1,8 +1,13 @@
 module AttachmentFu
+  module SetupMethods
+    def is_thumbnail_for(class_name)
+      require_dependency class_name.underscore
+    end
+  end
+
   class Tasks
     class Thumbnails
-      attr_reader   :options, :klass
-      attr_accessor :thumbnail_class
+      attr_reader :options, :klass, :thumbnail_class
 
       # Some valid options:
       #
@@ -45,25 +50,14 @@ module AttachmentFu
             unqueue :get_image_size
             prepend :get_image_size, :with => options[:with]
           end
-
-          def self.inherited(klass)
-            th_task = attachment_tasks[:thumbnails]
-            th_task.thumbnail_class ||= klass
-            super
-            th_task.assign_thumbnail_class_to_attachment_class if !th_task.thumbnail_class_processed?
-          end
         end
 
-        if @thumbnail_class = @options[:thumbnail_class]
-          assign_thumbnail_class_to_attachment_class
-        end
+        assign_thumbnail_class_to_attachment_class
       end
 
       # task :thumbnails, :sizes => {:thumb => '50x50', :tiny => [10, 10]}
       #
       def call(attachment, options)
-        assign_thumbnail_class_to_attachment_class unless @thumbnail_class_processed
-
         options[:sizes].each do |name, size|
           thumb_name = thumbnail_name_for(attachment, name)
           attachment.process :resize, :with => options[:with], :to => size, :destination => attachment.full_path(thumb_name), :skip_save => true, :skip_size => true
@@ -80,7 +74,7 @@ module AttachmentFu
 
       # Set the given class as the thumbnail class for the current attachment class
       def assign_thumbnail_class_to_attachment_class
-        @thumbnail_class ||= @klass.const_set(:Thumbnail, Class.new(@klass))
+        @thumbnail_class = @options[:thumbnail_class] || @klass.const_set(:Thumbnail, Class.new(@klass))
         if @thumbnail_class.is_a?(String) ; @thumbnail_class = @thumbnail_class.constantize; end
         th_task = self
 
@@ -112,7 +106,13 @@ module AttachmentFu
             prepend :get_image_size, :with => th_task.options[:with]
           end
         end
+
         @thumbnail_class_processed = true
+      end
+
+      def thumbnail_class=(value)
+        @thumbnail_class_processed = false
+        @thumbnail_class = value
       end
 
       def thumbnail_class_processed?
