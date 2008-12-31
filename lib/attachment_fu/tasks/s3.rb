@@ -23,7 +23,7 @@ module AttachmentFu
         end
 
         def connected?
-          !@connection_options.nil?
+          !@connection_options.blank?
         end
       end
 
@@ -65,6 +65,9 @@ module AttachmentFu
       def exist?(attachment, thumbnail = nil, options = nil)
         options = options ? @options.merge(options) : @options
         S3Object.exists?(attachment.s3.path(thumbnail), options[:bucket_name])
+      rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, Errno::ECONNREFUSED
+        self.class.connection_options.clear
+        false
       end
 
       def store(attachment, options = nil)
@@ -81,32 +84,50 @@ module AttachmentFu
           options[:bucket_name],
           :content_type => attachment.content_type,
           :access       => access || :authenticated_read
+      rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, Errno::ECONNREFUSED
+        self.class.connection_options.clear
+        nil
       end
 
       def rename(attachment, old_path, options = nil)
         options = options ? @options.merge(options) : @options
         S3Object.rename old_path, attachment.s3.path, options[:bucket_name]
+      rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, Errno::ECONNREFUSED
+        self.class.connection_options.clear
+        nil
       end
 
       def delete(attachment, options = nil)
         options = options ? @options.merge(options) : @options
         S3Object.delete attachment.s3.path, options[:bucket_name]
       rescue AWS::S3::NoSuchKey
+      rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, Errno::ECONNREFUSED
+        self.class.connection_options.clear
+        nil
       end
 
       def object_for(attachment, thumbnail = nil, options = nil)
         options = options ? @options.merge(options) : @options
         S3Object.find(attachment.s3.path(thumbnail), options[:bucket_name])
+      rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, Errno::ECONNREFUSED
+        self.class.connection_options.clear
+        nil
       end
 
       def acl_for(attachment, thumbnail = nil, options = nil)
         options = options ? @options.merge(options) : @options
         S3Object.acl(attachment.s3.path(thumbnail), options[:bucket_name])
+      rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, Errno::ECONNREFUSED
+        self.class.connection_options.clear
+        nil
       end
 
       def stream_for(attachment, thumbnail = nil, options = nil, &block)
         options = options ? @options.merge(options) : @options
         S3Object.stream(attachment.s3.path(thumbnail), options[:bucket_name], &block)
+      rescue Errno::EPIPE, Timeout::Error, Errno::EINVAL, EOFError, Errno::ECONNREFUSED
+        self.class.connection_options.clear
+        nil
       end
 
       # For authenticated URLs, pass one of these options:
