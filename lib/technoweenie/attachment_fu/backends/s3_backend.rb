@@ -81,6 +81,14 @@ module Technoweenie # :nodoc:
       #
       # Which would result in URLs like <tt>http(s)://:server/:bucket_name/my/custom/path/:id/:filename.</tt>
       #
+      # === S3 Header Options
+      # 
+      # You can pass options to pass along to S3 via :s3_options as follows
+      #
+      #   class Photo < ActiveRecord::Base
+      #     has_attachment :storage => :s3, :s3_options => { :cache_control => "max-age=2592000" }
+      #   end
+      #
       # === Permissions
       #
       # By default, files are stored on S3 with public access permissions. You can customize this using
@@ -276,7 +284,9 @@ module Technoweenie # :nodoc:
               old_full_filename,
               full_filename,
               bucket_name,
+              attachment_options[:s3_options].merge(
               :access => attachment_options[:s3_access]
+              )
             )
 
             @old_filename = nil
@@ -289,8 +299,10 @@ module Technoweenie # :nodoc:
                 full_filename,
                 (temp_path ? File.open(temp_path) : temp_data),
                 bucket_name,
+                attachment_options[:s3_options].merge(
                 :content_type => content_type,
                 :access => attachment_options[:s3_access]
+                )
               )
             end
 

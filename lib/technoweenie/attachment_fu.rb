@@ -46,10 +46,15 @@ module Technoweenie # :nodoc:
         options[:thumbnails]       ||= {}
         options[:thumbnail_class]  ||= self
         options[:s3_access]        ||= :public_read
+        options[:s3_options]       ||= {}
         options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
 
         unless options[:thumbnails].is_a?(Hash)
           raise ArgumentError, ":thumbnails option should be a hash: e.g. :thumbnails => { :foo => '50x50' }"
+        end
+
+        unless options[:s3_options].is_a?(Hash)
+          raise ArgumentError, ":s3_options option should be a hash: e.g. :s3_options => { :cache_control => 'max-age=2592000' }"
         end
 
         extend ClassMethods unless (class << self; included_modules; end).include?(ClassMethods)
