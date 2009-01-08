@@ -290,13 +290,15 @@ module Technoweenie # :nodoc:
       #
       # TODO: Allow it to work with Merb tempfiles too.
       def uploaded_data=(file_data)
+        default_mime_type = 'application/octet-stream'
+        browser_content_type = nil
         if file_data.respond_to?(:content_type)
           return nil if file_data.size == 0
-          self.content_type = file_data.content_type
+          browser_content_type = file_data.content_type
           self.filename     = file_data.original_filename if respond_to?(:filename)
         else
           return nil if file_data.blank? || file_data['size'] == 0
-          self.content_type = file_data['content_type']
+          browser_content_type = file_data['content_type']
           self.filename =  file_data['filename']
           file_data = file_data['tempfile']
         end
@@ -306,6 +308,29 @@ module Technoweenie # :nodoc:
         else
           self.temp_path = file_data
         end
+        browser_content_type = nil if browser_content_type.strip.blank? rescue nil
+        self.content_type = browser_content_type || file_extension_content_type || native_content_type || default_mime_type
+      end
+
+      # uses the os’s “file” utility to determine the file type, yanked and modified slightly from file_column.
+      # see http://blog.vixiom.com/2007/12/28/hacking-attachment_fu-to-work-with-flashflex-uploads-and-crop-square-images/
+      def native_content_type
+        begin
+          #mac osx uses -I instead of -i
+          file_flags = (RUBY_PLATFORM.index('darwin') ? '-bI' : '-bi')
+          file = File.join(temp_path)
+          content_type = `file #{file_flags} "#{file}" 2> /dev/null`.chomp
+          return nil if content_type.blank? || !$?.success?
+          content_type.gsub!(/;.+$/,"")
+        rescue
+          nil
+        end
+      end
+
+      # determine the content_type based on the file extension.
+      def file_extension_content_type
+        types = MIME::Types.type_for(self.filename)
+        types.empty? ? nil : types.first.content_type
       end
 
       # Gets the latest temp path from the collection of temp paths.  While working with an attachment,
