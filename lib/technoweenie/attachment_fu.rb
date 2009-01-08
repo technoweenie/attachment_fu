@@ -308,7 +308,7 @@ module Technoweenie # :nodoc:
         else
           self.temp_path = file_data
         end
-        browser_content_type = nil if browser_content_type.strip.blank? rescue nil
+        browser_content_type = nil if browser_content_type.blank? || browser_content_type.strip.blank? || browser_content_type.strip == default_mime_type
         self.content_type = browser_content_type || file_extension_content_type || native_content_type || default_mime_type
       end
 
