@@ -290,15 +290,11 @@ module Technoweenie # :nodoc:
       #
       # TODO: Allow it to work with Merb tempfiles too.
       def uploaded_data=(file_data)
-        default_mime_type = 'application/octet-stream'
-        browser_content_type = nil
         if file_data.respond_to?(:content_type)
           return nil if file_data.size == 0
-          browser_content_type = file_data.content_type
           self.filename     = file_data.original_filename if respond_to?(:filename)
         else
           return nil if file_data.blank? || file_data['size'] == 0
-          browser_content_type = file_data['content_type']
           self.filename =  file_data['filename']
           file_data = file_data['tempfile']
         end
@@ -308,7 +304,10 @@ module Technoweenie # :nodoc:
         else
           self.temp_path = file_data
         end
-        browser_content_type = nil if browser_content_type.blank? || browser_content_type.strip.blank? || browser_content_type.strip == default_mime_type
+
+        default_mime_type = 'application/octet-stream'
+        browser_content_type = (file_data.respond_to?(:content_type) ? file_data.content_type : file_data['content_type']).to_s.strip
+        browser_content_type = nil if browser_content_type.blank? || browser_content_type == default_mime_type
         self.content_type = browser_content_type || file_extension_content_type || native_content_type || default_mime_type
       end
 
