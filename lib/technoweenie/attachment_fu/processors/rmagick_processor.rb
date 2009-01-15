@@ -48,7 +48,7 @@ module Technoweenie # :nodoc:
           elsif size.is_a?(String) && size =~ /^b.*$/ # Image cropping w/border - example geometry string: b75x75
             dimensions = size[1..size.size].split("x")
             img.change_geometry(dimensions.join("x")) do |cols, rows, image| 
-	      image.resize!(cols<1 ? 1 : cols, rows<1 ? 1 : rows ) 
+              image.resize!(cols<1 ? 1 : cols, rows<1 ? 1 : rows ) 
             end
             img.background_color = "black"
             x_offset = (img.columns - dimensions[0].to_i) / 2
