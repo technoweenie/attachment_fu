@@ -18,17 +18,17 @@ module Technoweenie # :nodoc:
       # You can sign up for S3 and get access keys by visiting http://aws.amazon.com/s3.
       #
       # Example configuration (RAILS_ROOT/config/amazon_s3.yml)
-      # 
+      #
       #   development:
       #     bucket_name: appname_development
       #     access_key_id: <your key>
       #     secret_access_key: <your key>
-      #   
+      #
       #   test:
       #     bucket_name: appname_test
       #     access_key_id: <your key>
       #     secret_access_key: <your key>
-      #   
+      #
       #   production:
       #     bucket_name: appname
       #     access_key_id: <your key>
@@ -81,10 +81,43 @@ module Technoweenie # :nodoc:
       #
       # Which would result in URLs like <tt>http(s)://:server/:bucket_name/my/custom/path/:id/:filename.</tt>
       #
+      # === Using different bucket names on different models
+      #
+      # By default the bucket name that the file will be stored to is the one specified by the
+      # <tt>:bucket_name</tt> key in the amazon_s3.yml file.  You can use the <tt>:bucket_key</tt> option
+      # to overide this behavior on a per model basis.  For instance if you want a bucket that will hold
+      # only Photos you can do this:
+      #
+      #   class Photo < ActiveRecord::Base
+      #     has_attachment :storage => :s3, :bucket_key => :photo_bucket_name
+      #   end
+      #
+      # And then your amazon_s3.yml file needs to look like this.
+      #
+      #   development:
+      #     bucket_name: appname_development
+      #     access_key_id: <your key>
+      #     secret_access_key: <your key>
+      #
+      #   test:
+      #     bucket_name: appname_test
+      #     access_key_id: <your key>
+      #     secret_access_key: <your key>
+      #
+      #   production:
+      #     bucket_name: appname
+      #     photo_bucket_name: appname_photos
+      #     access_key_id: <your key>
+      #     secret_access_key: <your key>
+      #
+      #  If the bucket_key you specify is not there in a certain environment then attachment_fu will
+      #  default to the <tt>bucket_name</tt> key.  This way you only have to create special buckets
+      #  this can be helpful if you only need special buckets in certain environments.
+      #
       # === Permissions
       #
       # By default, files are stored on S3 with public access permissions. You can customize this using
-      # the <tt>:s3_access</tt> option to <tt>has_attachment</tt>. Available values are 
+      # the <tt>:s3_access</tt> option to <tt>has_attachment</tt>. Available values are
       # <tt>:private</tt>, <tt>:public_read_write</tt>, and <tt>:authenticated_read</tt>.
       #
       # === Other options
@@ -123,7 +156,7 @@ module Technoweenie # :nodoc:
 
         def self.included(base) #:nodoc:
           mattr_reader :bucket_name, :s3_config
-          
+
           begin
             require 'aws/s3'
             include AWS::S3
@@ -138,7 +171,13 @@ module Technoweenie # :nodoc:
           #  raise ConfigFileNotFoundError.new('File %s not found' % @@s3_config_path)
           end
 
-          @@bucket_name = s3_config[:bucket_name]
+          bucket_key = base.attachment_options[:bucket_key]
+
+          if bucket_key and s3_config[bucket_key.to_sym]
+            @@bucket_name =  s3_config[bucket_key.to_sym]
+          else
+            @@bucket_name = s3_config[:bucket_name]
+          end
 
           Base.establish_connection!(s3_config.slice(:access_key_id, :secret_access_key, :server, :port, :use_ssl, :persistent, :proxy))
 
@@ -150,11 +189,11 @@ module Technoweenie # :nodoc:
         def self.protocol
           @protocol ||= s3_config[:use_ssl] ? 'https://' : 'http://'
         end
-        
+
         def self.hostname
           @hostname ||= s3_config[:server] || AWS::S3::DEFAULT_HOST
         end
-        
+
         def self.port_string
           @port_string ||= (s3_config[:port].nil? || s3_config[:port] == (s3_config[:use_ssl] ? 443 : 80)) ? '' : ":#{s3_config[:port]}"
         end
@@ -163,11 +202,11 @@ module Technoweenie # :nodoc:
           def s3_protocol
             Technoweenie::AttachmentFu::Backends::S3Backend.protocol
           end
-          
+
           def s3_hostname
             Technoweenie::AttachmentFu::Backends::S3Backend.hostname
           end
-          
+
           def s3_port_string
             Technoweenie::AttachmentFu::Backends::S3Backend.port_string
           end
@@ -196,7 +235,7 @@ module Technoweenie # :nodoc:
           File.join(base_path, thumbnail_name_for(thumbnail))
         end
 
-        # All public objects are accessible via a GET request to the S3 servers. You can generate a 
+        # All public objects are accessible via a GET request to the S3 servers. You can generate a
         # url for an object using the s3_url method.
         #
         #   @photo.s3_url
@@ -211,7 +250,7 @@ module Technoweenie # :nodoc:
         end
         alias :public_filename :s3_url
 
-        # All private objects are accessible via an authenticated GET request to the S3 servers. You can generate an 
+        # All private objects are accessible via an authenticated GET request to the S3 servers. You can generate an
         # authenticated url for an object like this:
         #
         #   @photo.authenticated_s3_url
@@ -223,7 +262,7 @@ module Technoweenie # :nodoc:
         #
         #   # Absolute expiration date (October 13th, 2025)
         #   @photo.authenticated_s3_url(:expires => Time.mktime(2025,10,13).to_i)
-        #   
+        #
         #   # Expiration in five hours from now
         #   @photo.authenticated_s3_url(:expires_in => 5.hours)
         #
@@ -252,11 +291,11 @@ module Technoweenie # :nodoc:
         def s3_protocol
           Technoweenie::AttachmentFu::Backends::S3Backend.protocol
         end
-        
+
         def s3_hostname
           Technoweenie::AttachmentFu::Backends::S3Backend.hostname
         end
-          
+
         def s3_port_string
           Technoweenie::AttachmentFu::Backends::S3Backend.port_string
         end
@@ -269,7 +308,7 @@ module Technoweenie # :nodoc:
 
           def rename_file
             return unless @old_filename && @old_filename != filename
-            
+
             old_full_filename = File.join(base_path, @old_filename)
 
             S3Object.rename(
