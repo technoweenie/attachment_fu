@@ -276,6 +276,7 @@ module Technoweenie # :nodoc:
         #   @photo.authenticated_s3_url('thumbnail', :expires_in => 5.hours, :use_ssl => true)
         def authenticated_s3_url(*args)
           options   = args.extract_options!
+          options[:expires_in] = options[:expires_in].to_i if options[:expires_in]
           thumbnail = args.shift
           S3Object.url_for(full_filename(thumbnail), bucket_name, options)
         end
