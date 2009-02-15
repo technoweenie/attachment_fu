@@ -174,10 +174,11 @@ module Technoweenie # :nodoc:
           bucket_key = base.attachment_options[:bucket_key]
 
           if bucket_key and s3_config[bucket_key.to_sym]
-            @@bucket_name =  s3_config[bucket_key.to_sym]
+            eval_string = "def bucket_name()\n  \"#{s3_config[bucket_key.to_sym]}\"\nend"
           else
-            @@bucket_name = s3_config[:bucket_name]
+            eval_string = "def bucket_name()\n  \"#{s3_config[:bucket_name]}\"\nend"
           end
+          base.class_eval(eval_string, __FILE__, __LINE__)
 
           Base.establish_connection!(s3_config.slice(:access_key_id, :secret_access_key, :server, :port, :use_ssl, :persistent, :proxy))
 
