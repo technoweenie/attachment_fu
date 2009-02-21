@@ -325,7 +325,7 @@ module Technoweenie # :nodoc:
           file = File.join(temp_path)
           content_type = `file #{file_flags} "#{file}" 2> /dev/null`.chomp
           return nil if content_type.blank? || !$?.success?
-          content_type.gsub!(/;.+$/,"")
+          content_type.gsub(/;.+$/,"")
         rescue
           nil
         end
