@@ -1,4 +1,4 @@
-require 'ftools'
+require 'fileutils'
 require 'digest/sha2'
 
 module Technoweenie # :nodoc:
