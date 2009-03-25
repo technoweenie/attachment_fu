@@ -205,11 +205,22 @@ begin
     has_attachment :storage => :s3, :processor => :rmagick, :s3_config_path => File.join(File.dirname(__FILE__), '../amazon_s3.yml')
     validates_as_attachment
   end
+  
+  class CloudFilesAttachment < ActiveRecord::Base
+    has_attachment :storage => :cloud_files, :processor => :rmagick, :cloudfiles_config_path => File.join(File.dirname(__FILE__), '../rackspace_cloudfiles.yml')
+    validates_as_attachment
+  end
 
   class S3WithPathPrefixAttachment < S3Attachment
     has_attachment :storage => :s3, :path_prefix => 'some/custom/path/prefix', :processor => :rmagick
     validates_as_attachment
   end
+  
+  class CloudFilesWithPathPrefixAttachment < CloudFilesAttachment
+    has_attachment :storage => :cloud_files, :path_prefix => 'some/custom/path/prefix', :processor => :rmagick
+    validates_as_attachment
+  end
+  
 rescue
   puts "S3 error: #{$!}"
 end
