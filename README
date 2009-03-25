@@ -9,12 +9,13 @@ attachment_fu functionality
 
 attachment_fu facilitates file uploads in Ruby on Rails.  There are a few storage options for the actual file data, but the plugin always at a minimum stores metadata for each file in the database.
 
-There are three storage options for files uploaded through attachment_fu:
+There are four storage options for files uploaded through attachment_fu:
   File system
   Database file
   Amazon S3
+  Rackspace (Mosso) Cloud Files
 
-Each method of storage many options associated with it that will be covered in the following section.  Something to note, however, is that the Amazon S3 storage requires you to modify config/amazon_s3.yml and the Database file storage requires an extra table.
+Each method of storage many options associated with it that will be covered in the following section.  Something to note, however, is that the Amazon S3 storage requires you to modify config/amazon_s3.yml, the Rackspace Cloud Files storage requires you to modify config/rackspace_cloudfiles.yml, and the Database file storage requires an extra table.
 
 
 attachment_fu models
@@ -42,11 +43,11 @@ has_attachment(options = {})
     :thumbnail_class  # Set which model class to use for thumbnails.
                       # This current attachment class is used by default.
     :path_prefix      # Path to store the uploaded files in.
-                      # Uses public/#{table_name} by default for the filesystem, and just #{table_name} for the S3 backend.  
+                      # Uses public/#{table_name} by default for the filesystem, and just #{table_name} for the S3 and Cloud Files backend.  
                       # Setting this sets the :storage to :file_system.
     :partition        # Whether to partiton files in directories like /0000/0001/image.jpg. Default is true. Only applicable to the :file_system backend.
     :storage          # Specifies the storage system to use..
-                      # Defaults to :db_file.  Options are :file_system, :db_file, and :s3.
+                      # Defaults to :db_file.  Options are :file_system, :db_file, :s3, and :cloud_files.
     :cloudfront       # If using S3 for storage, this option allows for serving the files via Amazon CloudFront.
                       # Defaults to false.
     :processor        # Sets the image processor to use for resizing of the attached image.
@@ -70,6 +71,7 @@ has_attachment(options = {})
                    :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
     has_attachment :storage => :s3
     has_attachment :store => :s3, :cloudfront => true
+    has_attachment :storage => :cloud_files
 
 validates_as_attachment
   This method prevents files outside of the valid range (:min_size to :max_size, or the :size range) from being saved.  It does not however, halt the upload of such files.  They will be uploaded into memory regardless of size before validation.
@@ -125,7 +127,7 @@ There are two parts of the upload form that differ from typical usage.
     Example:
       <%= form.file_field :uploaded_data %>
 
-Displaying uploaded images is made easy by the public_filename method of the ActiveRecord attachment objects using file system and s3 storage.
+Displaying uploaded images is made easy by the public_filename method of the ActiveRecord attachment objects using file system, s3, and Cloud Files storage.
 
 public_filename(thumbnail = nil)
   Returns the public path to the file.  If a thumbnail prefix is specified it will return the public file path to the corresponding thumbnail.
