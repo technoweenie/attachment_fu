@@ -183,7 +183,6 @@ module Technoweenie # :nodoc:
         base.after_save :after_process_attachment
         base.after_destroy :destroy_file
         base.after_validation :process_attachment
-        base.attr_accessible :uploaded_data
         if defined?(::ActiveSupport::Callbacks)
           base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
         end
