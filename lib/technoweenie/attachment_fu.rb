@@ -84,7 +84,8 @@ module Technoweenie # :nodoc:
         options[:s3_access]        ||= :public_read
         options[:cloudfront]       ||= false
         options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
-
+        options[:background]       ||= false
+        
         unless options[:thumbnails].is_a?(Hash)
           raise ArgumentError, ":thumbnails option should be a hash: e.g. :thumbnails => { :foo => '50x50' }"
         end
@@ -284,6 +285,14 @@ module Technoweenie # :nodoc:
         ext.sub!(/gif$/, 'png') if attachment_options[:processor] == "ImageScience"
         "#{basename}_#{thumbnail}#{ext}"
       end
+      
+      # Generate the thumbnails for the picture
+      def generate_thumbnails
+        if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
+          temp_file = temp_path || create_temp_file
+          attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail temp_file, suffix, *size }
+        end
+      end
 
       # Creates or updates the thumbnail for the current attachment.
       def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
@@ -451,10 +460,7 @@ module Technoweenie # :nodoc:
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
           if @saved_attachment
-            if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
-              temp_file = temp_path || create_temp_file
-              attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
-            end
+            attachment_options[:background] ? send_later(:generate_thumbnails) : generate_thumbnails
             save_to_storage
             @temp_paths.clear
             @saved_attachment = nil
