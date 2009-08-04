@@ -1,4 +1,5 @@
 * Aug 4, 2009 *
+* Fixes non-image upload tests (both regular files and Merb files)
 * Fixes obsolete failures on RMagick tests (aspect_ratio tested but not initialized anymore due to new callback architecture
 
 * Apr 17 2008 *
