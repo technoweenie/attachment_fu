@@ -1,3 +1,4 @@
+
 $:.unshift(File.dirname(__FILE__) + '/../lib')
 
 ENV['RAILS_ENV'] = 'test'
