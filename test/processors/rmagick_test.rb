@@ -49,20 +49,21 @@ class RmagickTest < Test::Unit::TestCase
       end
     end
     
-    def test_should_create_thumbnail_with_geometry_string
+    def test_should_create_thumbnail_with_geometry_strings
       attachment = upload_file :filename => '/files/rails.png'
       
       assert_created do
         basename, ext = attachment.filename.split '.'
-        thumbnail = attachment.create_or_update_thumbnail(attachment.create_temp_file, 'thumb', 'x50')
-        assert_valid thumbnail
-        assert !thumbnail.size.zero?
-        #assert_equal 3915, thumbnail.size
-        assert_equal 39,   thumbnail.width
-        assert_equal 50,   thumbnail.height
-        assert_equal [thumbnail], attachment.thumbnails
-        assert_equal attachment.id,  thumbnail.parent_id if thumbnail.respond_to?(:parent_id)
-        assert_equal "#{basename}_thumb.#{ext}", thumbnail.filename
+        { 'x50' => [39, 50], '25x25!' => [25, 25] }.each do |geo, (w, h)|
+          thumbnail = attachment.create_or_update_thumbnail(attachment.create_temp_file, 'thumb', geo)
+          assert_valid thumbnail
+          assert !thumbnail.size.zero?
+          assert_equal w, thumbnail.width
+          assert_equal h, thumbnail.height
+          assert_equal [thumbnail], attachment.thumbnails
+          assert_equal attachment.id,  thumbnail.parent_id if thumbnail.respond_to?(:parent_id)
+          assert_equal "#{basename}_thumb.#{ext}", thumbnail.filename
+        end
       end
     end
     

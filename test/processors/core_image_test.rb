@@ -14,14 +14,17 @@ class CoreImageTest < Test::Unit::TestCase
       
       thumb      = attachment.thumbnails.detect { |t| t.filename =~ /_thumb/ }
       geo        = attachment.thumbnails.detect { |t| t.filename =~ /_geometry/ }
+      aspect     = attachment.thumbnails.detect { |t| t.filename =~ /_aspect/ }
       
       # test exact resize dimensions
       assert_equal 50, thumb.width
       assert_equal 51, thumb.height
       
-      # test geometry string
+      # test geometry strings
       assert_equal 31, geo.width
       assert_equal 41, geo.height
+      assert_equal 25, aspect.width
+      assert_equal 25, aspect.height
       
       # This makes sure that we didn't overwrite the original file
       # and will end up with a thumbnail instead of the original

@@ -1,4 +1,6 @@
 * Aug 4, 2009 *
+* Supports the :aspect/'!' geometry flag in all processors
+  (thanks to http://www.deepcalm.com/writing/cropped-thumbnails-in-attachment_fu-using-imagescience)
 * Moves from GIF to PNG regardless of the source file extension's case (used to require lowercase)
 * Auto-orients image (if EXIF suggests it) prior to processing with RMagickProcessor
 * Fixes non-image upload tests (both regular files and Merb files)
