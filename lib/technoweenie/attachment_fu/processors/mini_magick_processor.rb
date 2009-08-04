@@ -41,10 +41,16 @@ module Technoweenie # :nodoc:
           img.combine_options do |commands|
             commands.strip unless attachment_options[:keep_profile]
 
-            # gif are not handled correct, this is a hack, but it seems to work.
-            if img.output =~ / GIF /
-              img.format("png")
-            end           
+            # GIF is not handled correctly, so we move to PNG, as in other processors…
+            format = img['format']
+            if format == 'GIF'
+              commands.format('PNG')
+            elsif format == 'JPEG'
+              quality = attachment_options[:jpeg_quality]
+              quality = quality ? quality.to_i : -1
+              # FIXME: this DOESN'T work, for whatever reason…
+              commands.quality(quality) if quality.between?(0, 100)
+            end
             
             if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
               if size.is_a?(Fixnum)

@@ -248,6 +248,17 @@ class RmagickTest < Test::Unit::TestCase
     end
     
     test_against_subclass :test_should_overwrite_old_thumbnail_records_when_renaming, ImageWithThumbsAttachment
+
+    def test_should_handle_jpeg_quality
+      attachment_model ImageWithThumbsAttachment
+      attachment = upload_file :filename => '/files/rails.jpg'
+      full_size = attachment.size
+      attachment_model LowerQualityAttachment
+      attachment = upload_file :filename => '/files/rails.jpg'
+      lq_size = attachment.size
+      puts "FULL: #{full_size} - LQ: #{lq_size}"
+      assert lq_size <= full_size * 0.9, 'Lower-quality JPEG filesize should be congruently smaller'
+    end
   else
     def test_flunk
       puts "RMagick not installed, no tests running"

@@ -32,6 +32,16 @@ class CoreImageTest < Test::Unit::TestCase
       assert_equal 55, attachment.height
       
     end
+
+    def test_should_handle_jpeg_quality
+      attachment_model CoreImageAttachment
+      attachment = upload_file :filename => '/files/rails.jpg'
+      full_size = attachment.size
+      attachment_model LowerQualityCoreImageAttachment
+      attachment = upload_file :filename => '/files/rails.jpg'
+      lq_size = attachment.size
+      assert lq_size <= full_size * 0.9, 'Lower-quality JPEG filesize should be congruently smaller'
+    end
   else
     def test_flunk
       puts "CoreImage not loaded, tests not running"

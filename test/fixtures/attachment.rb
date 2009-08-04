@@ -8,6 +8,11 @@ class Attachment < ActiveRecord::Base
   end
 end
 
+class LowerQualityAttachment < Attachment
+  set_table_name 'attachments'
+  has_attachment :resize_to => [55,55], :jpeg_quality => 50
+end
+
 class SmallAttachment < Attachment
   has_attachment :max_size => 1.kilobyte
 end
@@ -121,6 +126,13 @@ begin
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :image_science, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55
   end
+
+  class ImageScienceLowerQualityAttachment < ActiveRecord::Base
+    set_table_name 'image_science_attachments'
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :image_science, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55,
+      :jpeg_quality => 75
+  end
 rescue MissingSourceFile
   puts $!.message
   puts "no ImageScience"
@@ -130,6 +142,13 @@ begin
   class CoreImageAttachment < ActiveRecord::Base
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :core_image, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55
+  end
+
+  class LowerQualityCoreImageAttachment < CoreImageAttachment
+    set_table_name 'core_image_attachments'
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :core_image, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55,
+      :jpeg_quality => 50
   end
 rescue MissingSourceFile
   puts $!.message
@@ -141,27 +160,7 @@ begin
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55
   end
-rescue MissingSourceFile
-  puts $!.message
-  puts "no Mini Magick"
-end
 
-begin
-  class GD2Attachment < ActiveRecord::Base
-    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
-      :processor => :gd2, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55
-  end
-rescue MissingSourceFile
-  puts $!.message
-  puts "no GD2"
-end
-
-
-begin
-  class MiniMagickAttachment < ActiveRecord::Base
-    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
-      :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55
-  end
   class ImageThumbnailCrop < MiniMagickAttachment
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
     :thumbnails => { :square => "50x50c", :vertical => "30x60c", :horizontal => "60x30c"}
@@ -195,9 +194,33 @@ begin
     end
   end
 
+  class LowerQualityMiniMagickAttachment < MiniMagickAttachment
+    set_table_name 'mini_magick_attachments'
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55,
+      :jpeg_quality => 50
+  end
+
 rescue MissingSourceFile
+  puts $!.message
+  puts "no Mini Magick"
 end
 
+begin
+  class GD2Attachment < ActiveRecord::Base
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :gd2, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55
+  end
+
+  class LowerQualityGD2Attachment < GD2Attachment
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :gd2, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55,
+      :jpeg_quality => 50
+  end
+rescue MissingSourceFile
+  puts $!.message
+  puts "no GD2"
+end
 
 
 begin

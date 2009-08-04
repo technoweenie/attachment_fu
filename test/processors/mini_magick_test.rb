@@ -64,6 +64,16 @@ class MiniMagickTest < Test::Unit::TestCase
       end
     end
 
+    def test_should_handle_jpeg_quality
+      attachment_model MiniMagickAttachment
+      attachment = upload_file :filename => '/files/rails.jpg'
+      full_size = attachment.size
+      attachment_model LowerQualityMiniMagickAttachment
+      attachment = upload_file :filename => '/files/rails.jpg'
+      lq_size = attachment.size
+      puts "FULL: #{full_size} - LQ: #{lq_size}"
+      assert lq_size <= full_size * 0.9, 'Lower-quality JPEG filesize should be congruently smaller'
+    end
   else
     def test_flunk
       puts "MiniMagick not loaded, tests not running"

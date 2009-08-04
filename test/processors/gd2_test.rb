@@ -26,6 +26,16 @@ class GD2Test < Test::Unit::TestCase
       assert_equal 25, aspect.width
       assert_equal 25, aspect.height
     end
+
+    def test_should_handle_jpeg_quality
+      attachment_model GD2Attachment
+      attachment = upload_file :filename => '/files/rails.jpg'
+      full_size = attachment.size
+      attachment_model LowerQualityGD2Attachment
+      attachment = upload_file :filename => '/files/rails.jpg'
+      lq_size = attachment.size
+      assert lq_size <= full_size * 0.9, 'Lower-quality JPEG filesize should be congruently smaller'
+    end
   else
     def test_flunk
       puts "GD2 not loaded, tests not running"

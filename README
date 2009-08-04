@@ -42,6 +42,10 @@ has_attachment(options = {})
                       # This option need only be included if you want thumbnailing.
     :thumbnail_class  # Set which model class to use for thumbnails.
                       # This current attachment class is used by default.
+    :jpeg_quality     # Used to provide explicit JPEG quality for thumbnail/resize saves.  Has to be an integer between 0 and 100.
+                      # Defaults vary depending on the processor (ImageScience: 100%, Rmagick/MiniMagick/Gd2: 75%, CoreImage: ~72%).
+                      # Note that only tdd-image_science (available from GitHub) currently supports explicit JPEG quality;
+                      # the default image_science currently forces 100%.
     :path_prefix      # Path to store the uploaded files in.
                       # Uses public/#{table_name} by default for the filesystem, and just #{table_name} for the S3 and Cloud Files backend.  
                       # Setting this sets the :storage to :file_system.
@@ -51,7 +55,7 @@ has_attachment(options = {})
     :cloudfront       # If using S3 for storage, this option allows for serving the files via Amazon CloudFront.
                       # Defaults to false.
     :processor        # Sets the image processor to use for resizing of the attached image.
-                      # Options include ImageScience, Rmagick, and MiniMagick.  Default is whatever is installed.
+                      # Options include ImageScience, Rmagick, MiniMagick, Gd2 and CoreImage.  Default is whatever is installed.
     :uuid_primary_key # If your model's primary key is a 128-bit UUID in hexadecimal format, then set this to true.
     :association_options  # attachment_fu automatically defines associations with thumbnails with has_many and belongs_to. If there are any additional options that you want to pass to these methods, then specify them here.
     

@@ -50,7 +50,14 @@ module Technoweenie # :nodoc:
             img.change_geometry(size.to_s) { |cols, rows, image| image.resize!(cols<1 ? 1 : cols, rows<1 ? 1 : rows) }
           end
           img.strip! unless attachment_options[:keep_profile]
-          temp_paths.unshift write_to_temp_file(img.to_blob)
+          opts = attachment_options
+          out_file = write_to_temp_file(img.to_blob {
+            qty = opts[:jpeg_quality]
+            qty = qty ? qty.to_i : -1
+            # FIXME: this DOESN'T work, for whatever reason…
+            self.quality = qty if img.format.to_s[/JPEG/] && qty.between?(0, 100)
+          })
+          temp_paths.unshift out_file
         end
       end
     end

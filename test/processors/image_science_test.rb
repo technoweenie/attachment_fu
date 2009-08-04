@@ -26,6 +26,19 @@ class ImageScienceTest < Test::Unit::TestCase
       assert_equal 25, aspect.width
       assert_equal 25, aspect.height
     end
+    
+    def test_should_handle_jpeg_quality
+      attachment = upload_file :filename => '/files/rails.jpg'
+      full_size = attachment.size
+      attachment_model ImageScienceLowerQualityAttachment
+      attachment = upload_file :filename => '/files/rails.jpg'
+      lq_size = attachment.size
+      if ImageScience.instance_method(:save).arity == -2 # tdd-image_science: JPEG quality processing
+        assert lq_size <= full_size * 0.75, 'Lower-quality JPEG filesize should be congruently smaller'
+      else
+        assert_equal full_size, lq_size, 'Unsupported lower-quality JPEG should yield exact same file size'
+      end
+    end
   else
     def test_flunk
       puts "ImageScience not loaded, tests not running"

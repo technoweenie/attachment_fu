@@ -38,7 +38,15 @@ module Technoweenie # :nodoc:
             grab_dimensions = lambda do |img|
               self.width  = img.width  if respond_to?(:width)
               self.height = img.height if respond_to?(:height)
-              img.save self.temp_path
+
+              # We don't check for quality being a 0-100 value as we also allow FreeImage JPEG_xxx constants.
+              quality = attachment_options[:jpeg_quality]
+              # Traditional ImageScience has a 1-arg save method, tdd-image_science has 1 mandatory + 1 optional
+              if quality && img.method(:save).arity == -2
+                img.save self.temp_path, quality
+              else
+                img.save self.temp_path
+              end
               self.size = File.size(self.temp_path)
               callback_with_args :after_resize, img
             end
