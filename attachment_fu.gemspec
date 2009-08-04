@@ -33,7 +33,6 @@ Gem::Specification.new do |s|
     test/base_attachment_tests.rb
     test/basic_test.rb
     test/database.yml
-    test/debug.log
     test/extra_attachment_test.rb
     test/geometry_test.rb
     test/schema.rb
