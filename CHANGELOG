@@ -1,3 +1,6 @@
+* Aug 4, 2009 *
+* Fixes obsolete failures on RMagick tests (aspect_ratio tested but not initialized anymore due to new callback architecture
+
 * Apr 17 2008 *
 * amazon_s3.yml is now passed through ERB before being passed to AWS::S3 [François Beausoleil]
 
