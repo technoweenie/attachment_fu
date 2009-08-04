@@ -1,5 +1,6 @@
 * Aug 4, 2009 *
 * Moves from GIF to PNG regardless of the source file extension's case (used to require lowercase)
+* Auto-orients image (if EXIF suggests it) prior to processing with RMagickProcessor
 * Fixes non-image upload tests (both regular files and Merb files)
 * Fixes obsolete failures on RMagick tests (aspect_ratio tested but not initialized anymore due to new callback architecture
 
