@@ -46,7 +46,14 @@ module Technoweenie # :nodoc:
       # *  <tt>:max_size</tt> - Maximum size allowed.  1.megabyte is the default.
       # *  <tt>:size</tt> - Range of sizes allowed.  (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
       # *  <tt>:resize_to</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
-      # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of filename suffixes and RMagick resizing options.
+      # *  <tt>:jpeg_quality</tt> - Used to provide explicit JPEG quality for thumbnail/resize saves.  Has to be an integer
+      #      between 0 and 100.  Defaults vary depending on the processor (ImageScience: 100%, Rmagick/MiniMagick/Gd2: 75%,
+      #      CoreImage: ~72%). Note that only tdd-image_science (available from GitHub) currently supports explicit JPEG quality;
+      #      the default image_science currently forces 100%.
+      # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of filename suffixes and
+      #      RMagick resizing options.  If you have a polymorphic parent relationship, you can provide parent-type-specific
+      #      thumbnail settings by using a pair with the type string as key and a Hash of thumbnail definitions as value.
+      #      AttachmentFu automatically detects your first polymorphic +belongs_to+ relationship.
       # *  <tt>:thumbnail_class</tt> - Set what class to use for thumbnails.  This attachment class is used by default.
       # *  <tt>:path_prefix</tt> - path to store the uploaded files.  Uses public/#{table_name} by default for the filesystem, and just #{table_name}
       #      for the S3 backend.  Setting this sets the :storage to :file_system.
@@ -251,6 +258,13 @@ module Technoweenie # :nodoc:
           tmp.close
         end
       end
+
+      def polymorphic_relation_type_column
+        return @@_polymorphic_relation_type_column if defined?(@@_polymorphic_relation_type_column)
+        # Checked against ActiveRecord 1.15.6 through Edge @ 2009-08-05.
+        ref = reflections.values.detect { |r| r.macro == :belongs_to && r.options[:polymorphic] }
+        @@_polymorphic_relation_type_column = ref && ref.options[:foreign_type]
+      end
     end
 
     module InstanceMethods
@@ -453,7 +467,17 @@ module Technoweenie # :nodoc:
           if @saved_attachment
             if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
               temp_file = temp_path || create_temp_file
-              attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
+              attachment_options[:thumbnails].each { |suffix, size|
+                if size.is_a?(Hash)
+                  parent_type = polymorphic_parent_type
+                  next unless parent_type && [parent_type, parent_type.tableize].include?(suffix.to_s)
+                  size.each { |ppt_suffix, ppt_size|
+                    create_or_update_thumbnail(temp_file, ppt_suffix, *ppt_size)
+                  }
+                else
+                  create_or_update_thumbnail(temp_file, suffix, *size)
+                end
+              }
             end
             save_to_storage
             @temp_paths.clear
@@ -508,6 +532,11 @@ module Technoweenie # :nodoc:
         # Removes the thumbnails for the attachment, if it has any
         def destroy_thumbnails
           self.thumbnails.each { |thumbnail| thumbnail.destroy } if thumbnailable?
+        end
+        
+        def polymorphic_parent_type
+          rel_name = self.class.polymorphic_relation_type_column
+          rel_name && send(rel_name)
         end
     end
   end

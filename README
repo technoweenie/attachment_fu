@@ -40,6 +40,9 @@ has_attachment(options = {})
     :thumbnails       # Specifies a set of thumbnails to generate.
                       # This accepts a hash of filename suffixes and RMagick resizing options.
                       # This option need only be included if you want thumbnailing.
+                      # If you have a polymorphic parent relationship, you can provide parent-type-specific
+                      # thumbnail settings by using a pair with the type string as key and a Hash of thumbnail definitions as value.
+                      # AttachmentFu automatically detects your first polymorphic +belongs_to+ relationship.
     :thumbnail_class  # Set which model class to use for thumbnails.
                       # This current attachment class is used by default.
     :jpeg_quality     # Used to provide explicit JPEG quality for thumbnail/resize saves.  Has to be an integer between 0 and 100.

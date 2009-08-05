@@ -44,6 +44,17 @@ class ImageWithThumbsAttachment < Attachment
   # end
 end
 
+class ImageWithPolymorphicThumbsAttachment < Attachment
+  belongs_to :imageable, :polymorphic => true
+  has_attachment :thumbnails => {
+    :thumb      => [50, 50],
+    :geometry   => 'x50',
+    :products   => { :large_thumb => '169x169!', :zoomed => '500x500>' },
+    :editorials => { :fullsize => '150x100>' },
+    'User'      => { :avatar => '64x64!' }
+  }
+end
+
 class FileAttachment < ActiveRecord::Base
   has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
   validates_as_attachment
