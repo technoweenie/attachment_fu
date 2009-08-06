@@ -1,3 +1,6 @@
+* Aug 6, 2009 *
+* JPEG quality control finalized across processors (although CoreImage applies it in a rather fuzzy-logic way), with tests.
+
 * Aug 4, 2009 *
 * Supports the :aspect/'!' geometry flag in all processors
   (thanks to http://www.deepcalm.com/writing/cropped-thumbnails-in-attachment_fu-using-imagescience)
