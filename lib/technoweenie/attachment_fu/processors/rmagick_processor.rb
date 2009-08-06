@@ -49,15 +49,13 @@ module Technoweenie # :nodoc:
           else
             img.change_geometry(size.to_s) { |cols, rows, image| image.resize!(cols<1 ? 1 : cols, rows<1 ? 1 : rows) }
           end
+          self.width  = img.columns if respond_to?(:width)
+          self.height = img.rows    if respond_to?(:height)
           img.strip! unless attachment_options[:keep_profile]
-          opts = attachment_options
-          out_file = write_to_temp_file(img.to_blob {
-            qty = opts[:jpeg_quality]
-            qty = qty ? qty.to_i : -1
-            # FIXME: this DOESN'T work, for whatever reason…
-            self.quality = qty if img.format.to_s[/JPEG/] && qty.between?(0, 100)
-          })
+          quality = img.format.to_s[/JPEG/] && get_jpeg_quality
+          out_file = write_to_temp_file(img.to_blob { self.quality = quality if quality })
           temp_paths.unshift out_file
+          self.size = File.size(self.temp_path)
         end
       end
     end

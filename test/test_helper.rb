@@ -121,6 +121,27 @@ class Test::Unit::TestCase #:nodoc:
       end
     end
     
+    def assert_file_jpeg_quality(model, thumbnail, expected)
+      filename = if model.respond_to?(:full_filename)
+        model.full_filename(thumbnail)
+      else
+        thumb = thumbnail ? model.thumbnails.find(:first, :conditions => { :thumbnail => thumbnail.to_s }, :include => :db_file) : model
+        unless thumb && thumb.db_file && thumb.db_file.data && thumb.db_file.data.size > 0
+          STDERR.puts "Cannot find DB file data for thumbnail #{thumbnail.inspect} -> Aborting JPEG quality check."
+          return
+        end
+        result = Tempfile.new('dbfile_dump').path
+        File.open(result, 'wb') { |f| f.write(thumb.db_file.data) }
+        result
+      end
+      quality = %x(identify -format '%Q' "#{filename}" 2> /dev/null)
+      if $?.success?
+        assert_equal expected, quality.to_i, "Produced JPEG quality (thumbnail: #{thumbnail.inspect}) is incorrect."
+      else
+        STDERR.puts "ImageMagick's identify not found / not in PATH: can't quickly check produced image quality."
+      end
+    end
+    
     def assert_not_created
       assert_created(0) { yield }
     end

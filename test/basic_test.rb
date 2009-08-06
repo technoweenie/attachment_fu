@@ -91,7 +91,26 @@ class BasicTest < Test::Unit::TestCase
       :thumb => [50, 50], :geometry => 'x50', :avatar => '64x64!'
   end
 
+  def test_should_compute_per_thumbnail_jpeg_quality
+    assert_jpeg_quality :thumb, 90
+    assert_jpeg_quality :avatar, 85
+    assert_jpeg_quality :large, 75
+    assert_jpeg_quality :large, 0x200 | 75, false
+    assert_jpeg_quality nil, 75
+  end
+
 private
+  def assert_jpeg_quality(thumbnail, quality, require_0_to_100 = true)
+    klass = ImageWithPerThumbJpegAttachment
+    w, h = if thumbnail
+      klass.attachment_options[:thumbnails][thumbnail].scan(/\d+/)
+    else
+      klass.attachment_options[:resize_to].scan(/\d+/)
+    end
+    attachment = klass.new(:thumbnail => thumbnail, :width => w, :height => h)
+    assert_equal quality, attachment.send(:get_jpeg_quality, require_0_to_100)
+  end
+
   def assert_polymorphic_thumb_creation(parent, defs)
     attachment_model ImageWithPolymorphicThumbsAttachment
     attachment_model.reset_creations

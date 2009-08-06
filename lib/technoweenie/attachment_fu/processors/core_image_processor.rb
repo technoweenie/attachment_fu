@@ -44,16 +44,17 @@ module Technoweenie # :nodoc:
             processor.render do |result|
               self.width  = result.extent.size.width  if respond_to?(:width)
               self.height = result.extent.size.height if respond_to?(:height)
-              
-              # Get a new temp_path for the image before saving
               out_file = random_tempfile_filename
               temp_paths.unshift Tempfile.new(out_file, Technoweenie::AttachmentFu.tempfile_path).path
               properties = nil
-              jpeg = out_file =~ /\.jpe?g\z/i
-              quality = attachment_options[:jpeg_quality]
-              quality = quality ? quality.to_i : -1
-              properties = { OSX::NSImageCompressionFactor => quality / 100.0 } if jpeg && quality.between?(0, 100)
+              # We don't check the source image since we're forcing the output to JPEG, apparently…
+              # Beware: apparently CoreImage only takes the percentage as a HINT, using a different actual quality…
+              quality = get_jpeg_quality
+              properties = { OSX::NSImageCompressionFactor => quality / 100.0 } if quality
               result.save(self.temp_path, OSX::NSJPEGFileType, properties)
+              #             
+              # puts "#{self.temp_path} @ #{quality.inspect} -> #{%x(identify -format '%Q' "#{self.temp_path}")}"
+              # 
               self.size = File.size(self.temp_path)
             end
           end          

@@ -35,12 +35,20 @@ class CoreImageTest < Test::Unit::TestCase
 
     def test_should_handle_jpeg_quality
       attachment_model CoreImageAttachment
-      attachment = upload_file :filename => '/files/rails.jpg'
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
       full_size = attachment.size
       attachment_model LowerQualityCoreImageAttachment
-      attachment = upload_file :filename => '/files/rails.jpg'
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
       lq_size = attachment.size
       assert lq_size <= full_size * 0.9, 'Lower-quality JPEG filesize should be congruently smaller'
+
+      # FIXME: wait for Marcus' reply to determine whether I can get exact-quality output or need to adjust for CoreImage.
+      # attachment_model CoreImageWithPerThumbJpegAttachment
+      # attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
+      # assert_file_jpeg_quality attachment, :thumb, 90
+      # assert_file_jpeg_quality attachment, :avatar, 80
+      # assert_file_jpeg_quality attachment, :editorial, 75
+      # assert_file_jpeg_quality attachment, nil, 75
     end
   else
     def test_flunk

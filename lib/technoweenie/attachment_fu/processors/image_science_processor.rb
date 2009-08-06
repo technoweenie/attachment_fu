@@ -40,7 +40,7 @@ module Technoweenie # :nodoc:
               self.height = img.height if respond_to?(:height)
 
               # We don't check for quality being a 0-100 value as we also allow FreeImage JPEG_xxx constants.
-              quality = attachment_options[:jpeg_quality]
+              quality = content_type[/jpe?g/i] && get_jpeg_quality(false)
               # Traditional ImageScience has a 1-arg save method, tdd-image_science has 1 mandatory + 1 optional
               if quality && img.method(:save).arity == -2
                 img.save self.temp_path, quality

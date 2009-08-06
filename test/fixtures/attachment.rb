@@ -44,6 +44,12 @@ class ImageWithThumbsAttachment < Attachment
   # end
 end
 
+class ImageWithPerThumbJpegAttachment < Attachment
+  has_attachment :resize_to => '500x500!',
+    :thumbnails => { :thumb => '50x50!', :large => '300x300!', :avatar => '64x64!' },
+    :jpeg_quality => { :thumb => 90, '<5000' => 85, '>=5000' => 75, :large => 0x200 | 75 }
+end
+
 class ImageWithPolymorphicThumbsAttachment < Attachment
   belongs_to :imageable, :polymorphic => true
   has_attachment :thumbnails => {
@@ -144,6 +150,14 @@ begin
       :processor => :image_science, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55,
       :jpeg_quality => 75
   end
+
+  class ImageScienceWithPerThumbJpegAttachment < ImageScienceAttachment
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :image_science,
+      :resize_to => '100x100',
+      :thumbnails => { :thumb => [50, 50], :editorial => '300x120', :avatar => '64x64!' },
+      :jpeg_quality => { :thumb => 90, '<5000' => 80, '>=5000' => 75 }
+  end
 rescue MissingSourceFile
   puts $!.message
   puts "no ImageScience"
@@ -156,10 +170,17 @@ begin
   end
 
   class LowerQualityCoreImageAttachment < CoreImageAttachment
-    set_table_name 'core_image_attachments'
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :core_image, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55,
       :jpeg_quality => 50
+  end
+
+  class CoreImageWithPerThumbJpegAttachment < CoreImageAttachment
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :core_image,
+      :resize_to => '100x100',
+      :thumbnails => { :thumb => [50, 50], :editorial => '300x120', :avatar => '64x64!' },
+      :jpeg_quality => { :thumb => 90, '<5000' => 80, '>=5000' => 75 }
   end
 rescue MissingSourceFile
   puts $!.message
@@ -171,7 +192,7 @@ begin
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55
   end
-
+  
   class ImageThumbnailCrop < MiniMagickAttachment
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
     :thumbnails => { :square => "50x50c", :vertical => "30x60c", :horizontal => "60x30c"}
@@ -205,11 +226,19 @@ begin
     end
   end
 
-  class LowerQualityMiniMagickAttachment < MiniMagickAttachment
+  class LowerQualityMiniMagickAttachment < ActiveRecord::Base
     set_table_name 'mini_magick_attachments'
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55,
       :jpeg_quality => 50
+  end
+
+  class MiniMagickWithPerThumbJpegAttachment < MiniMagickAttachment
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :mini_magick,
+      :resize_to => '100x100',
+      :thumbnails => { :thumb => [50, 50], :editorial => '300x120', :avatar => '64x64!' },
+      :jpeg_quality => { :thumb => 90, '<5000' => 80, '>=5000' => 75 }
   end
 
 rescue MissingSourceFile
@@ -227,6 +256,14 @@ begin
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :gd2, :thumbnails => { :thumb => [50, 51], :geometry => '31>', :aspect => '25x25!' }, :resize_to => 55,
       :jpeg_quality => 50
+  end
+
+  class GD2WithPerThumbJpegAttachment < GD2Attachment
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
+      :processor => :gd2,
+      :resize_to => '100x100',
+      :thumbnails => { :thumb => [50, 50], :editorial => '300x120', :avatar => '64x64!' },
+      :jpeg_quality => { :thumb => 90, '<5000' => 80, '>=5000' => 75 }
   end
 rescue MissingSourceFile
   puts $!.message

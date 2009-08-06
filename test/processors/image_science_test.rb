@@ -28,16 +28,23 @@ class ImageScienceTest < Test::Unit::TestCase
     end
     
     def test_should_handle_jpeg_quality
-      attachment = upload_file :filename => '/files/rails.jpg'
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
       full_size = attachment.size
       attachment_model ImageScienceLowerQualityAttachment
-      attachment = upload_file :filename => '/files/rails.jpg'
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
       lq_size = attachment.size
       if ImageScience.instance_method(:save).arity == -2 # tdd-image_science: JPEG quality processing
         assert lq_size <= full_size * 0.75, 'Lower-quality JPEG filesize should be congruently smaller'
       else
         assert_equal full_size, lq_size, 'Unsupported lower-quality JPEG should yield exact same file size'
       end
+      
+      attachment_model ImageScienceWithPerThumbJpegAttachment
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
+      assert_file_jpeg_quality attachment, :thumb, 90
+      assert_file_jpeg_quality attachment, :avatar, 80
+      assert_file_jpeg_quality attachment, :editorial, 75
+      assert_file_jpeg_quality attachment, nil, 75
     end
   else
     def test_flunk

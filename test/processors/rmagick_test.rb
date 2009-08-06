@@ -251,13 +251,19 @@ class RmagickTest < Test::Unit::TestCase
 
     def test_should_handle_jpeg_quality
       attachment_model ImageWithThumbsAttachment
-      attachment = upload_file :filename => '/files/rails.jpg'
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
       full_size = attachment.size
       attachment_model LowerQualityAttachment
-      attachment = upload_file :filename => '/files/rails.jpg'
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
       lq_size = attachment.size
-      puts "FULL: #{full_size} - LQ: #{lq_size}"
       assert lq_size <= full_size * 0.9, 'Lower-quality JPEG filesize should be congruently smaller'
+
+      attachment_model ImageWithPerThumbJpegAttachment
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
+      assert_file_jpeg_quality attachment, :thumb, 90
+      assert_file_jpeg_quality attachment, :avatar, 85
+      assert_file_jpeg_quality attachment, :large, 75
+      assert_file_jpeg_quality attachment, nil, 75
     end
   else
     def test_flunk

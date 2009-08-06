@@ -46,9 +46,15 @@ module Technoweenie # :nodoc:
       # *  <tt>:max_size</tt> - Maximum size allowed.  1.megabyte is the default.
       # *  <tt>:size</tt> - Range of sizes allowed.  (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
       # *  <tt>:resize_to</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
-      # *  <tt>:jpeg_quality</tt> - Used to provide explicit JPEG quality for thumbnail/resize saves.  Has to be an integer
-      #      between 0 and 100.  Defaults vary depending on the processor (ImageScience: 100%, Rmagick/MiniMagick/Gd2: 75%,
-      #      CoreImage: ~72%). Note that only tdd-image_science (available from GitHub) currently supports explicit JPEG quality;
+      # *  <tt>:jpeg_quality</tt> - Used to provide explicit JPEG quality for thumbnail/resize saves.  Can have multiple formats:
+      #      * Integer from 0 (basically crap) to 100 (basically lossless, fat files).
+      #      * When relying on ImageScience, you can also use one of its +JPEG_xxx+ constants for predefined ratios/settings.
+      #      * You can also use a Hash, with keys being either  thumbnail symbols (I repeat: _symbols_) or surface boundaries.
+      #        A surface boundary is a string starting with either '<' or '>=', followed by a number of pixels.  This lets you
+      #        specify per-thumbnail or per-general-thumbnail-"size" JPEG qualities. (which can be useful when you have a
+      #        _lot_ of thumbnail options).  Surface example:  +{ '<2000' => 90, '>=2000' => 75 }+.
+      #      Defaults vary depending on the processor (ImageScience: 100%, Rmagick/MiniMagick/Gd2: 75%,
+      #      CoreImage: auto-adjust). Note that only tdd-image_science (available from GitHub) currently supports explicit JPEG quality;
       #      the default image_science currently forces 100%.
       # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of filename suffixes and
       #      RMagick resizing options.  If you have a polymorphic parent relationship, you can provide parent-type-specific
@@ -533,10 +539,26 @@ module Technoweenie # :nodoc:
         def destroy_thumbnails
           self.thumbnails.each { |thumbnail| thumbnail.destroy } if thumbnailable?
         end
-        
+
         def polymorphic_parent_type
           rel_name = self.class.polymorphic_relation_type_column
           rel_name && send(rel_name)
+        end
+
+        def get_jpeg_quality(require_0_to_100 = true)
+          quality = attachment_options[:jpeg_quality]
+          if quality.is_a?(Hash)
+            sbl_quality  = thumbnail && quality[thumbnail.to_sym]
+            sbl_quality  = nil if sbl_quality && require_0_to_100 && !sbl_quality.to_i.between?(0, 100)
+            surface      = (width || 1) * (height || 1)
+            size_quality = quality.detect { |k, v|
+              next unless k.is_a?(String) && k =~ /^(<|>=)(\d+)$/
+              op, threshold = $1, $2.to_i
+              surface.send(op, threshold)
+            }
+            quality = sbl_quality || size_quality && size_quality[1]
+          end
+          return quality && (!require_0_to_100 || quality.to_i.between?(0, 100)) ? quality : nil
         end
     end
   end

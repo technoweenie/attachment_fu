@@ -44,16 +44,13 @@ module Technoweenie # :nodoc:
               w, h = [img.width, img.height] / size.to_s
               img.resize!(w, h, false)
             end
+            self.width  = img.width  if respond_to?(:width)
+            self.height = img.height if respond_to?(:height)
             out_file = random_tempfile_filename
             temp_paths.unshift out_file
             jpeg = out_file =~ /\.jpe?g\z/i
-            quality = attachment_options[:jpeg_quality]
-            quality = quality ? quality.to_i : -1
-            self.size = if jpeg && quality.between?(0, 100)
-              img.export(self.temp_path, :quality => quality)
-            else
-              img.export(self.temp_path)
-            end
+            quality = jpeg && get_jpeg_quality
+            self.size = img.export(self.temp_path, quality ? { :quality => quality } : {})
           end
 
       end
