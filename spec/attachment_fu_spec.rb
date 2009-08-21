@@ -23,6 +23,16 @@ module AttachmentFu
       it "has nil #partitioned_path" do
         @asset.partitioned_path.should == nil
       end
+
+      it "fails to create asset if #full_path does not exist" do
+        @file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
+        FileUtils.cp __FILE__, @file
+
+        @asset = BasicAsset.new(:content_type => 'application/x-ruby')
+        @asset.set_temp_path @file
+        FileUtils.rm_rf @file
+        lambda { @asset.save! }.should raise_error(AttachmentFu::AssetMissing)
+      end
     end
 
     describe "being processed" do

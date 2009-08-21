@@ -13,6 +13,14 @@ Tempfile.class_eval do
 end
 
 module AttachmentFu
+  class AssetMissing < StandardError
+    def initialize(full_path)
+      name = File.basename(full_path)
+      path = File.dirname(full_path)
+      super "#{name.inspect} not found in #{path.inspect}"
+    end
+  end
+
   @@image_content_types = Set.new [
       'image/jpeg',
       'image/pjpeg',
@@ -350,15 +358,13 @@ module AttachmentFu
     # Saves the attachment to the file system. It also processes
     # or queues the attachment for processing.
     def save_attachment
-      return if @temp_path.nil?
-      old_path = File.expand_path(full_path_for(@temp_path))
-      return if old_path.nil?
-      unless old_path == full_path
+      return if @temp_path.nil? || @old_asset_path.nil?
+      unless @old_asset_path == full_path
         FileUtils.mkdir_p(File.dirname(full_path))
-        FileUtils.mv(old_path, full_path)
+        FileUtils.mv(@old_asset_path, full_path)
       end
       File.chmod(0644, full_path)
-      @temp_path = nil # if a task tries to re-save, we don't want to re-store the attachment
+      @temp_path = @old_asset_path = nil # if a task tries to re-save, we don't want to re-store the attachment
       queued_attachment ? queue_processing : process
       @new_attachment = nil
     end
@@ -395,6 +401,8 @@ module AttachmentFu
     # Needed to tell the difference between an attachment that has just been saved, 
     # vs one saved in a previous request or object instantiation.
     def set_new_attachment
+      @old_asset_path = File.expand_path(full_path_for(@temp_path))
+      if !File.exist?(@old_asset_path) then raise AssetMissing.new(@old_asset_path) end
       @new_attachment = true
     end
   end
