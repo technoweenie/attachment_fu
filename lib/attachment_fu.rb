@@ -401,7 +401,9 @@ module AttachmentFu
     # Needed to tell the difference between an attachment that has just been saved, 
     # vs one saved in a previous request or object instantiation.
     def set_new_attachment
-      @old_asset_path = File.expand_path(full_path_for(@temp_path))
+      @old_asset_path = full_path_for(@temp_path)
+      if @old_asset_path.blank? then raise AssetMissing.new('...') end
+      @old_asset_path = File.expand_path(@old_asset_path)
       if !File.exist?(@old_asset_path) then raise AssetMissing.new(@old_asset_path) end
       @new_attachment = true
     end
