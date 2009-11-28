@@ -196,12 +196,17 @@ module AttachmentFu
       ("%08d" % attachment_path_id).scan(/..../) + args
     end
 
+    def has_attachment?
+      !(attachment_path_id.blank? || filename.blank?)
+    end
+
     def public_path(thumbnail = nil)
+      return nil if !has_attachment?
       File.join(attachment_path, *partitioned_path(thumbnailed_filename(thumbnail))).sub(/^public\//, '/')
     end
 
     def full_path(thumbnail = nil)
-      return nil if attachment_path_id.nil?
+      return nil if !has_attachment?
       File.expand_path(File.join(AttachmentFu.root_path, attachment_path, *partitioned_path(thumbnailed_filename(thumbnail))))
     end
 
@@ -331,8 +336,10 @@ module AttachmentFu
     # Deletes the attachment from the file system, and attempts to clean up 
     # the empty asset paths.
     def delete_attachment
-      FileUtils.rm full_path if File.exist?(full_path)
-      dir_name = File.dirname(full_path)
+      fp = full_path
+      return if fp.blank?
+      FileUtils.rm fp if File.exist?(fp)
+      dir_name = File.dirname(fp)
       default  = %w(. ..)
       while dir_name != AttachmentFu.root_path
         dir_exists = File.exists?(dir_name)
@@ -401,6 +408,7 @@ module AttachmentFu
     # Needed to tell the difference between an attachment that has just been saved, 
     # vs one saved in a previous request or object instantiation.
     def set_new_attachment
+      return true if @temp_path.blank?
       @old_asset_path = full_path_for(@temp_path)
       if @old_asset_path.blank? then raise AssetMissing.new('...') end
       @old_asset_path = File.expand_path(@old_asset_path)

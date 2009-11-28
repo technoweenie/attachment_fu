@@ -57,7 +57,37 @@ module AttachmentFu
         @asset.should be_queued
       end
     end
-    
+
+    describe "being created without attachment" do
+      before :all do
+        @assets = []
+        @assets << (@asset = BasicAsset.create!)
+      end
+
+      after :all do
+        @assets.each(&:destroy)
+      end
+
+      it "accepts attachment in future operation" do
+        file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
+        FileUtils.cp __FILE__, file
+
+        @assets << (asset = BasicAsset.create!)
+        asset.content_type = 'application/x-ruby'
+        asset.set_temp_path file
+        asset.save!
+        asset.full_path.should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{asset.partitioned_path * '/'}/guinea_pig.rb"))
+      end
+
+      it "has no full_path" do
+        @asset.full_path.should == nil
+      end
+
+      it "has no public_path" do
+        @asset.public_path.should == nil
+      end
+    end
+
     describe "being created" do
       before :all do
         @file = File.join(File.dirname(__FILE__), 'guinea_pig.rb')
