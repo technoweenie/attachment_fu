@@ -207,7 +207,12 @@ module AttachmentFu
 
     def full_path(thumbnail = nil)
       return nil if !has_attachment?
-      File.expand_path(File.join(AttachmentFu.root_path, attachment_path, *partitioned_path(thumbnailed_filename(thumbnail))))
+      File.expand_path(File.join(full_attachment_path, *partitioned_path(thumbnailed_filename(thumbnail))))
+    end
+
+    def full_attachment_path
+      return nil if !has_attachment?
+      File.expand_path(File.join(AttachmentFu.root_path, attachment_path))
     end
 
     # Sets the path to the attachment about to be saved.  Could be a string path to a file, 
@@ -337,17 +342,18 @@ module AttachmentFu
     # the empty asset paths.
     def delete_attachment
       fp = full_path
+      fap = full_attachment_path
       return if fp.blank?
       FileUtils.rm fp if File.exist?(fp)
       dir_name = File.dirname(fp)
       default  = %w(. ..)
-      while dir_name != AttachmentFu.root_path
+      while dir_name != fap
         dir_exists = File.exists?(dir_name)
         if !dir_exists || (Dir.entries(dir_name) - default).empty?
           FileUtils.rm_rf(dir_name) if dir_exists
           dir_name.sub! /\/\w+$/, ''
         else
-          dir_name = AttachmentFu.root_path
+          dir_name = fap
         end
       end
     end

@@ -20,6 +20,10 @@ module AttachmentFu
         @asset.full_path.should be_nil
       end
 
+      it "has nil #full_attachment_path" do
+        @asset.full_attachment_path.should be_nil
+      end
+
       it "has nil #partitioned_path" do
         @asset.partitioned_path.should == nil
       end
@@ -83,6 +87,10 @@ module AttachmentFu
         @asset.full_path.should == nil
       end
 
+      it "has no full_attachment_path" do
+        @asset.full_attachment_path.should == nil
+      end
+
       it "has no public_path" do
         @asset.public_path.should == nil
       end
@@ -104,6 +112,10 @@ module AttachmentFu
 
       it "stores asset in AttachmentFu root_path" do
         @asset.full_path.should == File.expand_path(File.join(AttachmentFu.root_path, "public/afu_spec_assets/#{@asset.partitioned_path * '/'}/guinea_pig.rb"))
+      end
+
+      it "stores asset in full_attachment_path" do
+        @asset.full_path.should == File.expand_path(File.join(@asset.full_attachment_path, "#{@asset.partitioned_path * '/'}/guinea_pig.rb"))
       end
 
       it "creates full_path from record id and attachment_path" do
@@ -199,7 +211,7 @@ module AttachmentFu
         File.exist?(@asset.full_path).should == false
       end
       
-      (1..4).each do |i|
+      (1..2).each do |i|
         it "deletes empty path ##{i}" do
           @asset.destroy
           dir_to_check = @dir.split("/")[0..-i] * "/"
@@ -214,9 +226,9 @@ module AttachmentFu
         end
       end
       
-      it "keeps AttachmentFu.root_path" do
+      it "keeps #full_attachment_path" do
         @asset.destroy
-        dir_to_check = @dir.split("/")[0..-5] * "/"
+        dir_to_check = @dir.split("/")[0..-3] * "/"
         fail "#{dir_to_check.inspect} is deleted" unless File.directory?(dir_to_check)
       end
     end
