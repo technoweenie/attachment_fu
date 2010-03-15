@@ -474,6 +474,11 @@ module Technoweenie # :nodoc:
             if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
               temp_file = temp_path || create_temp_file
               attachment_options[:thumbnails].each { |suffix, size|
+                if size.is_a?(Symbol)
+                  parent_type = polymorphic_parent_type
+                  next unless parent_type && [parent_type, parent_type.tableize].include?(suffix.to_s) && respond_to?(size)
+                  size = send(size)
+                end
                 if size.is_a?(Hash)
                   parent_type = polymorphic_parent_type
                   next unless parent_type && [parent_type, parent_type.tableize].include?(suffix.to_s)

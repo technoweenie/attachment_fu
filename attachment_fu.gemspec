@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{attachment_fu}
-  s.version = "0.9.9.a"
+  s.version = "0.9.9.b"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Rick Olson", "Christophe Porteneuve"]
-  s.date = %q{2009-08-06}
+  s.date = %q{2010-03-15}
   s.description = %q{This is a fork of Rick Olson’s attachment_fu adding '!' geometry support, JPEG quality control and polymorphic-relation-based thumbnailing.}
   s.email = %q{tdd@tddsworld.com}
   s.extra_rdoc_files = ["README"]

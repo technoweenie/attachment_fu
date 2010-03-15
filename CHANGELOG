@@ -1,3 +1,8 @@
+* Mar 15, 2010 *
+* Added a symbol syntax for parent-type-based size spec: calls the corresponding method on the current asset instance to
+  get a Hash of required thumbnails.  Lets us dynamically specify what would otherwise be hard-coded, which is useful
+  when the set of thumbnails for a given parent type varies depending on the usage context.
+
 * Aug 6, 2009 *
 * JPEG quality control finalized across processors (although CoreImage applies it in a rather fuzzy-logic way), with tests.
 
