@@ -59,7 +59,7 @@ module AttachmentFu
 
       def call(attachment, options = nil)
         options = options ? @options.merge(options) : @options
-        attachment.s3.store
+        attachment.s3.store(options)
       end
 
       def exist?(attachment, thumbnail = nil, options = nil)
