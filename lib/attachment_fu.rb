@@ -342,18 +342,18 @@ module AttachmentFu
     # the empty asset paths.
     def delete_attachment
       fp = full_path
-      fap = full_attachment_path
+      fa = full_attachment_path
       return if fp.blank?
       FileUtils.rm fp if File.exist?(fp)
       dir_name = File.dirname(fp)
       default  = %w(. ..)
-      while dir_name != fap
+      while dir_name != fa
         dir_exists = File.exists?(dir_name)
         if !dir_exists || (Dir.entries(dir_name) - default).empty?
           FileUtils.rm_rf(dir_name) if dir_exists
           dir_name.sub! /\/\w+$/, ''
         else
-          dir_name = fap
+          dir_name = fa
         end
       end
     end
