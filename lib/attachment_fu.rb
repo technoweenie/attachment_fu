@@ -150,6 +150,21 @@ module AttachmentFu
     create_task :get_image_size, "attachment_fu/tasks/resize"
   end
 
+  def self.cleanup_directory(root, file)
+    FileUtils.rm file if File.exist?(file)
+    dir_name = File.dirname(file)
+    default  = %w(. ..)
+    while dir_name != root
+      dir_exists = File.exists?(dir_name)
+      if !dir_exists || (Dir.entries(dir_name) - default).empty?
+        FileUtils.rm_rf(dir_name) if dir_exists
+        dir_name.sub! /\/\w+$/, ''
+      else
+        dir_name = root
+      end
+    end
+  end
+
   # This mixin is included in attachment classes by AttachmentFu::SetupMethods.is_attachment.
   module InstanceMethods
     # Strips filename of any funny characters.
@@ -342,20 +357,8 @@ module AttachmentFu
     # the empty asset paths.
     def delete_attachment
       fp = full_path
-      fa = full_attachment_path
       return if fp.blank?
-      FileUtils.rm fp if File.exist?(fp)
-      dir_name = File.dirname(fp)
-      default  = %w(. ..)
-      while dir_name != fa
-        dir_exists = File.exists?(dir_name)
-        if !dir_exists || (Dir.entries(dir_name) - default).empty?
-          FileUtils.rm_rf(dir_name) if dir_exists
-          dir_name.sub! /\/\w+$/, ''
-        else
-          dir_name = fa
-        end
-      end
+      AttachmentFu.cleanup_directory(full_attachment_path, fp)
     end
 
     def rename_attachment
