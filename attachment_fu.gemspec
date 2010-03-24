@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{attachment_fu}
+  s.name = %q{tdd-attachment_fu}
   s.version = "0.9.9.b"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
@@ -64,7 +64,7 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://github.com/tdd/attachment_fu}
   s.rdoc_options = ["--inline-source", "--charset=UTF-8"]
   s.require_paths = ["lib"]
-  s.rubyforge_project = %q{attachment_fu}
+  # s.rubyforge_project = %q{attachment_fu}
   s.rubygems_version = %q{1.3.5}
   s.summary = %q{attachment_fu with more geometries, polymorphic-based settings and JPEG quality control. }
 
