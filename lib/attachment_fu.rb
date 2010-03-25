@@ -217,7 +217,9 @@ module AttachmentFu
 
     def public_path(thumbnail = nil)
       return nil if !has_attachment?
-      File.join(attachment_path, *partitioned_path(thumbnailed_filename(thumbnail))).sub(/^public\//, '/')
+      p = File.join(attachment_path, *partitioned_path(thumbnailed_filename(thumbnail))).sub(/^public\//, '/')
+      p.insert(0, '/') unless p[0..0] == '/'
+      p
     end
 
     def full_path(thumbnail = nil)

@@ -9,6 +9,10 @@ module AttachmentFu
     is_faux_attachment :queued => true
   end
 
+  class PrivateAsset < ActiveRecord::Base
+    is_faux_attachment :path => 'foo'
+  end
+
   describe "AttachmentFu" do
     describe "pending creation" do
       before do
@@ -93,6 +97,16 @@ module AttachmentFu
 
       it "has no public_path" do
         @asset.public_path.should == nil
+      end
+    end
+
+    describe "being created outside of public path" do
+      it "creates public_path from record id and attachment_path" do
+        asset = PrivateAsset.new :filename => 'foo.bar'
+        def asset.attachment_path_id # fake-out #has_attachment?
+          55
+        end
+        asset.public_path.should == "/foo/0000/0055/foo.bar"
       end
     end
 
