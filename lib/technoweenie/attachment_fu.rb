@@ -282,7 +282,10 @@ module Technoweenie # :nodoc:
           ext = s; ''
         end
         # ImageScience doesn't create gif thumbnails, only pngs
-        ext.sub!(/gif$/, 'png') if ext && (attachment_options[:processor] == "ImageScience")
+        if ext
+          ext.sub!(/gif$/, 'png') if (attachment_options[:processor] == "ImageScience")
+          ext.sub!(/bmp$/, 'png') # Don't generate BMP thumbnails
+        end
         "#{basename}_#{thumbnail}#{ext}"
       end
       
