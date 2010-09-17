@@ -237,19 +237,19 @@ module Technoweenie # :nodoc:
 
       # Copies the given file path to a new tempfile, returning the closed tempfile.
       def copy_to_temp_file(file, temp_base_name)
-        returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
-          tmp.close
-          FileUtils.cp file, tmp.path
-        end
+        tmp = Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path)
+        tmp.close
+        FileUtils.cp file, tmp.path
+        tmp
       end
 
       # Writes the given data to a new tempfile, returning the closed tempfile.
       def write_to_temp_file(data, temp_base_name)
-        returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
-          tmp.binmode
-          tmp.write data
-          tmp.close
-        end
+        tmp = Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path)
+        tmp.binmode
+        tmp.write data
+        tmp.close
+        tmp
       end
     end
 
@@ -288,16 +288,16 @@ module Technoweenie # :nodoc:
       # Creates or updates the thumbnail for the current attachment.
       def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
         thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
-        returning find_or_initialize_thumbnail(file_name_suffix) do |thumb|
-          thumb.temp_paths.unshift temp_file
-          thumb.send(:'attributes=', {
-            :content_type             => content_type,
-            :filename                 => thumbnail_name_for(file_name_suffix),
-            :thumbnail_resize_options => size
-          }, false)
-          callback_with_args :before_thumbnail_saved, thumb
-          thumb.save!
-        end
+        thumb = find_or_initialize_thumbnail(file_name_suffix)
+        thumb.temp_paths.unshift temp_file
+        thumb.send(:'attributes=', {
+          :content_type             => content_type,
+          :filename                 => thumbnail_name_for(file_name_suffix),
+          :thumbnail_resize_options => size
+        }, false)
+        callback_with_args :before_thumbnail_saved, thumb
+        thumb.save!
+        thumb
       end
 
       # Sets the content type.
@@ -409,14 +409,14 @@ module Technoweenie # :nodoc:
 
         def sanitize_filename(filename)
           return unless filename
-          returning filename.strip do |name|
-            # NOTE: File.basename doesn't work right with Windows paths on Unix
-            # get only the filename, not the whole path
-            name.gsub! /^.*(\\|\/)/, ''
+          name = filename.strip
+          # NOTE: File.basename doesn't work right with Windows paths on Unix
+          # get only the filename, not the whole path
+          name.gsub! /^.*(\\|\/)/, ''
 
-            # Finally, replace all non alphanumeric, underscore or periods with underscore
-            name.gsub! /[^A-Za-z0-9\.\-]/, '_'
-          end
+          # Finally, replace all non alphanumeric, underscore or periods with underscore
+          name.gsub! /[^A-Za-z0-9\.\-]/, '_'
+          name
         end
 
         # before_validation callback.
