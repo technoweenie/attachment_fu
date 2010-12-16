@@ -74,6 +74,10 @@ module Technoweenie # :nodoc:
       #   has_attachment :storage => :file_system, :path_prefix => 'public/files',
       #     :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
       #   has_attachment :storage => :s3
+      #   has_attachment :storage_key => 'store', 
+      #                     :backends => { 's3' => { :storage => :s3, :path_prefix => 'foo', :max_size => 5.kilobyte, :default => true }, 
+      #                                    'local1' => { :storage => :file_system, :path_prefix => 'data/public' } }
+
       def has_attachment(options = {})
         # this allows you to redefine the acts' options for each subclass, however
         options[:min_size]         ||= 1
@@ -83,6 +87,7 @@ module Technoweenie # :nodoc:
         options[:thumbnail_class]  ||= self
         options[:s3_access]        ||= :public_read
         options[:cloudfront]       ||= false
+        options[:store_name]       ||= :default
         options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
 
         unless options[:thumbnails].is_a?(Hash)
@@ -91,12 +96,14 @@ module Technoweenie # :nodoc:
 
         extend ClassMethods unless (class << self; included_modules; end).include?(ClassMethods)
         include InstanceMethods unless included_modules.include?(InstanceMethods)
+        
+        attr_accessor :thumbnail_resize_options
 
         parent_options = attachment_options || {}
-        # doing these shenanigans so that #attachment_options is available to processors and backends
+        
         self.attachment_options = options
+        # doing these shenanigans so that #attachment_options is available to processors and backends
 
-        attr_accessor :thumbnail_resize_options
 
         attachment_options[:storage]     ||= (attachment_options[:file_system_path] || attachment_options[:path_prefix]) ? :file_system : :db_file
         attachment_options[:storage]     ||= parent_options[:storage]
@@ -119,8 +126,11 @@ module Technoweenie # :nodoc:
           m.belongs_to :parent, :class_name => "::#{base_class}" unless options[:thumbnails].empty?
         end
 
-        storage_mod = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
-        include storage_mod unless included_modules.include?(storage_mod)
+        @attachment_backends ||= {}
+        storage_klass = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend::Delegator")
+
+        @attachment_backends[attachment_options[:store_name]] = {:klass => storage_klass, :options => attachment_options}
+        #include storage_mod unless included_modules.include?(storage_mod)
 
         case attachment_options[:processor]
         when :none, nil
@@ -175,6 +185,8 @@ module Technoweenie # :nodoc:
       def image?(content_type)
         content_types.include?(content_type)
       end
+
+      attr_accessor :attachment_backends
 
       def self.extended(base)
         base.class_inheritable_accessor :attachment_options
@@ -460,6 +472,15 @@ module Technoweenie # :nodoc:
             @saved_attachment = nil
             callback :after_attachment_saved
           end
+        end
+
+        def get_attachment_storage_delegator(backend)
+          @attachment_fu_delegators ||= {}
+          @attachment_fu_delegators[backend] ||= self.class.attachment_backends[backend][:klass].new(self)
+        end
+
+        def save_to_storage(backend=:default)
+          get_attachment_store_delegator(backend).save_to_storage
         end
 
         # Resizes the given processed img object with either the attachment resize options or the thumbnail resize options.

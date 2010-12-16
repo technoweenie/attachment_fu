@@ -6,6 +6,7 @@ module Technoweenie # :nodoc:
     module Backends
       # Methods for file system backed attachments
       module FileSystemBackend
+          
         def self.included(base) #:nodoc:
           base.before_update :rename_file
         end
@@ -121,6 +122,18 @@ module Technoweenie # :nodoc:
             File.file?(full_filename) ? File.read(full_filename) : nil
           end
       end
+
+      class Delegator
+        include FileSystemBackend
+        def initialize(obj)
+          @obj = obj
+        end
+
+        def method_missing(method_id, *args, &block)
+          @obj.send!(method_id, *args, &block)
+        end
+      end
+
     end
   end
 end
