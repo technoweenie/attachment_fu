@@ -131,7 +131,8 @@ module Technoweenie # :nodoc:
         storage_klass = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Delegator")
 
         @attachment_backends[attachment_options[:store_name]] = {:klass => storage_klass, :options => attachment_options}
-        #include storage_mod unless included_modules.include?(storage_mod)
+        storage_klass.included_in_base(self)        
+
 
         case attachment_options[:processor]
         when :none, nil
@@ -405,6 +406,10 @@ module Technoweenie # :nodoc:
       def stores_in?(backend)
         backend == :default || true # something in the attributes
       end
+        
+      def current_data(backend=nil)
+        get_storage_delegator(backend).current_data
+      end
 
       # Stub for creating a temp file from the attachment data.  This should be defined in the backend module.
       def create_temp_file() end
@@ -482,16 +487,31 @@ module Technoweenie # :nodoc:
           end
         end
 
+        # if we're not given a specific storage engine, we'll grab one that the attachment actually has, starting with the default.
         def get_storage_delegator(backend)
           @attachment_fu_delegators ||= {}
-          hash = self.class.attachment_backends[backend]
-          @attachment_fu_delegators[backend] ||= hash[:klass].new(self, hash[:options])
+          
+          backends = self.class.attachment_backends
+          if backend.nil? 
+            list = backends.find_all { |a|
+              stores_in?(a[0]) 
+            }.sort { |a, b| 
+              (a[0] == :default ? 0 : 1) <=> (b[0] == :default ? 0 : 1)
+            }
+
+            backend = list[0]
+
+          end 
+
+          hash = backends[backend]          
+          @attachment_fu_delegators[backend] ||= backends[:klass].new(self, hash[:options])
           @attachment_fu_delegators[backend]
         end
 
-        def save_to_storage(backend=:default)
+        def save_to_storage(backend=nil)
           get_storage_delegator(backend).save_to_storage
         end
+
 
         def destroy_files
           self.class.attachment_backends.each do |k, v|

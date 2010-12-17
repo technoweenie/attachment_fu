@@ -6,7 +6,6 @@ module Technoweenie # :nodoc:
     module Backends
       # Methods for file system backed attachments
       module FileSystemBackend
-          
         def self.included(base) #:nodoc:
           #base.before_update :rename_file
         end
@@ -127,18 +126,17 @@ module Technoweenie # :nodoc:
         def initialize(obj, opts)
           @obj = obj
           @attachment_options = opts
-          obj.class.before_update :rename_file
         end
-    
+   
+        def self.included_in_base(base)
+          base.before_update :rename_file unless base.before_update.detect { |m| m.method == :rename_file }
+        end
+ 
         def __getobj__
           @obj
         end
 
         def attachment_options; @attachment_options; end
-
-        #def method_missing(method_id, *args, &block)
-        #  @obj.send(method_id, *args, &block)
-        #end
       end
 
     end
