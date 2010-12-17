@@ -352,42 +352,41 @@ module Technoweenie # :nodoc:
           Technoweenie::AttachmentFu::Backends::S3Backend.distribution_domain
         end
 
-        protected
-          # Called in the after_destroy callback
-          def destroy_file
-            S3Object.delete full_filename, bucket_name
-          end
+        # Called in the after_destroy callback
+        def destroy_file
+          S3Object.delete full_filename, bucket_name
+        end
 
-          def rename_file
-            return unless @old_filename && @old_filename != filename
+        def rename_file
+          return unless @old_filename && @old_filename != filename
 
-            old_full_filename = File.join(base_path, @old_filename)
+          old_full_filename = File.join(base_path, @old_filename)
 
-            S3Object.rename(
-              old_full_filename,
+          S3Object.rename(
+            old_full_filename,
+            full_filename,
+            bucket_name,
+            :access => attachment_options[:s3_access]
+          )
+
+          @old_filename = nil
+          true
+        end
+
+        def save_to_storage
+          if save_attachment?
+            S3Object.store(
               full_filename,
+              (temp_path ? File.open(temp_path) : temp_data),
               bucket_name,
+              :content_type => content_type,
               :access => attachment_options[:s3_access]
             )
-
-            @old_filename = nil
-            true
           end
 
-          def save_to_storage
-            if save_attachment?
-              S3Object.store(
-                full_filename,
-                (temp_path ? File.open(temp_path) : temp_data),
-                bucket_name,
-                :content_type => content_type,
-                :access => attachment_options[:s3_access]
-              )
-            end
-
-            @old_filename = nil
-            true
-          end
+          @old_filename = nil
+          true
+        end
       end
     end
   end
