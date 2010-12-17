@@ -127,7 +127,8 @@ module Technoweenie # :nodoc:
         end
 
         @attachment_backends ||= {}
-        storage_klass = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend::Delegator")
+        storage_mod = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
+        storage_klass = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Delegator")
 
         @attachment_backends[attachment_options[:store_name]] = {:klass => storage_klass, :options => attachment_options}
         #include storage_mod unless included_modules.include?(storage_mod)
@@ -193,7 +194,7 @@ module Technoweenie # :nodoc:
         base.before_destroy :destroy_thumbnails
         base.before_validation :set_size_from_temp_path
         base.after_save :after_process_attachment
-        base.after_destroy :destroy_file
+        base.after_destroy :destroy_files
         base.after_validation :process_attachment
         if defined?(::ActiveSupport::Callbacks)
           base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
@@ -400,6 +401,11 @@ module Technoweenie # :nodoc:
         self.class.write_to_temp_file data, random_tempfile_filename
       end
 
+      # Do we store to this particular store?  To be figured out what we need to support this
+      def stores_in?(backend)
+        backend == :default || true # something in the attributes
+      end
+
       # Stub for creating a temp file from the attachment data.  This should be defined in the backend module.
       def create_temp_file() end
 
@@ -467,20 +473,30 @@ module Technoweenie # :nodoc:
               temp_file = temp_path || create_temp_file
               attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
             end
-            save_to_storage
+            self.class.attachment_backends.each do |k, v|
+              save_to_storage(k) if stores_in?(k)
+            end
             @temp_paths.clear
             @saved_attachment = nil
             callback :after_attachment_saved
           end
         end
 
-        def get_attachment_storage_delegator(backend)
+        def get_storage_delegator(backend)
           @attachment_fu_delegators ||= {}
-          @attachment_fu_delegators[backend] ||= self.class.attachment_backends[backend][:klass].new(self)
+          hash = self.class.attachment_backends[backend]
+          @attachment_fu_delegators[backend] ||= hash[:klass].new(self, hash[:options])
+          @attachment_fu_delegators[backend]
         end
 
         def save_to_storage(backend=:default)
-          get_attachment_store_delegator(backend).save_to_storage
+          get_storage_delegator(backend).save_to_storage
+        end
+
+        def destroy_files
+          self.class.attachment_backends.each do |k, v|
+            get_storage_delegator(k).destroy_file if stores_in?(k)
+          end
         end
 
         # Resizes the given processed img object with either the attachment resize options or the thumbnail resize options.

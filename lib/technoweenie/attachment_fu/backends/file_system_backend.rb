@@ -8,7 +8,7 @@ module Technoweenie # :nodoc:
       module FileSystemBackend
           
         def self.included(base) #:nodoc:
-          base.before_update :rename_file
+          #base.before_update :rename_file
         end
       
         # Gets the full path to the filename in this format:
@@ -31,7 +31,7 @@ module Technoweenie # :nodoc:
       
         # The attachment ID used in the full path of a file
         def attachment_path_id
-          ((respond_to?(:parent_id) && parent_id) || id) || 0
+          ((respond_to?(:parent_id) && parent_id) || read_attribute(:id)) || 0
         end
       
         # Partitions the given path into an array of path components.
@@ -83,55 +83,62 @@ module Technoweenie # :nodoc:
           copy_to_temp_file full_filename
         end
 
-        protected
-          # Destroys the file.  Called in the after_destroy callback
-          def destroy_file
-            FileUtils.rm full_filename
-            # remove directory also if it is now empty
-            Dir.rmdir(File.dirname(full_filename)) if (Dir.entries(File.dirname(full_filename))-['.','..']).empty?
-          rescue
-            logger.info "Exception destroying  #{full_filename.inspect}: [#{$!.class.name}] #{$1.to_s}"
-            logger.warn $!.backtrace.collect { |b| " > #{b}" }.join("\n")
-          end
+        # Destroys the file.  Called in the after_destroy callback
+        def destroy_file
+          FileUtils.rm full_filename
+          # remove directory also if it is now empty
+          Dir.rmdir(File.dirname(full_filename)) if (Dir.entries(File.dirname(full_filename))-['.','..']).empty?
+        rescue
+          logger.info "Exception destroying  #{full_filename.inspect}: [#{$!.class.name}] #{$1.to_s}"
+          logger.warn $!.backtrace.collect { |b| " > #{b}" }.join("\n")
+        end
 
-          # Renames the given file before saving
-          def rename_file
-            return unless @old_filename && @old_filename != full_filename
-            if save_attachment? && File.exists?(@old_filename)
-              FileUtils.rm @old_filename
-            elsif File.exists?(@old_filename)
-              FileUtils.mv @old_filename, full_filename
-            end
-            @old_filename =  nil
-            true
+        # Renames the given file before saving
+        def rename_file
+          return unless @old_filename && @old_filename != full_filename
+          if save_attachment? && File.exists?(@old_filename)
+            FileUtils.rm @old_filename
+          elsif File.exists?(@old_filename)
+            FileUtils.mv @old_filename, full_filename
           end
-          
-          # Saves the file to the file system
-          def save_to_storage
-            if save_attachment?
-              # TODO: This overwrites the file if it exists, maybe have an allow_overwrite option?
-              FileUtils.mkdir_p(File.dirname(full_filename))
-              FileUtils.cp(temp_path, full_filename)
-              FileUtils.chmod(attachment_options[:chmod] || 0644, full_filename)
-            end
-            @old_filename = nil
-            true
+          @old_filename =  nil
+          true
+        end
+        
+        # Saves the file to the file system
+        def save_to_storage
+          if save_attachment?
+            # TODO: This overwrites the file if it exists, maybe have an allow_overwrite option?
+            FileUtils.mkdir_p(File.dirname(full_filename))
+            FileUtils.cp(temp_path, full_filename)
+            FileUtils.chmod(attachment_options[:chmod] || 0644, full_filename)
           end
-          
-          def current_data
-            File.file?(full_filename) ? File.read(full_filename) : nil
-          end
+          @old_filename = nil
+          true
+        end
+        
+        def current_data
+          File.file?(full_filename) ? File.read(full_filename) : nil
+        end
       end
 
-      class Delegator
+      class FileSystemDelegator < Delegator
         include FileSystemBackend
-        def initialize(obj)
+        def initialize(obj, opts)
           @obj = obj
+          @attachment_options = opts
+          obj.class.before_update :rename_file
+        end
+    
+        def __getobj__
+          @obj
         end
 
-        def method_missing(method_id, *args, &block)
-          @obj.send!(method_id, *args, &block)
-        end
+        def attachment_options; @attachment_options; end
+
+        #def method_missing(method_id, *args, &block)
+        #  @obj.send(method_id, *args, &block)
+        #end
       end
 
     end
