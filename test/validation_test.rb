@@ -44,7 +44,7 @@ class ValidationTest < ActiveSupport::TestCase
   end
 
   def test_should_require_filename
-    @attachment = Attachment.new
+    @attachment = AttachmentTest.new
     assert !@attachment.valid?
     assert @attachment.errors.on(:filename)
     

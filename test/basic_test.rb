@@ -2,23 +2,23 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'test_helper'))
 
 class BasicTest < ActiveSupport::TestCase
   def test_should_set_default_min_size
-    assert_equal 1, Attachment.attachment_options[:min_size]
+    assert_equal 1, AttachmentTest.attachment_options[:min_size]
   end
   
   def test_should_set_default_max_size
-    assert_equal 1.megabyte, Attachment.attachment_options[:max_size]
+    assert_equal 1.megabyte, AttachmentTest.attachment_options[:max_size]
   end
   
   def test_should_set_default_size
-    assert_equal (1..1.megabyte), Attachment.attachment_options[:size]
+    assert_equal (1..1.megabyte), AttachmentTest.attachment_options[:size]
   end
   
   def test_should_set_default_thumbnails_option
-    assert_equal Hash.new, Attachment.attachment_options[:thumbnails]
+    assert_equal Hash.new, AttachmentTest.attachment_options[:thumbnails]
   end
 
   def test_should_set_default_thumbnail_class
-    assert_equal Attachment, Attachment.attachment_options[:thumbnail_class]
+    assert_equal AttachmentTest, Attachment.attachment_options[:thumbnail_class]
   end
   
   def test_should_normalize_content_types_to_array
@@ -29,12 +29,12 @@ class BasicTest < ActiveSupport::TestCase
   end
   
   def test_should_sanitize_content_type
-    @attachment = Attachment.new :content_type => ' foo '
+    @attachment = AttachmentTest.new :content_type => ' foo '
     assert_equal 'foo', @attachment.content_type
   end
   
   def test_should_sanitize_filenames
-    @attachment = Attachment.new :filename => 'blah/foo.bar'
+    @attachment = AttachmentTest.new :filename => 'blah/foo.bar'
     assert_equal 'foo.bar',    @attachment.filename
 
     @attachment.filename = 'blah\\foo.bar'

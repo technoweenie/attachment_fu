@@ -1,4 +1,4 @@
-class Attachment < ActiveRecord::Base
+class AttachmentTest < ActiveRecord::Base
   @@saves = 0
   cattr_accessor :saves
   has_attachment :processor => :rmagick
@@ -8,31 +8,31 @@ class Attachment < ActiveRecord::Base
   end
 end
 
-class SmallAttachment < Attachment
+class SmallAttachment < AttachmentTest
   has_attachment :max_size => 1.kilobyte
 end
 
-class BigAttachment < Attachment
+class BigAttachment < AttachmentTest
   has_attachment :size => 1.megabyte..2.megabytes
 end
 
-class PdfAttachment < Attachment
+class PdfAttachment < AttachmentTest
   has_attachment :content_type => 'pdf'
 end
 
-class DocAttachment < Attachment
+class DocAttachment < AttachmentTest
   has_attachment :content_type => %w(pdf doc txt)
 end
 
-class ImageAttachment < Attachment
+class ImageAttachment < AttachmentTest
   has_attachment :content_type => :image, :resize_to => [50,50]
 end
 
-class ImageOrPdfAttachment < Attachment
+class ImageOrPdfAttachment < AttachmentTest
   has_attachment :content_type => ['pdf', :image], :resize_to => 'x50'
 end
 
-class ImageWithThumbsAttachment < Attachment
+class ImageWithThumbsAttachment < AttachmentTest
   has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
   after_resize do |record, img|
    # record.aspect_ratio = img.columns.to_f / img.rows.to_f

@@ -51,8 +51,8 @@ class ActiveSupport::TestCase #:nodoc:
   end
 
   def setup
-    Attachment.saves = 0
-    DbFile.transaction { [Attachment, FileAttachment, OrphanAttachment, MinimalAttachment, DbFile].each { |klass| klass.delete_all } }
+    AttachmentTest.saves = 0
+    DbFile.transaction { [AttachmentTest, FileAttachment, OrphanAttachment, MinimalAttachment, DbFile].each { |klass| klass.delete_all } }
     attachment_model self.class.attachment_model
   end
   

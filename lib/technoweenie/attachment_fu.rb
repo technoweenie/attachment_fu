@@ -347,7 +347,7 @@ module Technoweenie # :nodoc:
       #     <p><%= submit_tag :Save %>
       #   <% end -%>
       #
-      #   @attachment = Attachment.create! params[:attachment]
+      #   @attachment = AttachmentTest.create! params[:attachment]
       #
       # TODO: Allow it to work with Merb tempfiles too.
       def uploaded_data=(file_data)
