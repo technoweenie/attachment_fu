@@ -39,7 +39,7 @@ module Technoweenie # :nodoc:
           if save_attachment?
             (db_file || build_db_file).data = temp_data
             db_file.save!
-            @obj.class.update_all ['db_file_id = ?', obj.db_file_id = db_file.id], ['id = ?', id]
+            @obj.class.update_all ['db_file_id = ?', @obj.db_file_id = db_file.id], ['id = ?', id]
           end
           true
         end

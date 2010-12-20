@@ -1,5 +1,5 @@
 ActiveRecord::Schema.define(:version => 0) do
-  create_table :attachments, :force => true do |t|
+  create_table :attachment_tests, :force => true do |t|
     t.column :db_file_id,      :integer
     t.column :parent_id,       :integer
     t.column :thumbnail,       :string
