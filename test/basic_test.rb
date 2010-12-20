@@ -1,6 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'test_helper'))
 
-class BasicTest < Test::Unit::TestCase
+class BasicTest < ActiveSupport::TestCase
   def test_should_set_default_min_size
     assert_equal 1, Attachment.attachment_options[:min_size]
   end

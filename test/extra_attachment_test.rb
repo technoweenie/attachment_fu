@@ -1,6 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'test_helper'))
 
-class OrphanAttachmentTest < Test::Unit::TestCase
+class OrphanAttachmentTest < ActiveSupport::TestCase
   include BaseAttachmentTests
   attachment_model OrphanAttachment
   

@@ -1,6 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'test_helper'))
 
-class CoreImageTest < Test::Unit::TestCase
+class CoreImageTest < ActiveSupport::TestCase
   attachment_model CoreImageAttachment
 
   if Object.const_defined?(:OSX)

@@ -1,6 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'test_helper'))
 
-class MiniMagickTest < Test::Unit::TestCase
+class MiniMagickTest < ActiveSupport::TestCase
   attachment_model MiniMagickAttachment
 
   if Object.const_defined?(:MiniMagick)

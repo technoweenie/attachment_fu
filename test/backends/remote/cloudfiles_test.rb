@@ -1,7 +1,7 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'test_helper'))
 require 'net/http'
 
-class CloudfilesTest < Test::Unit::TestCase
+class CloudfilesTest < ActiveSupport::TestCase
   def self.test_CloudFiles?
     true unless ENV["TEST_CLOUDFILES"] == "false"
   end

@@ -1,7 +1,7 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'test_helper'))
 require 'net/http'
 
-class S3Test < Test::Unit::TestCase
+class S3Test < ActiveSupport::TestCase
   def self.test_S3?
     true unless ENV["TEST_S3"] == "false"
   end
