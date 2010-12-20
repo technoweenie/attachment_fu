@@ -5,11 +5,22 @@ module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     module Backends
       # Methods for file system backed attachments
-      module FileSystemBackend
-        def self.included(base) #:nodoc:
-          #base.before_update :rename_file
+      class FileSystemBackend < Delegator
+
+        def initialize(obj, opts)
+          @obj = obj
+          @attachment_options = opts
         end
-      
+   
+        def self.included_in_base(base)
+        end
+ 
+        def __getobj__
+          @obj
+        end
+
+        def attachment_options; @attachment_options; end
+
         # Gets the full path to the filename in this format:
         #
         #   # This assumes a model name like MyModel
@@ -120,25 +131,6 @@ module Technoweenie # :nodoc:
           File.file?(full_filename) ? File.read(full_filename) : nil
         end
       end
-
-      class FileSystemDelegator < Delegator
-        include FileSystemBackend
-        def initialize(obj, opts)
-          @obj = obj
-          @attachment_options = opts
-        end
-   
-        def self.included_in_base(base)
-          base.before_update :rename_file unless base.before_update.detect { |m| m.method == :rename_file }
-        end
- 
-        def __getobj__
-          @obj
-        end
-
-        def attachment_options; @attachment_options; end
-      end
-
     end
   end
 end

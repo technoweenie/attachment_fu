@@ -168,12 +168,12 @@ module Technoweenie # :nodoc:
       #
       # If you set :cloudfront to true in your model, the public_filename will be the CloudFront
       # URL, not the S3 URL.
-      module S3Backend
+      class S3Backend < Delegator
         class RequiredLibraryNotFoundError < StandardError; end
         class ConfigFileNotFoundError < StandardError; end
 
-        def self.included(base) #:nodoc:
-          mattr_reader :bucket_name, :s3_config
+        def self.included_in_base(base) #:nodoc:
+          base.mattr_reader :bucket_name, :s3_config
 
           begin
             require 'aws/s3'
@@ -202,7 +202,6 @@ module Technoweenie # :nodoc:
 
           # Bucket.create(@@bucket_name)
 
-          base.before_update :rename_file
         end
 
         def self.protocol

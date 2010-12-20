@@ -127,8 +127,7 @@ module Technoweenie # :nodoc:
         end
 
         @attachment_backends ||= {}
-        storage_mod = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
-        storage_klass = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Delegator")
+        storage_klass = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
 
         @attachment_backends[attachment_options[:store_name]] = {:klass => storage_klass, :options => attachment_options}
         storage_klass.included_in_base(self)        
@@ -193,7 +192,9 @@ module Technoweenie # :nodoc:
       def self.extended(base)
         base.class_inheritable_accessor :attachment_options
         base.before_destroy :destroy_thumbnails
+        base.before_update :rename_files
         base.before_validation :set_size_from_temp_path
+        base.before_save :process_attachment_migrations
         base.after_save :after_process_attachment
         base.after_destroy :destroy_files
         base.after_validation :process_attachment
@@ -309,6 +310,7 @@ module Technoweenie # :nodoc:
             :filename                 => thumbnail_name_for(file_name_suffix),
             :thumbnail_resize_options => size
           }, false)
+          thumb.instance_variable_set("@target_attachment_stores", @target_attachment_stores)
           callback_with_args :before_thumbnail_saved, thumb
           thumb.save!
         end
@@ -402,11 +404,34 @@ module Technoweenie # :nodoc:
         self.class.write_to_temp_file data, random_tempfile_filename
       end
 
-      # Do we store to this particular store?  To be figured out what we need to support this
-      def stores_in?(backend)
-        backend == :default || true # something in the attributes
+      def supports_multiple_stores?
+        has_attribute?(:stores) 
       end
-        
+
+      def attachment_stores
+        read_attribute(:stores).split(',').map(&:to_sym)
+      end
+
+      def attachment_stored_in?(backend)
+        !supports_multiple_stores? || attachment_stores.include?(backend)
+      end
+
+      # Do we *want* to save in this particular store?  
+      def attachment_should_store_in?(backend)
+        backend = backend.to_sym
+        attachment_stored_in?(backend) || self.class.attachment_backends[backend][:store_by_default]
+      end
+
+      def attachment_should_store_in(backend, bool)
+        stores = @target_attachment_stores || attachment_stores
+        if bool && !attachment_stored_in?(backend)
+          @target_attachment_stores = stores << backend.to_s
+        elsif !bool && attachment_stored_in?(backend)
+          @target_attachment_stores = stores.reject { |s| s == backend }
+        end 
+        puts @target_attachment_stores.join(',')
+      end
+       
       def current_data(backend=nil)
         get_storage_delegator(backend).current_data
       end
@@ -471,22 +496,6 @@ module Technoweenie # :nodoc:
           @saved_attachment = save_attachment?
         end
 
-        # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
-        def after_process_attachment
-          if @saved_attachment
-            if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
-              temp_file = temp_path || create_temp_file
-              attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
-            end
-            self.class.attachment_backends.each do |k, v|
-              save_to_storage(k) if stores_in?(k)
-            end
-            @temp_paths.clear
-            @saved_attachment = nil
-            callback :after_attachment_saved
-          end
-        end
-
         # if we're not given a specific storage engine, we'll grab one that the attachment actually has, starting with the default.
         def get_storage_delegator(backend)
           @attachment_fu_delegators ||= {}
@@ -494,28 +503,80 @@ module Technoweenie # :nodoc:
           backends = self.class.attachment_backends
           if backend.nil? 
             list = backends.find_all { |a|
-              stores_in?(a[0]) 
+              attachment_stored_in?(a[0]) 
             }.sort { |a, b| 
               (a[0] == :default ? 0 : 1) <=> (b[0] == :default ? 0 : 1)
             }
 
-            backend = list[0]
+            backend = list[0][0]
 
           end 
 
-          hash = backends[backend]          
-          @attachment_fu_delegators[backend] ||= backends[:klass].new(self, hash[:options])
+          hash = backends[backend]
+          @attachment_fu_delegators[backend] ||= hash[:klass].new(self, hash[:options])
           @attachment_fu_delegators[backend]
         end
 
-        def save_to_storage(backend=nil)
-          get_storage_delegator(backend).save_to_storage
+        def with_each_store
+          self.class.attachment_backends.each do |k, v|
+            yield get_storage_delegator(k)
+          end
         end
 
+        def process_attachment_migrations
+          if @target_attachment_stores 
+            # rewrite the tempfile to support migrating
+            set_temp_data(current_data) if !save_attachment?
+
+            if Set.new(@target_attachment_stores) != Set.new(attachment_stores)
+              @old_attachment_stores = attachment_stores
+              write_attribute(:stores, @target_attachment_stores.join(','))
+              @target_attachment_stores = nil
+            end
+          end
+          true
+        end
+
+        # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
+        def after_process_attachment
+          if @saved_attachment || @old_attachment_stores
+            if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
+              temp_file = temp_path || create_temp_file
+              attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
+            end
+            with_each_store do |store|
+              name = store.attachment_options[:store_name]
+              if @old_attachment_stores 
+                if attachment_stores.include?(name)
+                  store.save_to_storage
+                elsif @old_attachment_stores.include?(name)
+                  store.destroy_file
+                end
+              else
+                # user hasn't manually specified stores to put it in, just use defaults.
+                if attachment_should_store_in?(name)
+                  store.save_to_storage
+                end 
+              end
+            end
+
+            @temp_paths.clear
+            @saved_attachment = nil
+            @old_attachment_stores = nil
+            @target_attachment_stores = nil
+            callback :after_attachment_saved
+          end
+        end
 
         def destroy_files
-          self.class.attachment_backends.each do |k, v|
-            get_storage_delegator(k).destroy_file if stores_in?(k)
+          with_each_store do |store|
+            store.destroy_file
+          end
+        end
+
+        def rename_files
+          with_each_store do |store|
+            store.rename_file
           end
         end
 
