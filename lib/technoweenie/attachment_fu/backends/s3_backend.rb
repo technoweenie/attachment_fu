@@ -172,8 +172,20 @@ module Technoweenie # :nodoc:
         class RequiredLibraryNotFoundError < StandardError; end
         class ConfigFileNotFoundError < StandardError; end
 
+        mattr_reader :s3_config
+        attr_reader :bucket_name
+
+        def initialize(obj, opts)
+          @obj = obj
+          @attachment_options = opts
+          @bucket_name = opts[:bucket_name]
+        end
+        
+        def __getobj__
+          @obj
+        end
+
         def self.included_in_base(base) #:nodoc:
-          base.mattr_reader :bucket_name, :s3_config
 
           begin
             require 'aws/s3'
@@ -189,14 +201,13 @@ module Technoweenie # :nodoc:
           #  raise ConfigFileNotFoundError.new('File %s not found' % @@s3_config_path)
           end
 
-          bucket_key = base.attachment_options[:bucket_key]
-
-          if bucket_key and s3_config[bucket_key.to_sym]
-            eval_string = "def bucket_name()\n  \"#{s3_config[bucket_key.to_sym]}\"\nend"
-          else
-            eval_string = "def bucket_name()\n  \"#{s3_config[:bucket_name]}\"\nend"
-          end
-          base.class_eval(eval_string, __FILE__, __LINE__)
+          
+          #if bucket_key and s3_config[bucket_key.to_sym]
+          #  eval_string = "def bucket_name()\n  \"#{s3_config[bucket_key.to_sym]}\"\nend"
+          #else
+          #  eval_string = "def bucket_name()\n  \"#{s3_config[:bucket_name]}\"\nend"
+          #end
+          #base.class_eval(eval_string, __FILE__, __LINE__)
 
           Base.establish_connection!(s3_config.slice(:access_key_id, :secret_access_key, :server, :port, :use_ssl, :persistent, :proxy))
 
@@ -246,7 +257,7 @@ module Technoweenie # :nodoc:
 
         # The attachment ID used in the full path of a file
         def attachment_path_id
-          ((respond_to?(:parent_id) && parent_id) || id).to_s
+          ((respond_to?(:parent_id) && parent_id) || @obj.id).to_s
         end
 
         # The pseudo hierarchy containing the file relative to the bucket name
