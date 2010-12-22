@@ -184,6 +184,8 @@ module Technoweenie # :nodoc:
         def __getobj__
           @obj
         end
+        
+        attr_reader :attachment_options
 
         def self.included_in_base(base) #:nodoc:
 
@@ -247,13 +249,12 @@ module Technoweenie # :nodoc:
             Technoweenie::AttachmentFu::Backends::S3Backend.distribution_domain
           end
         end
-
-        # Overwrites the base filename writer in order to store the old filename
-        def filename=(value)
+        
+        # called by the ActiveRecord class from filename=
+        def notify_rename
           @old_filename = filename unless filename.nil? || @old_filename
-          write_attribute :filename, sanitize_filename(value)
-        end
-
+        end  
+          
         # The attachment ID used in the full path of a file
         def attachment_path_id
           ((respond_to?(:parent_id) && parent_id) || @obj.id).to_s
@@ -335,10 +336,6 @@ module Technoweenie # :nodoc:
           options[:expires_in] = options[:expires_in].to_i if options[:expires_in]
           thumbnail = args.shift
           S3Object.url_for(full_filename(thumbnail), bucket_name, options)
-        end
-
-        def create_temp_file
-          write_to_temp_file current_data
         end
 
         def current_data

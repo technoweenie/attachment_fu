@@ -325,6 +325,10 @@ module Technoweenie # :nodoc:
 
       # Sanitizes a filename.
       def filename=(new_name)
+        with_each_store(true) do |store|
+          store.notify_rename if store.respond_to?(:notify_rename)
+        end
+             
         write_attribute :filename, sanitize_filename(new_name)
       end
 
@@ -419,18 +423,23 @@ module Technoweenie # :nodoc:
       end
 
       def attachment_stores
-        read_attribute(:stores).split(',').map(&:to_sym)
+        if !has_attribute?(:stores)
+          [self.class.attachment_backends.keys.first]
+        else
+          read_attribute(:stores).split(',').map(&:to_sym)
+        end
       end
 
-      def attachment_stored_in?(backend)
+      def stored_in?(backend)
         attachment_stores.include?(backend)
       end
 
-      def attachment_should_store_in(backend, bool)
+      def should_store_in(backend, bool)
+        backend = backend.to_sym
         stores = @target_attachment_stores || attachment_stores
-        if bool && !attachment_stored_in?(backend)
-          @target_attachment_stores = stores << backend.to_s
-        elsif !bool && attachment_stored_in?(backend)
+        if bool && !stored_in?(backend)
+          @target_attachment_stores = stores << backend
+        elsif !bool && stored_in?(backend)
           @target_attachment_stores = stores.reject { |s| s == backend }
         end 
       end
@@ -439,8 +448,10 @@ module Technoweenie # :nodoc:
         get_storage_delegator(backend).current_data
       end
 
-      # Stub for creating a temp file from the attachment data.  This should be defined in the backend module.
-      def create_temp_file() end
+      # Creates a temp file with the current data.
+      def create_temp_file
+        write_to_temp_file current_data
+      end 
 
       # Allows you to work with a processed representation (RMagick, ImageScience, etc) of the attachment in a block.
       #
@@ -509,7 +520,7 @@ module Technoweenie # :nodoc:
               backend = backends.keys.first
             else
               list = backends.find_all { |a|
-                attachment_stored_in?(a[0]) 
+                stored_in?(a[0]) 
               }
               backend = list.map { |k, v| v[:options][:default] ? k : nil }.compact.first
               if !backend
@@ -523,17 +534,23 @@ module Technoweenie # :nodoc:
           @attachment_fu_delegators[backend]
         end
 
-        def with_each_store
+        def with_each_store(only_active=false)
           self.class.attachment_backends.each do |k, v|
-            yield get_storage_delegator(k)
+            if !only_active || stored_in?(k)
+              yield get_storage_delegator(k)
+            end
           end
         end
 
         def process_attachment_migrations
-          @old_attachment_stores = new_record? ? [] : attachment_stores
-  
-          @target_attachment_stores ||= default_attachment_stores
-          
+          if new_record?
+            @old_attachment_stores = [] 
+            @target_attachment_stores ||= default_attachment_stores
+          else
+            @old_attachment_stores = attachment_stores 
+            @target_attachment_stores ||= attachment_stores
+          end
+         
           if Set.new(@target_attachment_stores) != Set.new(attachment_stores)
             set_temp_data(current_data) if !save_attachment?
             write_attribute(:stores, @target_attachment_stores.join(','))

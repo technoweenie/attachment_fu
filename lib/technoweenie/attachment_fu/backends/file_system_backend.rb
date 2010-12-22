@@ -83,14 +83,8 @@ module Technoweenie # :nodoc:
           full_filename(thumbnail).gsub %r(^#{Regexp.escape(base_path)}), ''
         end
       
-        def filename=(value)
+        def notify_rename
           @old_filename = full_filename unless filename.nil? || @old_filename
-          write_attribute :filename, sanitize_filename(value)
-        end
-
-        # Creates a temp file from the currently saved file.
-        def create_temp_file
-          copy_to_temp_file full_filename
         end
 
         # Destroys the file.  Called in the after_destroy callback
