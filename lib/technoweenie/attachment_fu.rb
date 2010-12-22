@@ -384,8 +384,7 @@ module Technoweenie # :nodoc:
 
       # Gets an array of the currently used temp paths.  Defaults to a copy of #full_filename.
       def temp_paths
-        @temp_paths ||= (new_record? || !respond_to?(:full_filename) || !File.exist?(full_filename) ?
-          [] : [copy_to_temp_file(full_filename)])
+        @temp_paths ||= (new_record?) ? [] : [write_to_temp_file current_data]
       end
 
       # Gets the data from the latest temp file.  This will read the file into memory.
@@ -421,28 +420,27 @@ module Technoweenie # :nodoc:
         has_attribute?(:stores) 
       end
 
-      def attachment_stores
+      def stores
         if !has_attribute?(:stores)
           [self.class.attachment_backends.keys.first]
         else
-          read_attribute(:stores).split(',').map(&:to_sym)
+          stores = read_attribute(:stores) || ''
+          stores.split(',').map(&:to_sym)
         end
       end
 
       def stored_in?(backend)
-        attachment_stores.include?(backend)
+        stores.include?(backend)
       end
 
-      def should_store_in(backend, bool)
-        backend = backend.to_sym
-        stores = @target_attachment_stores || attachment_stores
-        if bool && !stored_in?(backend)
-          @target_attachment_stores = stores << backend
-        elsif !bool && stored_in?(backend)
-          @target_attachment_stores = stores.reject { |s| s == backend }
-        end 
+      def stores=(input)
+        if input.is_a?(Symbol)
+          @target_attachment_stores = [input]
+        else
+          @target_attachment_stores = input.map(&:to_sym)
+        end
       end
-       
+
       def current_data(backend=nil)
         get_storage_delegator(backend).current_data
       end
@@ -545,12 +543,13 @@ module Technoweenie # :nodoc:
           if new_record?
             @old_attachment_stores = [] 
             @target_attachment_stores ||= default_attachment_stores
+            raise "Please configure one attachment store as :default" if @target_attachment_stores.empty?
           else
-            @old_attachment_stores = attachment_stores 
-            @target_attachment_stores ||= attachment_stores
+            @old_attachment_stores = stores 
+            @target_attachment_stores ||= stores
           end
          
-          if Set.new(@target_attachment_stores) != Set.new(attachment_stores)
+          if Set.new(@target_attachment_stores) != Set.new(stores)
             set_temp_data(current_data) if !save_attachment?
             write_attribute(:stores, @target_attachment_stores.join(','))
           end
@@ -577,9 +576,10 @@ module Technoweenie # :nodoc:
             with_each_store do |store|
               name = store.attachment_options[:store_name]
 
-              if attachment_stores.include?(name)
+              if stores.include?(name)
                 store.save_to_storage
               elsif @old_attachment_stores.include?(name) # needs a delete
+                thumbnails.each { |thumb| thumb.destroy_file(name) }
                 store.destroy_file
               end
             end
@@ -590,6 +590,10 @@ module Technoweenie # :nodoc:
             @target_attachment_stores = nil
             callback :after_attachment_saved
           end
+        end
+
+        def destroy_file(name)
+          get_storage_delegator(name).destroy_file 
         end
 
         def destroy_files

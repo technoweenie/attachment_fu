@@ -116,19 +116,29 @@ class MinimalAttachment < ActiveRecord::Base
   end
 end
 
+
 class MultiStoreAttachment < ActiveRecord::Base
-  has_attachment :store_name => :store1, :default => true
-  has_attachment :store_name => :store2, :path_prefix => 'vendor/plugins/attachment_fu/test/files'
+  set_table_name "multi_store_attachments"
 end
 
-class MultiStoreAttachmentNoDefault < ActiveRecord::Base
+class MultiStoreAttachmentTwoDefaults < MultiStoreAttachment
+  has_attachment :store_name => :dbfile, :default => true
+  has_attachment :store_name => :fs, :default => true, :path_prefix => 'vendor/plugins/attachment_fu/test/files'
+end
+
+class MultiStoreAttachmentTwoFilesystems < MultiStoreAttachment
+  has_attachment :store_name => :fs1, :default => true, :path_prefix => 'vendor/plugins/attachment_fu/test/files1'
+  has_attachment :store_name => :fs2, :default => true, :path_prefix => 'vendor/plugins/attachment_fu/test/files2'
+end
+
+class MultiStoreAttachmentNoDefault < MultiStoreAttachment
   has_attachment :store_name => :store1
   has_attachment :store_name => :store2, :path_prefix => 'vendor/plugins/attachment_fu/test/files'
 end
 
-class MultiStoreAttachmentWithThumbnails < ActiveRecord::Base
-  has_attachment :store_name => :store1, :default => true, :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
-  has_attachment :store_name => :store2, :path_prefix => 'vendor/plugins/attachment_fu/test/files', :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
+class MultiStoreAttachmentWithThumbnails < MultiStoreAttachment
+  has_attachment :store_name => :fs1, :default => true, :path_prefix => 'vendor/plugins/attachment_fu/test/files1', :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
+  has_attachment :store_name => :fs2, :default => true, :path_prefix => 'vendor/plugins/attachment_fu/test/files2', :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
 end
 
 begin

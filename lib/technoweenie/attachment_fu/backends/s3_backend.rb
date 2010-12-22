@@ -176,10 +176,14 @@ module Technoweenie # :nodoc:
         attr_reader :bucket_name
 
         def initialize(obj, opts)
-          @bucket_name = opts[:bucket_name]
+          @bucket_name = opts[:bucket_name] || @@s3_config[:bucket_name]
           super(obj, opts)
         end
 
+        def s3_config
+          @@s3_config
+        end
+      
         def self.included_in_base(base) #:nodoc:
 
           begin
