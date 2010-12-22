@@ -102,11 +102,11 @@ module Technoweenie # :nodoc:
       #
       # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the container name as part of the path.
       # You can retrieve the container name using the <tt>container_name</tt> method.
-      module CloudFileBackend
+      class CloudFileBackend < BackendDelegator
         class RequiredLibraryNotFoundError < StandardError; end
         class ConfigFileNotFoundError < StandardError; end
 
-        def self.included(base) #:nodoc:
+        def self.included_in_base(base) #:nodoc:
           mattr_reader :container_name, :cloudfiles_config
 
           begin
@@ -125,19 +125,16 @@ module Technoweenie # :nodoc:
           @@container_name = @@cloudfiles_config[:container_name]
           @@cf = CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
           @@container = @@cf.container(@@container_name)
-          
-          base.before_update :rename_file
         end
 
         # Overwrites the base filename writer in order to store the old filename
-        def filename=(value)
+        def notify_rename
           @old_filename = filename unless filename.nil? || @old_filename
-          write_attribute :filename, sanitize_filename(value)
         end
 
         # The attachment ID used in the full path of a file
         def attachment_path_id
-          ((respond_to?(:parent_id) && parent_id) || id).to_s
+          ((respond_to?(:parent_id) && parent_id) || @obj.id).to_s
         end
 
         # The pseudo hierarchy containing the file relative to the container name
