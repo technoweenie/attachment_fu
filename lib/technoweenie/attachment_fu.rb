@@ -408,12 +408,16 @@ module Technoweenie # :nodoc:
       end
 
       def public_filename(backend=nil)
-        get_storage_delegator(backend).public_filename 
+        on_one_store(:public_filename, backend)
       end
      
       # Fixme: this loops eternally if the delegator doesn't respond to full_filename 
       def full_filename(backend=nil)
-        get_storage_delegator(backend).full_filename 
+        on_one_store(:full_filename, backend)
+      end
+      
+      def current_data(backend=nil)
+        on_one_store(:current_data, backend)
       end
 
       def supports_multiple_stores?
@@ -441,9 +445,6 @@ module Technoweenie # :nodoc:
         end
       end
 
-      def current_data(backend=nil)
-        get_storage_delegator(backend).current_data
-      end
 
       # Creates a temp file with the current data.
       def create_temp_file
@@ -529,6 +530,12 @@ module Technoweenie # :nodoc:
           hash = backends[backend]
           @attachment_fu_delegators[backend] ||= hash[:klass].new(self, hash[:options])
           @attachment_fu_delegators[backend]
+        end
+
+        def on_one_store(method, backend, *args)
+          delegator = get_storage_delegator(backend) 
+          # using methods.include instead of respond_to? because the delegation has already screwed respond_to?
+          delegator.send(method, *args) if delegator.methods.include?(method)
         end
 
         def with_each_store(only_active=false)

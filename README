@@ -88,6 +88,8 @@ Fields for attachment_fu metadata tables...
     size,         :integer  # file size in bytes
     content_type, :string   # mime type, ex: application/mp3
     filename,     :string   # sanitized filename
+  that reference multiple attachment stores:
+    stores,       :string
   that reference images:
     height,       :integer  # in pixels
     width,        :integer  # in pixels
