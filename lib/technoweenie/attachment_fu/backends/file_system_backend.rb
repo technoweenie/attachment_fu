@@ -5,22 +5,10 @@ module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     module Backends
       # Methods for file system backed attachments
-      class FileSystemBackend < Delegator
-
-        def initialize(obj, opts)
-          @obj = obj
-          @attachment_options = opts
-        end
-   
+      class FileSystemBackend < BackendDelegator
         def self.included_in_base(base)
         end
  
-        def __getobj__
-          @obj
-        end
-
-        def attachment_options; @attachment_options; end
-
         # Gets the full path to the filename in this format:
         #
         #   # This assumes a model name like MyModel

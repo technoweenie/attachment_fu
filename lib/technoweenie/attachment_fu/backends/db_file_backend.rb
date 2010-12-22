@@ -19,7 +19,7 @@ module Technoweenie # :nodoc:
         def destroy_file
           db_file.destroy if db_file
         end
-        
+      
         # Saves the data to the DbFile model
         def save_to_storage
           if save_attachment?

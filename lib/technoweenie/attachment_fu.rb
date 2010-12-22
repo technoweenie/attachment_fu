@@ -126,10 +126,10 @@ module Technoweenie # :nodoc:
           m.belongs_to :parent, :class_name => "::#{base_class}" unless options[:thumbnails].empty?
         end
 
-        @attachment_backends ||= {}
+        self.attachment_backends ||= {}
         storage_klass = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
 
-        @attachment_backends[attachment_options[:store_name]] = {:klass => storage_klass, :options => attachment_options}
+        self.attachment_backends[attachment_options[:store_name]] = {:klass => storage_klass, :options => attachment_options}
         storage_klass.included_in_base(self)        
 
         # support syntax-sugar of "a = Attachment.new ; a.s3.authenticated_s3_url" for accessing store-specific stuff
@@ -189,10 +189,9 @@ module Technoweenie # :nodoc:
         content_types.include?(content_type)
       end
 
-      attr_accessor :attachment_backends
-
       def self.extended(base)
         base.class_inheritable_accessor :attachment_options
+        base.class_inheritable_accessor :attachment_backends
         base.before_destroy :destroy_thumbnails
         base.before_update :rename_files
         base.before_validation :set_size_from_temp_path
@@ -328,7 +327,6 @@ module Technoweenie # :nodoc:
         with_each_store(true) do |store|
           store.notify_rename if store.respond_to?(:notify_rename)
         end
-             
         write_attribute :filename, sanitize_filename(new_name)
       end
 
@@ -413,7 +411,8 @@ module Technoweenie # :nodoc:
       def public_filename(backend=nil)
         get_storage_delegator(backend).public_filename 
       end
-      
+     
+      # Fixme: this loops eternally if the delegator doesn't respond to full_filename 
       def full_filename(backend=nil)
         get_storage_delegator(backend).full_filename 
       end
@@ -560,7 +559,12 @@ module Technoweenie # :nodoc:
         end
 
         def default_attachment_stores
-          self.class.attachment_backends.map { |k, v| v[:options][:default] ? k : nil }.compact
+          backends = self.class.attachment_backends
+          if backends.size == 1
+            [backends.keys.first]
+          else
+            backends.map { |k, v| v[:options][:default] ? k : nil }.compact
+          end
         end
 
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
