@@ -201,7 +201,6 @@ module Technoweenie # :nodoc:
           #  raise ConfigFileNotFoundError.new('File %s not found' % @@s3_config_path)
           end
 
-          
           #if bucket_key and s3_config[bucket_key.to_sym]
           #  eval_string = "def bucket_name()\n  \"#{s3_config[bucket_key.to_sym]}\"\nend"
           #else

@@ -19,6 +19,8 @@ module Technoweenie # :nodoc:
 
         def attachment_options; @attachment_options; end
 
+        def rename_file ; end
+
         # Creates a temp file with the current db data.
         def create_temp_file
           write_to_temp_file current_data

@@ -132,6 +132,8 @@ module Technoweenie # :nodoc:
         @attachment_backends[attachment_options[:store_name]] = {:klass => storage_klass, :options => attachment_options}
         storage_klass.included_in_base(self)        
 
+        # support syntax-sugar of "a = Attachment.new ; a.s3.authenticated_s3_url" for accessing store-specific stuff
+        self.class_eval ("def #{attachment_options[:store_name]}_file; get_storage_delegator(:#{attachment_options[:store_name]}); end")
 
         case attachment_options[:processor]
         when :none, nil
@@ -404,6 +406,14 @@ module Technoweenie # :nodoc:
         self.class.write_to_temp_file data, random_tempfile_filename
       end
 
+      def public_filename(backend=nil)
+        get_storage_delegator(backend).public_filename 
+      end
+      
+      def full_filename(backend=nil)
+        get_storage_delegator(backend).full_filename 
+      end
+
       def supports_multiple_stores?
         has_attribute?(:stores) 
       end
@@ -413,13 +423,7 @@ module Technoweenie # :nodoc:
       end
 
       def attachment_stored_in?(backend)
-        !supports_multiple_stores? || attachment_stores.include?(backend)
-      end
-
-      # Do we *want* to save in this particular store?  
-      def attachment_should_store_in?(backend)
-        backend = backend.to_sym
-        attachment_stored_in?(backend) || self.class.attachment_backends[backend][:store_by_default]
+        attachment_stores.include?(backend)
       end
 
       def attachment_should_store_in(backend, bool)
@@ -429,7 +433,6 @@ module Technoweenie # :nodoc:
         elsif !bool && attachment_stored_in?(backend)
           @target_attachment_stores = stores.reject { |s| s == backend }
         end 
-        puts @target_attachment_stores.join(',')
       end
        
       def current_data(backend=nil)
@@ -502,14 +505,17 @@ module Technoweenie # :nodoc:
           
           backends = self.class.attachment_backends
           if backend.nil? 
-            list = backends.find_all { |a|
-              attachment_stored_in?(a[0]) 
-            }.sort { |a, b| 
-              (a[0] == :default ? 0 : 1) <=> (b[0] == :default ? 0 : 1)
-            }
-
-            backend = list[0][0]
-
+            if backends.size == 1
+              backend = backends.keys.first
+            else
+              list = backends.find_all { |a|
+                attachment_stored_in?(a[0]) 
+              }
+              backend = list.map { |k, v| v[:options][:default] ? k : nil }.compact.first
+              if !backend
+                backend = list[0][0]
+              end
+            end
           end 
 
           hash = backends[backend]
@@ -524,17 +530,20 @@ module Technoweenie # :nodoc:
         end
 
         def process_attachment_migrations
-          if @target_attachment_stores 
-            # rewrite the tempfile to support migrating
+          @old_attachment_stores = new_record? ? [] : attachment_stores
+  
+          @target_attachment_stores ||= default_attachment_stores
+          
+          if Set.new(@target_attachment_stores) != Set.new(attachment_stores)
             set_temp_data(current_data) if !save_attachment?
-
-            if Set.new(@target_attachment_stores) != Set.new(attachment_stores)
-              @old_attachment_stores = attachment_stores
-              write_attribute(:stores, @target_attachment_stores.join(','))
-              @target_attachment_stores = nil
-            end
+            write_attribute(:stores, @target_attachment_stores.join(','))
           end
-          true
+        
+          @target_attachment_stores = nil
+        end
+
+        def default_attachment_stores
+          self.class.attachment_backends.map { |k, v| v[:options][:default] ? k : nil }.compact
         end
 
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
@@ -546,17 +555,11 @@ module Technoweenie # :nodoc:
             end
             with_each_store do |store|
               name = store.attachment_options[:store_name]
-              if @old_attachment_stores 
-                if attachment_stores.include?(name)
-                  store.save_to_storage
-                elsif @old_attachment_stores.include?(name)
-                  store.destroy_file
-                end
-              else
-                # user hasn't manually specified stores to put it in, just use defaults.
-                if attachment_should_store_in?(name)
-                  store.save_to_storage
-                end 
+
+              if attachment_stores.include?(name)
+                store.save_to_storage
+              elsif @old_attachment_stores.include?(name) # needs a delete
+                store.destroy_file
               end
             end
 

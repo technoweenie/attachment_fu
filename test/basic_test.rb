@@ -18,7 +18,7 @@ class BasicTest < ActiveSupport::TestCase
   end
 
   def test_should_set_default_thumbnail_class
-    assert_equal AttachmentTest, Attachment.attachment_options[:thumbnail_class]
+    assert_equal AttachmentTest, AttachmentTest.attachment_options[:thumbnail_class]
   end
   
   def test_should_normalize_content_types_to_array

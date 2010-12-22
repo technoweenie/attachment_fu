@@ -116,6 +116,21 @@ class MinimalAttachment < ActiveRecord::Base
   end
 end
 
+class MultiStoreAttachment < ActiveRecord::Base
+  has_attachment :store_name => :store1, :default => true
+  has_attachment :store_name => :store2, :path_prefix => 'vendor/plugins/attachment_fu/test/files'
+end
+
+class MultiStoreAttachmentNoDefault < ActiveRecord::Base
+  has_attachment :store_name => :store1
+  has_attachment :store_name => :store2, :path_prefix => 'vendor/plugins/attachment_fu/test/files'
+end
+
+class MultiStoreAttachmentWithThumbnails < ActiveRecord::Base
+  has_attachment :store_name => :store1, :default => true, :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
+  has_attachment :store_name => :store2, :path_prefix => 'vendor/plugins/attachment_fu/test/files', :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
+end
+
 begin
   class ImageScienceAttachment < ActiveRecord::Base
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
