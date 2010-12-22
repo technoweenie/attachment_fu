@@ -60,6 +60,10 @@ class ActiveSupport::TestCase #:nodoc:
     FileUtils.rm_rf File.join(File.dirname(__FILE__), 'files')
   end
 
+  def assert_valid(record) 
+    assert record.valid?, record.errors.full_messages.join("\n") 
+  end 
+
   self.use_transactional_fixtures = true
   self.use_instantiated_fixtures  = false
 
