@@ -33,6 +33,7 @@ module BaseAttachmentTests
      
       attachment.set_temp_data 'wtf'
       assert attachment.save_attachment?
+
       attachment.save!
       
       assert_equal 'wtf', attachment_model.find(attachment.id).send(:current_data)

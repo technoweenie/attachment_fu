@@ -379,12 +379,12 @@ module Technoweenie # :nodoc:
       # it's not needed anymore.  The collection is cleared after saving the attachment.
       def temp_path
         p = temp_paths.first
-        p.respond_to?(:path) ? p.path : p.to_s
+        p.respond_to?(:path) ? p.path : p
       end
 
       # Gets an array of the currently used temp paths.  Defaults to a copy of #full_filename.
       def temp_paths
-        @temp_paths ||= (new_record?) ? [] : [write_to_temp_file current_data]
+        @temp_paths ||= []
       end
 
       # Gets the data from the latest temp file.  This will read the file into memory.
@@ -535,7 +535,7 @@ module Technoweenie # :nodoc:
         def on_one_store(method, backend, *args)
           delegator = get_storage_delegator(backend) 
           # using methods.include instead of respond_to? because the delegation has already screwed respond_to?
-          delegator.send(method, *args) if delegator.methods.include?(method)
+          delegator.send(method, *args) if delegator.methods.include?(method.to_s)
         end
 
         def with_each_store(only_active=false)
@@ -555,7 +555,7 @@ module Technoweenie # :nodoc:
             @old_attachment_stores = stores 
             @target_attachment_stores ||= stores
           end
-         
+
           if Set.new(@target_attachment_stores) != Set.new(stores)
             set_temp_data(current_data) if !save_attachment?
             write_attribute(:stores, @target_attachment_stores.join(','))
