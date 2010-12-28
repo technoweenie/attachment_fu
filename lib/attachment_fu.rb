@@ -12,16 +12,8 @@ end
 require 'geometry'
 
 require 'technoweenie/attachment_fu'
-require 'technoweenie/attachment_fu/backends/backend_delegator'
-require 'technoweenie/attachment_fu/backends/db_file_backend'
-require 'technoweenie/attachment_fu/backends/file_system_backend'
-require 'technoweenie/attachment_fu/backends/s3_backend'
-require 'technoweenie/attachment_fu/backends/cloud_file_backend'
-require 'technoweenie/attachment_fu/processors/core_image_processor'
-require 'technoweenie/attachment_fu/processors/gd2_processor'
-require 'technoweenie/attachment_fu/processors/image_science_processor'
-require 'technoweenie/attachment_fu/processors/mini_magick_processor'
-require 'technoweenie/attachment_fu/processors/rmagick_processor'
+
+ActiveSupport::Dependencies.load_paths << File.dirname(__FILE__)
 
 ActiveRecord::Base.send(:extend, Technoweenie::AttachmentFu::ActMethods)
 Technoweenie::AttachmentFu.tempfile_path = ATTACHMENT_FU_TEMPFILE_PATH if Object.const_defined?(:ATTACHMENT_FU_TEMPFILE_PATH)
