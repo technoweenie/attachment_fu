@@ -13,7 +13,7 @@ class S3Test < ActiveSupport::TestCase
     def test_should_create_correct_bucket_name(klass = S3Attachment)
       attachment_model klass
       attachment = upload_file :filename => '/files/rails.png'
-      assert_equal attachment.default_file.s3_config[:bucket_name], attachment.default_file.bucket_name
+      assert_equal attachment.s3_config[:bucket_name], attachment.bucket_name
     end
 
     test_against_subclass :test_should_create_correct_bucket_name, S3Attachment
@@ -21,7 +21,7 @@ class S3Test < ActiveSupport::TestCase
     def test_should_create_default_path_prefix(klass = S3Attachment)
       attachment_model klass
       attachment = upload_file :filename => '/files/rails.png'
-      assert_equal File.join(attachment_model.table_name, attachment.default_file.attachment_path_id), attachment.default_file.base_path
+      assert_equal File.join(attachment_model.table_name, attachment.attachment_path_id), attachment.base_path
     end
 
     test_against_subclass :test_should_create_default_path_prefix, S3Attachment
@@ -29,7 +29,7 @@ class S3Test < ActiveSupport::TestCase
     def test_should_create_custom_path_prefix(klass = S3WithPathPrefixAttachment)
       attachment_model klass
       attachment = upload_file :filename => '/files/rails.png'
-      assert_equal File.join('some/custom/path/prefix', attachment.default_file.attachment_path_id), attachment.default_file.base_path
+      assert_equal File.join('some/custom/path/prefix', attachment.attachment_path_id), attachment.base_path
     end
 
     test_against_subclass :test_should_create_custom_path_prefix, S3WithPathPrefixAttachment
@@ -37,7 +37,7 @@ class S3Test < ActiveSupport::TestCase
     def test_should_create_valid_url(klass = S3Attachment)
       attachment_model klass
       attachment = upload_file :filename => '/files/rails.png'
-      assert_equal "#{s3_protocol}#{s3_hostname}#{s3_port_string}/#{attachment.default_file.bucket_name}/#{attachment.full_filename}", attachment.default_file.s3_url
+      assert_equal "#{s3_protocol}#{s3_hostname}#{s3_port_string}/#{attachment.bucket_name}/#{attachment.full_filename}", attachment.s3_url
     end
 
     test_against_subclass :test_should_create_valid_url, S3Attachment
@@ -45,7 +45,7 @@ class S3Test < ActiveSupport::TestCase
     def test_should_create_authenticated_url(klass = S3Attachment)
       attachment_model klass
       attachment = upload_file :filename => '/files/rails.png'
-      assert_match /^http.+AWSAccessKeyId.+Expires.+Signature.+/, attachment.default_file.authenticated_s3_url(:use_ssl => true)
+      assert_match /^http.+AWSAccessKeyId.+Expires.+Signature.+/, attachment.authenticated_s3_url(:use_ssl => true)
     end
 
     test_against_subclass :test_should_create_authenticated_url, S3Attachment
@@ -56,8 +56,8 @@ class S3Test < ActiveSupport::TestCase
       ['large', :large].each do |thumbnail|
         assert_match(
           /^http.+rails_large\.png.+AWSAccessKeyId.+Expires.+Signature/, 
-          attachment.default_file.authenticated_s3_url(thumbnail), 
-          "default_file.authenticated_s3_url failed with #{thumbnail.class} parameter"
+          attachment.authenticated_s3_url(thumbnail), 
+          "authenticated_s3_url failed with #{thumbnail.class} parameter"
         )
       end
     end
@@ -69,7 +69,7 @@ class S3Test < ActiveSupport::TestCase
         assert_valid attachment
         assert attachment.image?
         assert !attachment.size.zero?
-        assert_kind_of Net::HTTPOK, http_response_for(attachment.default_file.s3_url)
+        assert_kind_of Net::HTTPOK, http_response_for(attachment.s3_url)
       end
     end
 
@@ -79,7 +79,7 @@ class S3Test < ActiveSupport::TestCase
       attachment_model klass
       attachment = upload_file :filename => '/files/rails.png'
 
-      urls = [attachment.default_file.s3_url] + attachment.thumbnails.collect { |t| t.default_file.s3_url }
+      urls = [attachment.s3_url] + attachment.thumbnails.collect(&:s3_url)
 
       urls.each {|url| assert_kind_of Net::HTTPOK, http_response_for(url) }
       attachment.destroy

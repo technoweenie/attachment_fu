@@ -224,7 +224,6 @@ rescue MissingSourceFile
 end
 
 
-
 begin
   class S3Attachment < ActiveRecord::Base
     has_attachment :storage => :s3, :processor => :rmagick, :s3_config_path => File.join(File.dirname(__FILE__), '../amazon_s3.yml')

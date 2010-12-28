@@ -407,17 +407,12 @@ module Technoweenie # :nodoc:
         self.class.write_to_temp_file data, random_tempfile_filename
       end
 
-      def public_filename(backend=nil)
-        on_one_store(:public_filename, backend)
-      end
-     
-      # Fixme: this loops eternally if the delegator doesn't respond to full_filename 
-      def full_filename(backend=nil)
-        on_one_store(:full_filename, backend)
-      end
-      
-      def current_data(backend=nil)
-        on_one_store(:current_data, backend)
+      # supports backwards compat -- we pretend that methods are mixed in.  Might screw with someone using respond_to? though.
+      ONE_STORE_METHODS = [:public_filename, :full_filename, :current_data, :base_path, :attachment_path_id, :partitioned_path, :cloudfront_url, 
+                           :authenticated_s3_url, :s3_config, :cloudfiles_url, :s3_url, :bucket_name]
+
+      ONE_STORE_METHODS.each do |method|
+        eval("def #{method}(*args) ; on_one_store(:#{method}, nil, *args) ; end")
       end
 
       def supports_multiple_stores?
@@ -533,9 +528,21 @@ module Technoweenie # :nodoc:
         end
 
         def on_one_store(method, backend, *args)
-          delegator = get_storage_delegator(backend) 
-          # using methods.include instead of respond_to? because the delegation has already screwed respond_to?
-          delegator.send(method, *args) if delegator.methods.include?(method.to_s)
+          delegator = nil
+          if backend 
+            delegator = get_storage_delegator(backend) 
+          else
+            with_each_store(true) { |store|
+              # using methods.include instead of respond_to? because the delegation has already screwed up respond_to?
+              if store.methods.include?(method.to_s)
+                delegator = store
+                break
+              end
+            }
+          end
+          
+          raise NoMethodError, "No stores responded to \"#{method}\"" if delegator.nil?
+          delegator.send(method, *args) 
         end
 
         def with_each_store(only_active=false)
@@ -597,10 +604,6 @@ module Technoweenie # :nodoc:
             @target_attachment_stores = nil
             callback :after_attachment_saved
           end
-        end
-
-        def destroy_file(name)
-          get_storage_delegator(name).destroy_file 
         end
 
         def destroy_files
