@@ -593,7 +593,9 @@ module Technoweenie # :nodoc:
               if stores.include?(name)
                 store.save_to_storage
               elsif @old_attachment_stores.include?(name) # needs a delete
-                thumbnails.each { |thumb| thumb.destroy_file(name) }
+                thumbnails.each { |thumb| 
+                  thumb.send(:get_storage_delegator, name).destroy_file
+                }
                 store.destroy_file
               end
             end

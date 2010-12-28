@@ -123,4 +123,31 @@ class MultiBackendTest < ActiveSupport::TestCase
     assert File.exist?(attachment.thumbnails.first.fs1_file.full_filename)
     assert !File.exist?(attachment.thumbnails.first.fs2_file.full_filename), "Second thumbnail was not destroyed"
   end
+
+  def test_should_move_files_and_thumbnails
+    attachment_model MultiStoreAttachmentWithThumbnails
+
+    attachment = upload_file :filename => '/files/rails.png', :stores => :fs1
+    
+    assert File.exist?(attachment.fs1_file.full_filename)
+    assert File.exist?(attachment.thumbnails.first.fs1_file.full_filename)
+
+    attachment.stores = :fs2
+    attachment.save
+
+    assert File.exist?(attachment.fs2_file.full_filename)
+    assert File.exist?(attachment.thumbnails.first.fs2_file.full_filename)
+    assert attachment.full_filename =~ /files2/
+    assert attachment.thumbnails.first.full_filename =~ /files2/
+
+  end
+
+  def test_should_support_sugary_stuff
+    attachment_model MultiStoreAttachmentTwoFilesystems
+
+    attachment = upload_file :filename => '/files/rails.png'
+    attachment.save
+
+    assert(attachment.fs1_file.current_data == attachment.fs2_file.current_data)
+  end
 end
