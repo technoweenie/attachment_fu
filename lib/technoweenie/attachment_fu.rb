@@ -133,7 +133,7 @@ module Technoweenie # :nodoc:
         storage_klass.included_in_base(self)        
 
         # support syntax-sugar of "a = Attachment.new ; a.s3.authenticated_s3_url" for accessing store-specific stuff
-        self.class_eval ("def #{attachment_options[:store_name]}_file; get_storage_delegator(:#{attachment_options[:store_name]}); end")
+        self.class_eval "def #{attachment_options[:store_name]}_file; get_storage_delegator(:#{attachment_options[:store_name]}); end"
 
         case attachment_options[:processor]
         when :none, nil
