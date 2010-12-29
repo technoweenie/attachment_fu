@@ -311,7 +311,7 @@ module Technoweenie # :nodoc:
             :filename                 => thumbnail_name_for(file_name_suffix),
             :thumbnail_resize_options => size
           }, false)
-          thumb.instance_variable_set("@target_attachment_stores", @target_attachment_stores)
+          thumb.stores = stores
           callback_with_args :before_thumbnail_saved, thumb
           thumb.save!
         end
@@ -593,9 +593,6 @@ module Technoweenie # :nodoc:
               if stores.include?(name)
                 store.save_to_storage
               elsif @old_attachment_stores.include?(name) # needs a delete
-                thumbnails.each { |thumb| 
-                  thumb.send(:get_storage_delegator, name).destroy_file
-                }
                 store.destroy_file
               end
             end
