@@ -193,7 +193,7 @@ module Technoweenie # :nodoc:
             raise RequiredLibraryNotFoundError.new('AWS::S3 could not be loaded')
           end
 
-          if base.attachment_options[:s3_access_key] && base.attachment_options[:s3_secret_access_key]
+          if base.attachment_options[:s3_access_key] && base.attachment_options[:s3_secret_key]
             @@s3_config = {:access_key_id => base.attachment_options[:s3_access_key], 
                            :secret_access_key => base.attachment_options[:s3_secret_key]}
           else 
