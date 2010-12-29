@@ -137,8 +137,10 @@ class MultiBackendTest < ActiveSupport::TestCase
 
     assert File.exist?(attachment.fs2_file.full_filename)
     assert File.exist?(attachment.thumbnails.first.fs2_file.full_filename)
+    attachment.thumbnails.first.reload
     assert attachment.full_filename =~ /files2/
-    assert attachment.thumbnails.first.full_filename =~ /files2/
+    assert attachment.thumbnails.first.full_filename =~ /files2/, 
+            "attachment.thumbnails.first.full_filename (\"#{attachment.thumbnails.first.full_filename}\") did not include /files2: " 
 
   end
 
