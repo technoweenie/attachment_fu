@@ -193,19 +193,13 @@ module Technoweenie # :nodoc:
             raise RequiredLibraryNotFoundError.new('AWS::S3 could not be loaded')
           end
 
-          begin
+          if base.attachment_options[:s3_access_key] && base.attachment_options[:s3_secret_access_key]
+            @@s3_config = {:access_key_id => base.attachment_options[:s3_access_key], 
+                           :secret_access_key => base.attachment_options[:secret_access_key]}
+          else 
             @@s3_config_path = base.attachment_options[:s3_config_path] || (RAILS_ROOT + '/config/amazon_s3.yml')
             @@s3_config = @@s3_config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)[RAILS_ENV].symbolize_keys
-          #rescue
-          #  raise ConfigFileNotFoundError.new('File %s not found' % @@s3_config_path)
           end
-
-          #if bucket_key and s3_config[bucket_key.to_sym]
-          #  eval_string = "def bucket_name()\n  \"#{s3_config[bucket_key.to_sym]}\"\nend"
-          #else
-          #  eval_string = "def bucket_name()\n  \"#{s3_config[:bucket_name]}\"\nend"
-          #end
-          #base.class_eval(eval_string, __FILE__, __LINE__)
 
           Base.establish_connection!(s3_config.slice(:access_key_id, :secret_access_key, :server, :port, :use_ssl, :persistent, :proxy))
 
