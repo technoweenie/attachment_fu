@@ -195,7 +195,7 @@ module Technoweenie # :nodoc:
 
           if base.attachment_options[:s3_access_key] && base.attachment_options[:s3_secret_access_key]
             @@s3_config = {:access_key_id => base.attachment_options[:s3_access_key], 
-                           :secret_access_key => base.attachment_options[:secret_access_key]}
+                           :secret_access_key => base.attachment_options[:s3_secret_key]}
           else 
             @@s3_config_path = base.attachment_options[:s3_config_path] || (RAILS_ROOT + '/config/amazon_s3.yml')
             @@s3_config = @@s3_config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)[RAILS_ENV].symbolize_keys
