@@ -95,8 +95,8 @@ class CloudfilesTest < ActiveSupport::TestCase
         Technoweenie::AttachmentFu::Backends::S3Backend.port_string
       end
   else
-    def test_flunk_s3
-      puts "s3 config file not loaded, tests not running"
+    def test_flunk_cloud
+      puts "cloudfiles config file not loaded, tests not running"
     end
   end
 end
