@@ -106,8 +106,8 @@ module Technoweenie # :nodoc:
         class RequiredLibraryNotFoundError < StandardError; end
         class ConfigFileNotFoundError < StandardError; end
 
+        cattr_reader :cloudfiles_config, :container_name
         def self.included_in_base(base) #:nodoc:
-          mattr_reader :container_name, :cloudfiles_config
 
           begin
             require 'cloudfiles'
@@ -115,12 +115,13 @@ module Technoweenie # :nodoc:
             raise RequiredLibraryNotFoundError.new('CloudFiles could not be loaded')
           end
 
-          begin
+#          begin
             @@cloudfiles_config_path = base.attachment_options[:cloudfiles_config_path] || (RAILS_ROOT + '/config/rackspace_cloudfiles.yml')
             @@cloudfiles_config = @@cloudfiles_config = YAML.load(ERB.new(File.read(@@cloudfiles_config_path)).result)[RAILS_ENV].symbolize_keys
-          rescue
+#          rescue
+
             #raise ConfigFileNotFoundError.new('File %s not found' % @@cloudfiles_config_path)
-          end
+#          end
 
           @@container_name = @@cloudfiles_config[:container_name]
           @@cf = CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
@@ -176,32 +177,31 @@ module Technoweenie # :nodoc:
           @@container.get_object(full_filename).data
         end
 
-        protected
-          # Called in the after_destroy callback
-          def destroy_file
-            @@container.delete_object(full_filename)
+        # Called in the after_destroy callback
+        def destroy_file
+          @@container.delete_object(full_filename)
+        end
+
+        def rename_file
+          # Cloud Files doesn't rename right now, so we'll just nuke.
+          return unless @old_filename && @old_filename != filename
+
+          old_full_filename = File.join(base_path, @old_filename)
+          @@container.delete_object(old_full_filename)
+
+          @old_filename = nil
+          true
+        end
+
+        def save_to_storage
+          if save_attachment?
+            @object = @@container.create_object(full_filename)
+            @object.write((temp_path ? File.open(temp_path) : temp_data))
           end
 
-          def rename_file
-            # Cloud Files doesn't rename right now, so we'll just nuke.
-            return unless @old_filename && @old_filename != filename
-
-            old_full_filename = File.join(base_path, @old_filename)
-            @@container.delete_object(old_full_filename)
-
-            @old_filename = nil
-            true
-          end
-
-          def save_to_storage
-            if save_attachment?
-              @object = @@container.create_object(full_filename)
-              @object.write((temp_path ? File.open(temp_path) : temp_data))
-            end
-
-            @old_filename = nil
-            true
-          end
+          @old_filename = nil
+          true
+        end
       end
     end
   end
