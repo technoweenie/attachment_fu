@@ -115,17 +115,32 @@ module Technoweenie # :nodoc:
             raise RequiredLibraryNotFoundError.new('CloudFiles could not be loaded')
           end
 
-#          begin
+          opts = base.attachment_options
+          if opts[:cloudfiles_username] && opts[:cloudfiles_api_key] && opts[:cloudfiles_container_name]
+            @@cloudfiles_config = {:container_name => opts[:cloudfiles_container_name], 
+                                   :username => opts[:cloudfiles_username], 
+                                   :api_key => opts[:cloudfiles_api_key]}
+          else
             @@cloudfiles_config_path = base.attachment_options[:cloudfiles_config_path] || (RAILS_ROOT + '/config/rackspace_cloudfiles.yml')
             @@cloudfiles_config = @@cloudfiles_config = YAML.load(ERB.new(File.read(@@cloudfiles_config_path)).result)[RAILS_ENV].symbolize_keys
-#          rescue
-
-            #raise ConfigFileNotFoundError.new('File %s not found' % @@cloudfiles_config_path)
-#          end
+          end
 
           @@container_name = @@cloudfiles_config[:container_name]
           @@cf = CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
           @@container = @@cf.container(@@container_name)
+        end
+
+        # TBD -- should support multiple containers for different configs.  I think same thing w/ S3 stuff
+        def container_name
+          self.class.container_name
+        end
+  
+        def cloudfiles_authtoken
+          @@cf.authtoken
+        end
+
+        def cloudfiles_storage_url
+          @@cf.storagescheme + "://" + (@@cf.storageport ? "" : ":#{@@cf.storageport}") + @@cf.storagehost + @@cf.storagepath
         end
 
         # Overwrites the base filename writer in order to store the old filename
