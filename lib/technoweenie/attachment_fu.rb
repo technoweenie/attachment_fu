@@ -112,6 +112,7 @@ module Technoweenie # :nodoc:
           attachment_options[:path_prefix] = case attachment_options[:storage]
             when :s3 then table_name
             when :cloud_files then table_name
+            when :mogile_fs then table_name
             else File.join("public", table_name)
           end
         end
@@ -127,7 +128,14 @@ module Technoweenie # :nodoc:
         end
 
         self.attachment_backends ||= {}
-        storage_klass = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
+        storage_klass_name = case options[:storage]
+          when :mogile_fs
+            "MogileFS"
+          else
+            options[:storage].to_s.classify
+        end
+
+        storage_klass = Technoweenie::AttachmentFu::Backends.const_get("#{storage_klass_name}Backend")
 
         self.attachment_backends[attachment_options[:store_name]] = {:klass => storage_klass, :options => attachment_options}
         storage_klass.included_in_base(self)        

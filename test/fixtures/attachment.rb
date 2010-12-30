@@ -223,6 +223,15 @@ begin
 rescue MissingSourceFile
 end
 
+begin
+  class MogileFSAttachment < ActiveRecord::Base
+    has_attachment :storage => :mogile_fs, :processor => :rmagick, :mogile_config_path => File.join(File.dirname(__FILE__), '../mogilefs.yml')
+    validates_as_attachment
+  end
+rescue
+  puts "MogileFS error: #{$!}"
+end
+
 
 begin
   class S3Attachment < ActiveRecord::Base
