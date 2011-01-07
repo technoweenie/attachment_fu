@@ -205,6 +205,7 @@ module Technoweenie # :nodoc:
         base.before_validation :set_size_from_temp_path
         base.before_save :process_attachment_migrations
         base.after_save :after_process_attachment
+        base.after_save :resave_on_failure
         base.after_destroy :destroy_files
         base.after_validation :process_attachment
         if defined?(::ActiveSupport::Callbacks)
@@ -599,7 +600,22 @@ module Technoweenie # :nodoc:
               name = store.attachment_options[:store_name]
 
               if stores.include?(name)
-                store.save_to_storage
+                # if we've only got one store, don't bother with fancy-pants logic.  Just raise on failure.
+                if stores.size == 1
+                  store.save_to_storage
+                else
+                  begin
+                    Timeout.timeout(store.attachment_options[:timeout]) {
+                      store.save_to_storage
+                    }
+                  rescue Exception => e
+                    Rails.logger.error("Exception saving #{self.filename} to #{name}: #{e.inspect}")
+                    new_stores = stores.reject { |s| s == name.to_sym }.join(",")
+                    write_attribute(:stores, new_stores)
+                    @changed_attributes = {"stores" => new_stores}
+                    @need_resave = true
+                  end
+                end
               elsif @old_attachment_stores.include?(name) # needs a delete
                 store.destroy_file
               end
@@ -610,6 +626,13 @@ module Technoweenie # :nodoc:
             @old_attachment_stores = nil
             @target_attachment_stores = nil
             callback :after_attachment_saved
+          end
+        end
+
+        def resave_on_failure
+          if @need_resave
+            @need_resave = false
+            self.save!
           end
         end
 
