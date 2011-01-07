@@ -4,14 +4,14 @@ class MultiBackendTest < ActiveSupport::TestCase
 
   def test_should_save_in_multiple_stores
     attachment_model MultiStoreAttachmentTwoDefaults
-    assert_created do 
+    assert_created do
       attachment = upload_file :filename => '/files/rails.png'
-      assert attachment.dbfile_file.current_data 
+      assert attachment.dbfile_file.current_data
       assert File.exist?(attachment.fs_file.full_filename)
       assert Set.new(attachment.stores) == Set.new([:dbfile, :fs])
     end
   end
-  
+
   def test_should_destroy_from_both_stores
     attachment_model MultiStoreAttachmentTwoDefaults
     attachment = upload_file :filename => '/files/rails.png'
@@ -23,7 +23,7 @@ class MultiBackendTest < ActiveSupport::TestCase
 
   def test_should_save_to_targed_stores
     attachment_model MultiStoreAttachmentTwoDefaults
-    att = nil 
+    att = nil
     assert_created do
       use_temp_file '/files/rails.png' do |file|
         att = attachment_model.new :uploaded_data => fixture_file_upload(file, 'image/png')
@@ -31,9 +31,9 @@ class MultiBackendTest < ActiveSupport::TestCase
         att.save
       end
     end
-  
-    assert att.db_file 
-    assert !File.exist?(att.fs_file.full_filename) 
+
+    assert att.db_file
+    assert !File.exist?(att.fs_file.full_filename)
   end
 
   def test_should_update_to_targeted_stores
@@ -42,19 +42,19 @@ class MultiBackendTest < ActiveSupport::TestCase
     assert !attachment.new_record?
     attachment.stores = :dbfile
     attachment.save
-    
-    assert !File.exist?(attachment.fs_file.full_filename) 
+
+    assert !File.exist?(attachment.fs_file.full_filename)
 
     attachment.stores = [:dbfile, :fs]
     attachment.save
-    assert File.exist?(attachment.fs_file.full_filename) 
+    assert File.exist?(attachment.fs_file.full_filename)
     assert attachment.db_file
 
     attachment.stores = [:fs]
     attachment.save
-    assert File.exist?(attachment.fs_file.full_filename) 
+    assert File.exist?(attachment.fs_file.full_filename)
     assert attachment.db_file.destroyed?
-  end 
+  end
 
   def test_should_rename_to_multiple_stores
     attachment_model MultiStoreAttachmentTwoFilesystems
@@ -90,33 +90,33 @@ class MultiBackendTest < ActiveSupport::TestCase
 
   def test_should_fail_without_default
     attachment_model MultiStoreAttachmentNoDefault
-    assert_raise(RuntimeError) do 
+    assert_raise(RuntimeError) do
       attachment = upload_file :filename => '/files/rails.png'
     end
   end
 
   def test_should_create_multiple_thumbnails
     attachment_model MultiStoreAttachmentWithThumbnails
-    
+
     attachment = upload_file :filename => '/files/rails.png'
 
     assert File.exist?(attachment.thumbnails.first.fs1_file.full_filename)
     assert File.exist?(attachment.thumbnails.first.fs2_file.full_filename)
   end
-  
+
   def test_should_destroy_multiple_thumbnails
     attachment_model MultiStoreAttachmentWithThumbnails
-    
+
     attachment = upload_file :filename => '/files/rails.png'
 
     attachment.destroy
     assert !File.exist?(attachment.thumbnails.first.fs1_file.full_filename)
     assert !File.exist?(attachment.thumbnails.first.fs2_file.full_filename)
   end
-  
+
   def test_should_destroy_targeted_thumbnails
     attachment_model MultiStoreAttachmentWithThumbnails
-    
+
     attachment = upload_file :filename => '/files/rails.png'
     attachment.stores = :fs1
     attachment.save
@@ -128,7 +128,7 @@ class MultiBackendTest < ActiveSupport::TestCase
     attachment_model MultiStoreAttachmentWithThumbnails
 
     attachment = upload_file :filename => '/files/rails.png', :stores => :fs1
-    
+
     assert File.exist?(attachment.fs1_file.full_filename)
     assert File.exist?(attachment.thumbnails.first.fs1_file.full_filename)
 
@@ -139,8 +139,8 @@ class MultiBackendTest < ActiveSupport::TestCase
     assert File.exist?(attachment.thumbnails.first.fs2_file.full_filename)
     attachment.thumbnails.first.reload
     assert attachment.full_filename =~ /files2/
-    assert attachment.thumbnails.first.full_filename =~ /files2/, 
-            "attachment.thumbnails.first.full_filename (\"#{attachment.thumbnails.first.full_filename}\") did not include /files2: " 
+    assert attachment.thumbnails.first.full_filename =~ /files2/,
+            "attachment.thumbnails.first.full_filename (\"#{attachment.thumbnails.first.full_filename}\") did not include /files2: "
 
   end
 
@@ -151,5 +151,16 @@ class MultiBackendTest < ActiveSupport::TestCase
     attachment.save
 
     assert(attachment.fs1_file.current_data == attachment.fs2_file.current_data)
+  end
+
+  def test_should_save_to_one_store_on_failure
+    attachment_model MultiStoreAttachmentTwoFilesystems
+
+    attachment = upload_file :filename => '/files/rails.png'
+    attachment.send(:get_storage_delegator, :fs1).stubs(:save_to_storage).raises(Exception)
+    attachment.save
+
+    assert(attachment.stores.include?(:fs2))
+    assert(!attachment.stores.include?(:fs1))
   end
 end

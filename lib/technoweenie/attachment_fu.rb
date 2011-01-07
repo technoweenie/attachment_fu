@@ -74,8 +74,8 @@ module Technoweenie # :nodoc:
       #   has_attachment :storage => :file_system, :path_prefix => 'public/files',
       #     :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
       #   has_attachment :storage => :s3
-      #   has_attachment :storage_key => 'store', 
-      #                     :backends => { 's3' => { :storage => :s3, :path_prefix => 'foo', :max_size => 5.kilobyte, :default => true }, 
+      #   has_attachment :storage_key => 'store',
+      #                     :backends => { 's3' => { :storage => :s3, :path_prefix => 'foo', :max_size => 5.kilobyte, :default => true },
       #                                    'local1' => { :storage => :file_system, :path_prefix => 'data/public' } }
 
       def has_attachment(options = {})
@@ -96,11 +96,11 @@ module Technoweenie # :nodoc:
 
         extend ClassMethods unless (class << self; included_modules; end).include?(ClassMethods)
         include InstanceMethods unless included_modules.include?(InstanceMethods)
-        
+
         attr_accessor :thumbnail_resize_options
 
         parent_options = attachment_options || {}
-        
+
         self.attachment_options = options
         # doing these shenanigans so that #attachment_options is available to processors and backends
 
@@ -138,7 +138,7 @@ module Technoweenie # :nodoc:
         storage_klass = Technoweenie::AttachmentFu::Backends.const_get("#{storage_klass_name}Backend")
 
         self.attachment_backends[attachment_options[:store_name]] = {:klass => storage_klass, :options => attachment_options}
-        storage_klass.included_in_base(self)        
+        storage_klass.included_in_base(self)
 
         # support syntax-sugar of "a = Attachment.new ; a.s3.authenticated_s3_url" for accessing store-specific stuff
         self.class_eval "def #{attachment_options[:store_name]}_file; get_storage_delegator(:#{attachment_options[:store_name]}); end"
@@ -416,7 +416,7 @@ module Technoweenie # :nodoc:
       end
 
       # supports backwards compat -- we pretend that methods are mixed in.  Might screw with someone using respond_to? though.
-      ONE_STORE_METHODS = [:public_filename, :full_filename, :current_data, :base_path, :attachment_path_id, :partitioned_path, :cloudfront_url, 
+      ONE_STORE_METHODS = [:public_filename, :full_filename, :current_data, :base_path, :attachment_path_id, :partitioned_path, :cloudfront_url,
                            :authenticated_s3_url, :s3_config, :cloudfiles_config, :container_name, :cloudfiles_url, :cloudfiles_storage_url,  :cloudfiles_authtoken, :s3_url, :bucket_name]
 
       ONE_STORE_METHODS.each do |method|
@@ -424,7 +424,7 @@ module Technoweenie # :nodoc:
       end
 
       def supports_multiple_stores?
-        has_attribute?(:stores) 
+        has_attribute?(:stores)
       end
 
       def stores
@@ -452,7 +452,7 @@ module Technoweenie # :nodoc:
       # Creates a temp file with the current data.
       def create_temp_file
         write_to_temp_file current_data
-      end 
+      end
 
       # Allows you to work with a processed representation (RMagick, ImageScience, etc) of the attachment in a block.
       #
@@ -514,21 +514,21 @@ module Technoweenie # :nodoc:
         # if we're not given a specific storage engine, we'll grab one that the attachment actually has, starting with the default.
         def get_storage_delegator(backend)
           @attachment_fu_delegators ||= {}
-          
+
           backends = self.class.attachment_backends
-          if backend.nil? 
+          if backend.nil?
             if backends.size == 1
               backend = backends.keys.first
             else
               list = backends.find_all { |a|
-                stored_in?(a[0]) 
+                stored_in?(a[0])
               }
               backend = list.map { |k, v| v[:options][:default] ? k : nil }.compact.first
               if !backend
                 backend = list[0][0]
               end
             end
-          end 
+          end
 
           hash = backends[backend]
           @attachment_fu_delegators[backend] ||= hash[:klass].new(self, hash[:options])
@@ -537,8 +537,8 @@ module Technoweenie # :nodoc:
 
         def on_one_store(method, backend, *args)
           delegator = nil
-          if backend 
-            delegator = get_storage_delegator(backend) 
+          if backend
+            delegator = get_storage_delegator(backend)
           else
             with_each_store(true) { |store|
               # using methods.include instead of respond_to? because the delegation has already screwed up respond_to?
@@ -548,9 +548,9 @@ module Technoweenie # :nodoc:
               end
             }
           end
-          
+
           raise NoMethodError, "No stores responded to \"#{method}\"" if delegator.nil?
-          delegator.send(method, *args) 
+          delegator.send(method, *args)
         end
 
         def with_each_store(only_active=false)
@@ -563,11 +563,11 @@ module Technoweenie # :nodoc:
 
         def process_attachment_migrations
           if new_record?
-            @old_attachment_stores = [] 
+            @old_attachment_stores = []
             @target_attachment_stores ||= default_attachment_stores
             raise "Please configure one attachment store as :default" if @target_attachment_stores.empty?
           else
-            @old_attachment_stores = stores 
+            @old_attachment_stores = stores
             @target_attachment_stores ||= stores
           end
 
@@ -575,7 +575,7 @@ module Technoweenie # :nodoc:
             set_temp_data(current_data) if !save_attachment?
             write_attribute(:stores, @target_attachment_stores.join(','))
           end
-        
+
           @target_attachment_stores = nil
         end
 
