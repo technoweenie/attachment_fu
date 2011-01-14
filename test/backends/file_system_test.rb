@@ -88,7 +88,7 @@ class FileSystemTest < ActiveSupport::TestCase
     attachment.id = 1
     
     begin
-      assert_equal ["0000", "0001", "bar.txt"], attachment.default_file.send(:partitioned_path, "bar.txt")
+      assert_equal ["0000", "0001", "bar.txt"], attachment.default.send(:partitioned_path, "bar.txt")
     ensure
       attachment.id = old_id
     end
@@ -112,7 +112,7 @@ class FileSystemTest < ActiveSupport::TestCase
           hash[64..95],
           hash[96..127],
           "bar.txt"
-        ], attachment.default_file.send(:partitioned_path, "bar.txt")
+        ], attachment.default.send(:partitioned_path, "bar.txt")
     ensure
       attachment.id = old_id
     end
@@ -133,7 +133,7 @@ class FileSystemTest < ActiveSupport::TestCase
           "0c0743b698483569",
           "dc65909a8cdb3bf9",
           "bar.txt"
-        ], attachment.default_file.send(:partitioned_path, "bar.txt")
+        ], attachment.default.send(:partitioned_path, "bar.txt")
     ensure
       attachment.id = old_id
     end
