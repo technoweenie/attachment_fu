@@ -229,6 +229,7 @@ begin
     validates_as_attachment
   end
 rescue
+  ENV["TEST_MOGILE"] = "false"
   puts "MogileFS error: #{$!}"
 end
 

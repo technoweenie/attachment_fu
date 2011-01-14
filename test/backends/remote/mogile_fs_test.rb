@@ -1,11 +1,11 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'test_helper'))
 
 class MogileFSTest < ActiveSupport::TestCase
-  def self.test_S3?
+  def self.test_mogile?
     true unless ENV["TEST_MOGILE"] == "false"
   end
-  
-  if test_S3? && File.exist?(File.join(File.dirname(__FILE__), '../../mogilefs.yml'))
+
+  if test_mogile? && File.exist?(File.join(File.dirname(__FILE__), '../../mogilefs.yml'))
     include BaseAttachmentTests
     attachment_model MogileFSAttachment
 
