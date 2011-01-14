@@ -257,7 +257,7 @@ begin
 
 
   class CloudFilesWithPathPrefixAttachment < CloudFilesAttachment
-    has_attachment :storage => :cloud_files, :path_prefix => 'some/custom/path/prefix', :processor => :rmagick
+    has_attachment :storage => :cloud_files, :path_prefix => 'some/custom/path/prefix', :processor => :rmagick, :cloudfiles_config_path => File.join(File.dirname(__FILE__), '../rackspace_cloudfiles.yml')
     validates_as_attachment
   end
 rescue
