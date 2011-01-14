@@ -141,7 +141,7 @@ module Technoweenie # :nodoc:
         storage_klass.included_in_base(self)
 
         # support syntax-sugar of "a = Attachment.new ; a.s3.authenticated_s3_url" for accessing store-specific stuff
-        self.class_eval "def #{attachment_options[:store_name]}_file; get_storage_delegator(:#{attachment_options[:store_name]}); end"
+        self.class_eval "def #{attachment_options[:store_name]}; get_storage_delegator(:#{attachment_options[:store_name]}); end"
 
         case attachment_options[:processor]
         when :none, nil
@@ -170,6 +170,26 @@ module Technoweenie # :nodoc:
         end unless parent_options[:processor] # Don't let child override processor
       end
 
+      # helper method for has_attachment, for if you want to set up stuff from a yaml file
+      def setup_attachment_fu(extra_opts = {}, config_filename = nil)
+        config_file ||= RAILS_ROOT + "/config/attachments.yml"
+        raise "No attachment_fu configuration found, tried #{config_file}" unless File.exist?(config_file)
+
+        att_opts = YAML.load(ERB.new(File.read(config_file)).result)[Rails.env]
+        raise "No attachment_fu configuration found for environment #{Rails.env}" unless att_opts
+
+        arr = att_opts[self.name.tableize] || att_opts[:default]
+
+        raise "No attachment_fu configuration found for table #{self.name.tableize}" unless arr
+        arr = [arr] if arr.is_a?(Hash) # both flavors!
+        arr.each do |val|
+          options = val.symbolize_keys.merge(extra_opts)
+          puts options.inspect
+          has_attachment options
+        end
+      end
+
+
       def load_related_exception?(e) #:nodoc: implementation specific
         case
         when e.kind_of?(LoadError), e.kind_of?(MissingSourceFile), $!.class.name == "CompilationError"
@@ -182,6 +202,7 @@ module Technoweenie # :nodoc:
       end
       private :load_related_exception?
     end
+
 
     module ClassMethods
       delegate :content_types, :to => Technoweenie::AttachmentFu
@@ -251,7 +272,9 @@ module Technoweenie # :nodoc:
         def before_thumbnail_saved(&block)
           write_inheritable_array(:before_thumbnail_saved, [block])
         end
+
       end
+
 
       # Get the thumbnail class, which is the current attachment class by default.
       # Configure this with the :thumbnail_class option.
@@ -262,19 +285,21 @@ module Technoweenie # :nodoc:
 
       # Copies the given file path to a new tempfile, returning the closed tempfile.
       def copy_to_temp_file(file, temp_base_name)
-        returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
+        tmp = Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
           tmp.close
           FileUtils.cp file, tmp.path
         end
+        tmp
       end
 
       # Writes the given data to a new tempfile, returning the closed tempfile.
       def write_to_temp_file(data, temp_base_name)
-        returning Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
+        tmp = Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) do |tmp|
           tmp.binmode
           tmp.write data
           tmp.close
         end
+        tmp
       end
     end
 
@@ -313,7 +338,7 @@ module Technoweenie # :nodoc:
       # Creates or updates the thumbnail for the current attachment.
       def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
         thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
-        returning find_or_initialize_thumbnail(file_name_suffix) do |thumb|
+        thumb = find_or_initialize_thumbnail(file_name_suffix) do |thumb|
           thumb.temp_paths.unshift temp_file
           thumb.send(:'attributes=', {
             :content_type             => content_type,
@@ -324,6 +349,7 @@ module Technoweenie # :nodoc:
           callback_with_args :before_thumbnail_saved, thumb
           thumb.save!
         end
+        thumb
       end
 
       # Sets the content type.
@@ -473,18 +499,22 @@ module Technoweenie # :nodoc:
 
         def sanitize_filename(filename)
           return unless filename
-          returning filename.strip do |name|
-            # NOTE: File.basename doesn't work right with Windows paths on Unix
-            # get only the filename, not the whole path
-            name.gsub! /^.*(\\|\/)/, ''
 
-            # Finally, replace all non alphanumeric, underscore or periods with underscore
-            name.gsub! /[^A-Za-z0-9\.\-]/, '_'
-          end
+          name = filename.strip
+
+          # NOTE: File.basename doesn't work right with Windows paths on Unix
+          # get only the filename, not the whole path
+          name.gsub! /^.*(\\|\/)/, ''
+
+          # Finally, replace all non alphanumeric, underscore or periods with underscore
+          name.gsub! /[^A-Za-z0-9\.\-]/, '_'
+
+          name
         end
 
         # before_validation callback.
         def set_size_from_temp_path
+          #puts "hello. here I be.  #{temp_path} and \"#{File.size(temp_path)}\""
           self.size = File.size(temp_path) if save_attachment?
         end
 
