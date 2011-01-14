@@ -184,7 +184,6 @@ module Technoweenie # :nodoc:
         arr = [arr] if arr.is_a?(Hash) # both flavors!
         arr.each do |val|
           options = val.symbolize_keys.merge(extra_opts)
-          puts options.inspect
           has_attachment options
         end
       end
@@ -285,7 +284,7 @@ module Technoweenie # :nodoc:
 
       # Copies the given file path to a new tempfile, returning the closed tempfile.
       def copy_to_temp_file(file, temp_base_name)
-        tmp = Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) 
+        tmp = Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path)
         tmp.close
         FileUtils.cp file, tmp.path
         tmp
@@ -293,7 +292,7 @@ module Technoweenie # :nodoc:
 
       # Writes the given data to a new tempfile, returning the closed tempfile.
       def write_to_temp_file(data, temp_base_name)
-        tmp = Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path) 
+        tmp = Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path)
         tmp.binmode
         tmp.write data
         tmp.close
@@ -337,7 +336,7 @@ module Technoweenie # :nodoc:
       def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
         thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
         thumb = find_or_initialize_thumbnail(file_name_suffix)
- 
+
         thumb.temp_paths.unshift temp_file
         thumb.send(:'attributes=', {
           :content_type             => content_type,
