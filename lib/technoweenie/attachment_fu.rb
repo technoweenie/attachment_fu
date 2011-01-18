@@ -542,7 +542,6 @@ module Technoweenie # :nodoc:
 
         # Stub for a #process_attachment method in a processor
         def process_attachment
-          @saved_attachment = save_attachment?
         end
 
         # if we're not given a specific storage engine, we'll grab one that the attachment actually has, starting with the default.
@@ -596,6 +595,7 @@ module Technoweenie # :nodoc:
         end
 
         def process_attachment_migrations
+          new_stores = nil
           if new_record?
             @old_attachment_stores = []
             @target_attachment_stores ||= default_attachment_stores
@@ -605,9 +605,10 @@ module Technoweenie # :nodoc:
             @target_attachment_stores ||= stores
           end
 
-          if Set.new(@target_attachment_stores) != Set.new(stores)
+          if Set.new(@target_attachment_stores) != Set.new(@old_attachment_stores)
             set_temp_data(current_data) if !save_attachment?
             write_attribute(:stores, @target_attachment_stores.join(','))
+            @saved_attachment = true
           end
 
           @target_attachment_stores = nil
@@ -624,7 +625,7 @@ module Technoweenie # :nodoc:
 
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
-          if @saved_attachment || @old_attachment_stores
+          if @saved_attachment
             if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
               temp_file = temp_path || create_temp_file
               attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
