@@ -184,6 +184,12 @@ module Technoweenie # :nodoc:
         arr = [arr] if arr.is_a?(Hash) # both flavors!
         arr.each do |val|
           options = val.symbolize_keys.merge(extra_opts)
+
+          options[:thumbnails] = options[:thumbnails].symbolize_keys if options[:thumbnails]
+          [:store_name, :storage].each { |k|
+            options[k] = options.delete(k).to_sym if options[k]
+          }
+
           has_attachment options
         end
       end
