@@ -583,7 +583,8 @@ module Technoweenie # :nodoc:
           else
             with_each_store(true) { |store|
               # using methods.include instead of respond_to? because the delegation has already screwed up respond_to?
-              if store.methods.include?(method.to_s)
+              # checking both the string (ruby 1.8) and the symbol (ruby 1.9)
+              if store.methods.include?(method.to_s) || store.methods.include?(method.to_sym)
                 delegator = store
                 break
               end
