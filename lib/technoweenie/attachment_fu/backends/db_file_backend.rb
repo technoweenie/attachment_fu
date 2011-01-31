@@ -12,7 +12,7 @@ module Technoweenie # :nodoc:
 
         # Gets the current data from the database
         def current_data
-          db_file.data
+          db_file && db_file.data
         end
         
         # Destroys the file.  Called in the after_destroy callback
