@@ -114,6 +114,15 @@ class MultiBackendTest < ActiveSupport::TestCase
     assert !File.exist?(attachment.thumbnails.first.fs2.full_filename)
   end
 
+  def test_should_not_attempt_to_destroy_inactive_stores
+    attachment_model MultiStoreAttachmentWithThumbnails
+
+    attachment = upload_file :filename => '/files/rails.png'
+    attachment.stores = :fs1
+    attachment.save
+    attachment.destroy
+  end
+
   def test_should_destroy_targeted_thumbnails
     attachment_model MultiStoreAttachmentWithThumbnails
 
