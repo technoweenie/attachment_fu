@@ -166,8 +166,9 @@ class MultiBackendTest < ActiveSupport::TestCase
     attachment_model MultiStoreAttachmentTwoFilesystems
 
     attachment = upload_file :filename => '/files/rails.png'
+    attachment.uploaded_data = fixture_file_upload('/files/rails.png')
     attachment.send(:get_storage_delegator, :fs1).stubs(:save_to_storage).raises(Exception)
-    attachment.save
+    attachment.save!
 
     assert(attachment.stores.include?(:fs2))
     assert(!attachment.stores.include?(:fs1))

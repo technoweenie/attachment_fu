@@ -229,11 +229,10 @@ module Technoweenie # :nodoc:
         base.before_destroy :destroy_thumbnails
         base.before_update :rename_files
         base.before_validation :set_size_from_temp_path
-        base.before_save :process_attachment_migrations
         base.after_save :after_process_attachment
         base.after_save :resave_on_failure
         base.after_destroy :destroy_files
-        base.after_validation :process_attachment
+        base.after_validation :process_attachment_migrations, :process_attachment
         if defined?(::ActiveSupport::Callbacks)
           base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
         end
@@ -550,6 +549,7 @@ module Technoweenie # :nodoc:
 
         # Stub for a #process_attachment method in a processor
         def process_attachment
+          @saved_attachment ||= save_attachment?
         end
 
         # if we're not given a specific storage engine, we'll grab one that the attachment actually has, starting with the default.
@@ -615,9 +615,13 @@ module Technoweenie # :nodoc:
           end
 
           if Set.new(@target_attachment_stores) != Set.new(@old_attachment_stores)
-            set_temp_data(current_data) if !save_attachment?
+            if !new_record? && !save_attachment?
+              data = current_data
+              set_temp_data(data) if data
+            end
+
             write_attribute(:stores, @target_attachment_stores.join(','))
-            @saved_attachment = true
+            @saved_attachment = save_attachment? 
           end
 
           @target_attachment_stores = nil
@@ -635,6 +639,8 @@ module Technoweenie # :nodoc:
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
           if @saved_attachment
+            set_size_from_temp_path
+ 
             if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
               temp_file = temp_path || create_temp_file
               attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
