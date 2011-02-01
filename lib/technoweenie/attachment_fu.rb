@@ -686,13 +686,13 @@ module Technoweenie # :nodoc:
         end
 
         def destroy_files
-          with_each_store do |store|
+          with_each_store(true) do |store|
             store.destroy_file
           end
         end
 
         def rename_files
-          with_each_store do |store|
+          with_each_store(true) do |store|
             store.rename_file
           end
         end

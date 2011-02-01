@@ -119,7 +119,8 @@ class MultiBackendTest < ActiveSupport::TestCase
 
     attachment = upload_file :filename => '/files/rails.png'
     attachment.stores = :fs1
-    attachment.save
+    attachment.save!
+    attachment.send(:get_storage_delegator, :fs2).expects(:destroy_file).never
     attachment.destroy
   end
 
