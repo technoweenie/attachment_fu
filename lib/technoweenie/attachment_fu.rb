@@ -621,7 +621,7 @@ module Technoweenie # :nodoc:
             end
 
             write_attribute(:stores, @target_attachment_stores.join(','))
-            @saved_attachment = save_attachment? 
+            @saved_attachment = save_attachment?
           end
 
           @target_attachment_stores = nil
@@ -640,7 +640,7 @@ module Technoweenie # :nodoc:
         def after_process_attachment
           if @saved_attachment
             set_size_from_temp_path
- 
+
             if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
               temp_file = temp_path || create_temp_file
               attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
