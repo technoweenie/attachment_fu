@@ -9,13 +9,13 @@ module Technoweenie # :nodoc:
       #
       # == Requirements
       #
-      # Requires the {Cloud Files Gem}[http://www.mosso.com/cloudfiles.jsp] by Rackspace 
+      # Requires the {Cloud Files Gem}[http://www.mosso.com/cloudfiles.jsp] by Rackspace
       #
       # == Configuration
       #
       # Configuration is done via <tt>RAILS_ROOT/config/rackspace_cloudfiles.yml</tt> and is loaded according to the <tt>RAILS_ENV</tt>.
       # The minimum connection options that you must specify are a container name, your Mosso login name and your Mosso API key.
-      # You can sign up for Cloud Files and get access keys by visiting https://www.mosso.com/buy.htm 
+      # You can sign up for Cloud Files and get access keys by visiting https://www.mosso.com/buy.htm
       #
       # Example configuration (RAILS_ROOT/config/rackspace_cloudfiles.yml)
       #
@@ -117,8 +117,8 @@ module Technoweenie # :nodoc:
 
           opts = base.attachment_options
           if opts[:cloudfiles_username] && opts[:cloudfiles_api_key] && opts[:cloudfiles_container_name]
-            @@cloudfiles_config = {:container_name => opts[:cloudfiles_container_name], 
-                                   :username => opts[:cloudfiles_username], 
+            @@cloudfiles_config = {:container_name => opts[:cloudfiles_container_name],
+                                   :username => opts[:cloudfiles_username],
                                    :api_key => opts[:cloudfiles_api_key]}
           else
             @@cloudfiles_config_path = base.attachment_options[:cloudfiles_config_path] || (RAILS_ROOT + '/config/rackspace_cloudfiles.yml')
@@ -134,7 +134,7 @@ module Technoweenie # :nodoc:
         def container_name
           self.class.container_name
         end
-  
+
         def cloudfiles_authtoken
           @@cf.authtoken
         end
@@ -182,7 +182,7 @@ module Technoweenie # :nodoc:
             nil
           end
         end
-        alias :public_filename :cloudfiles_url
+        alias :public_url :cloudfiles_url
 
         def create_temp_file
           write_to_temp_file current_data
