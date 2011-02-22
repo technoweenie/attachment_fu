@@ -123,24 +123,30 @@ module Technoweenie # :nodoc:
           else
             @@cloudfiles_config_path = base.attachment_options[:cloudfiles_config_path] || (RAILS_ROOT + '/config/rackspace_cloudfiles.yml')
             @@cloudfiles_config = @@cloudfiles_config = YAML.load(ERB.new(File.read(@@cloudfiles_config_path)).result)[RAILS_ENV].symbolize_keys
+            base.attachment_options[:cloudfiles_container_name] = @@cloudfiles_config[:container_name]
           end
-
-          @@container_name = @@cloudfiles_config[:container_name]
-          @@cf = CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
-          @@container = @@cf.container(@@container_name)
         end
 
         # TBD -- should support multiple containers for different configs.  I think same thing w/ S3 stuff
         def container_name
-          self.class.container_name
+          attachment_options[:cloudfiles_container_name]
+        end
+
+        def self.connection
+          @@cf ||= CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
+        end
+
+        def container
+          self.class.connection.container(container_name)
         end
 
         def cloudfiles_authtoken
-          @@cf.authtoken
+          self.class.connection.authtoken
         end
 
         def cloudfiles_storage_url
-          @@cf.storagescheme + "://" + (@@cf.storageport ? "" : ":#{@@cf.storageport}") + @@cf.storagehost + @@cf.storagepath
+          cx = self.class.connection
+          cx.storagescheme + "://" + (cx.storageport ? "" : ":#{cx.storageport}") + cx.storagehost + cx.storagepath
         end
 
         # Overwrites the base filename writer in order to store the old filename
@@ -176,8 +182,8 @@ module Technoweenie # :nodoc:
         #
         # If you are trying to get the URL for a nonpublic container, nil will be returned.
         def cloudfiles_url(thumbnail = nil)
-          if @@container.public?
-            File.join(@@container.cdn_url, full_filename(thumbnail))
+          if container.public?
+            File.join(container.cdn_url, full_filename(thumbnail))
           else
             nil
           end
@@ -189,12 +195,12 @@ module Technoweenie # :nodoc:
         end
 
         def current_data
-          @@container.get_object(full_filename).data
+          container.get_object(full_filename).data
         end
 
         # Called in the after_destroy callback
         def destroy_file
-          @@container.delete_object(full_filename)
+          container.delete_object(full_filename)
         end
 
         def rename_file
@@ -202,7 +208,7 @@ module Technoweenie # :nodoc:
           return unless @old_filename && @old_filename != filename
 
           old_full_filename = File.join(base_path, @old_filename)
-          @@container.delete_object(old_full_filename)
+          container.delete_object(old_full_filename)
 
           @old_filename = nil
           true
@@ -210,7 +216,7 @@ module Technoweenie # :nodoc:
 
         def save_to_storage
           if save_attachment?
-            @object = @@container.create_object(full_filename)
+            @object = container.create_object(full_filename)
             @object.write((temp_path ? File.open(temp_path) : temp_data))
           end
 
