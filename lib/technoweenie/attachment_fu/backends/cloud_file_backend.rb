@@ -116,7 +116,9 @@ module Technoweenie # :nodoc:
           end
 
           opts = base.attachment_options
-          if opts[:cloudfiles_username] && opts[:cloudfiles_api_key] && opts[:cloudfiles_container_name]
+          if opts[:cloudfiles_options]
+            @@cloudfiles_config = opts[:cloudfiles_options]
+          elsif opts[:cloudfiles_username] && opts[:cloudfiles_api_key] && opts[:cloudfiles_container_name]
             @@cloudfiles_config = {:container_name => opts[:cloudfiles_container_name],
                                    :username => opts[:cloudfiles_username],
                                    :api_key => opts[:cloudfiles_api_key]}
@@ -129,11 +131,11 @@ module Technoweenie # :nodoc:
 
         # TBD -- should support multiple containers for different configs.  I think same thing w/ S3 stuff
         def container_name
-          attachment_options[:cloudfiles_container_name]
+          @@cloudfiles_config[:container_name]
         end
 
         def self.connection
-          @@cf ||= CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
+          @@cf ||= CloudFiles::Connection.new(@@cloudfiles_config)
         end
 
         def container
