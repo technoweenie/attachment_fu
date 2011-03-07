@@ -370,6 +370,8 @@ module Technoweenie # :nodoc:
       # An array of all the tempfile objects is stored so that the Tempfile instance is held on to until
       # it's not needed anymore.  The collection is cleared after saving the attachment.
       def temp_path
+        return nil if temp_paths.empty?
+
         p = temp_paths.first
         p.respond_to?(:path) ? p.path : p.to_s
       end
