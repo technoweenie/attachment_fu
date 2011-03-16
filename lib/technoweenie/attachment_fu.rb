@@ -230,7 +230,6 @@ module Technoweenie # :nodoc:
         base.before_update :rename_files
         base.before_validation :set_size_from_temp_path
         base.after_save :after_process_attachment
-        base.after_save :resave_on_failure
         base.after_destroy :destroy_files
         base.after_validation :process_attachment_migrations, :process_attachment
         if defined?(::ActiveSupport::Callbacks)
@@ -661,8 +660,7 @@ module Technoweenie # :nodoc:
                     Rails.logger.error("Exception saving #{self.filename} to #{name}: #{e.inspect}")
                     new_stores = stores.reject { |s| s == name.to_sym }.join(",")
                     write_attribute(:stores, new_stores)
-                    @changed_attributes = {"stores" => new_stores}
-                    @need_resave = true
+                    self.class.update_all ({:stores => new_stores}, ["id = ?", self.id])
                   end
                 end
               elsif @old_attachment_stores.include?(name) # needs a delete
@@ -675,13 +673,6 @@ module Technoweenie # :nodoc:
             @old_attachment_stores = nil
             @target_attachment_stores = nil
             callback :after_attachment_saved
-          end
-        end
-
-        def resave_on_failure
-          if @need_resave
-            @need_resave = false
-            self.save!
           end
         end
 
