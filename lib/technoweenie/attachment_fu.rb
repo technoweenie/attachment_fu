@@ -546,9 +546,15 @@ module Technoweenie # :nodoc:
             thumbnail_class.find_or_initialize_by_thumbnail(file_name_suffix.to_s)
         end
 
-        # Stub for a #process_attachment method in a processor
+        def has_attachment_processor?
+          self.respond_to?(:_process_attachment)
+        end
+
         def process_attachment
           @saved_attachment ||= save_attachment?
+          if @saved_attachment && has_attachment_processor?
+            self._process_attachment
+          end
           true
         end
 
@@ -642,7 +648,7 @@ module Technoweenie # :nodoc:
           if @saved_attachment
             set_size_from_temp_path
 
-            if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
+            if has_attachment_processor? && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
               temp_file = temp_path || create_temp_file
               attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
             end

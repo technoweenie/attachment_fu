@@ -5,7 +5,6 @@ module Technoweenie # :nodoc:
       module ImageScienceProcessor
         def self.included(base)
           base.send :extend, ClassMethods
-          base.alias_method_chain :process_attachment, :processing
         end
 
         module ClassMethods
@@ -16,8 +15,8 @@ module Technoweenie # :nodoc:
         end
 
         protected
-          def process_attachment_with_processing
-            return unless process_attachment_without_processing && image?
+          def _process_attachment
+            return unless image?
             with_image do |img|
               self.width  = img.width  if respond_to?(:width)
               self.height = img.height if respond_to?(:height)

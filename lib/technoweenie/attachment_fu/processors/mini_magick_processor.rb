@@ -5,7 +5,6 @@ module Technoweenie # :nodoc:
       module MiniMagickProcessor
         def self.included(base)
           base.send :extend, ClassMethods
-          base.alias_method_chain :process_attachment, :processing
         end
 
         module ClassMethods
@@ -25,8 +24,7 @@ module Technoweenie # :nodoc:
         end
 
       protected
-        def process_attachment_with_processing
-          return unless process_attachment_without_processing
+        def _process_attachment
           with_image do |img|
             resize_image_or_thumbnail! img
             self.width = img[:width] if respond_to?(:width)
