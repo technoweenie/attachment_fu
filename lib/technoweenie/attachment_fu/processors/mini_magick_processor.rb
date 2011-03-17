@@ -95,7 +95,11 @@ module Technoweenie # :nodoc:
               commands.resize(size.to_s)
             end
           end
-          temp_paths.unshift img
+          return temp_paths.unshift img
+          rescue MiniMagick::MiniMagickError => e
+            logger.error("Error resizing image #{img}: #{e}")
+            self.content_type = "application/unknown"
+            return temp_paths
         end
 
         def calculate_offset(image_width,image_height,image_aspect,thumb_width,thumb_height,thumb_aspect)

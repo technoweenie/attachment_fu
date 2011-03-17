@@ -166,6 +166,13 @@ begin
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>' }, :resize_to => 55
   end
+
+  class MiniMagickAttachmentWithValidation < ActiveRecord::Base
+    set_table_name "mini_magick_attachments"
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :content_type => :image,
+      :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>' }, :resize_to => 55
+    validates_as_attachment
+  end
 rescue MissingSourceFile
   puts $!.message
   puts "no Mini Magick"

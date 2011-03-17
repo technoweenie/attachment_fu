@@ -229,9 +229,9 @@ module Technoweenie # :nodoc:
         base.before_destroy :destroy_thumbnails
         base.before_update :rename_files
         base.before_validation :set_size_from_temp_path
+        base.before_validation :process_attachment_migrations, :process_attachment
         base.after_save :after_process_attachment
         base.after_destroy :destroy_files
-        base.after_validation :process_attachment_migrations, :process_attachment
         if defined?(::ActiveSupport::Callbacks)
           base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
         end
@@ -549,6 +549,7 @@ module Technoweenie # :nodoc:
         # Stub for a #process_attachment method in a processor
         def process_attachment
           @saved_attachment ||= save_attachment?
+          true
         end
 
         # if we're not given a specific storage engine, we'll grab one that the attachment actually has, starting with the default.
@@ -624,6 +625,7 @@ module Technoweenie # :nodoc:
           end
 
           @target_attachment_stores = nil
+          true
         end
 
         def default_attachment_stores
