@@ -668,7 +668,7 @@ module Technoweenie # :nodoc:
                     Rails.logger.error("Exception saving #{self.filename} to #{name}: #{e.inspect}")
                     new_stores = stores.reject { |s| s == name.to_sym }.join(",")
                     write_attribute(:stores, new_stores)
-                    self.class.update_all ({:stores => new_stores}, ["id = ?", self.id])
+                    self.class.update_all({:stores => new_stores}, ["id = ?", self.id])
                   end
                 end
               elsif @old_attachment_stores.include?(name) # needs a delete
