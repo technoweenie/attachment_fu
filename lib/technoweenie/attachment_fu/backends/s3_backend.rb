@@ -7,8 +7,12 @@ module Technoweenie # :nodoc:
       #
       # == Requirements
       #
-      # Requires the {AWS::S3 Library}[http://amazon.rubyforge.org] for S3 by Marcel Molina Jr. installed either
-      # as a gem or a as a Rails plugin.
+      # Requires one of the following libraries installed either as a gem or as a Rails plugin:
+      #
+      #   {AWS::S3 Library}[http://amazon.rubyforge.org] for S3 by Marcel Molina Jr.
+      #   {RightAws}[http://rightscale.rubyforge.org/] for AWS by RightScale
+      #
+      # If both libraries are installed, attachment_fu will prefer to use RightAws.
       #
       # == Configuration
       #
@@ -168,6 +172,7 @@ module Technoweenie # :nodoc:
       #
       # If you set :cloudfront to true in your model, the public_filename will be the CloudFront
       # URL, not the S3 URL.
+      #
       module S3Backend
         class RequiredLibraryNotFoundError < StandardError; end
         class ConfigFileNotFoundError < StandardError; end
@@ -193,8 +198,10 @@ module Technoweenie # :nodoc:
           begin
             require 'right_aws'
 
-            @@s3_connection = RightAws::S3.new(s3_config[:access_key_id], s3_config[:secret_access_key])
-            @@s3_generator = RightAws::S3Generator.new(s3_config[:access_key_id], s3_config[:secret_access_key])
+            params = s3_config.slice(:server, :port)
+            params[:protocol] = (s3_config[:use_ssl] ? 'https' : 'http')
+            @@s3_connection = RightAws::S3.new(s3_config[:access_key_id], s3_config[:secret_access_key], params)
+            @@s3_generator = RightAws::S3Generator.new(s3_config[:access_key_id], s3_config[:secret_access_key], params)
           rescue LoadError
             begin
               require 'aws/s3'
