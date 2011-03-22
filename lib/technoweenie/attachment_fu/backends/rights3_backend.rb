@@ -85,7 +85,7 @@ module Technoweenie # :nodoc:
       #
       # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the bucket name as part of the path.
       # You can retrieve the bucket name using the <tt>bucket_name</tt> method.
-      Module Rights3Backend
+      module Rights3Backend
         class RequiredLibraryNotFoundError < StandardError
         end
 
@@ -93,12 +93,12 @@ module Technoweenie # :nodoc:
           mattr_reader :bucket_name, :s3_config
 
           begin
-            require 'rightaws'
+            require 'right_aws'
           rescue LoadError
             raise RequiredLibraryNotFoundError.new('RightAws could not be required')
           end
 
-          @@s3_config = ApplicationConfig.amazon_s3
+          @@s3_config = ::ApplicationConfig.amazon_s3
           @@s3_connection = RightAws::S3.new(s3_config[:access_key_id], s3_config[:secret_access_key])
           @@s3_generator = RightAws::S3Generator.new(s3_config[:access_key_id], s3_config[:secret_access_key])
           @@bucket_name = s3_config[:bucket_name]
