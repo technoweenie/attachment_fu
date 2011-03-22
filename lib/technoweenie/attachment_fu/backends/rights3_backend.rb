@@ -86,6 +86,8 @@ module Technoweenie # :nodoc:
       # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the bucket name as part of the path.
       # You can retrieve the bucket name using the <tt>bucket_name</tt> method.
       module Rights3Backend
+        class ConfigFileNotFoundError < StandardError
+        end
         class RequiredLibraryNotFoundError < StandardError
         end
 
@@ -98,7 +100,13 @@ module Technoweenie # :nodoc:
             raise RequiredLibraryNotFoundError.new('RightAws could not be required')
           end
 
-          @@s3_config = ::ApplicationConfig.amazon_s3
+          begin
+            @@s3_config_path = base.attachment_options[:s3_config_path] || (RAILS_ROOT + '/config/amazon_s3.yml')
+            @@s3_config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)[RAILS_ENV].symbolize_keys
+          #rescue
+          #  raise ConfigFileNotFoundError.new('File %s not found' % @@s3_config_path)
+          end
+
           @@s3_connection = RightAws::S3.new(s3_config[:access_key_id], s3_config[:secret_access_key])
           @@s3_generator = RightAws::S3Generator.new(s3_config[:access_key_id], s3_config[:secret_access_key])
           @@bucket_name = s3_config[:bucket_name]
