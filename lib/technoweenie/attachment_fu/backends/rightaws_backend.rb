@@ -30,10 +30,10 @@ module Technoweenie # :nodoc:
       #
       # == Usage
       #
-      # To specify RightAws::S3 as the storage mechanism for a model, set the acts_as_attachment <tt>:storage</tt> option to <tt>:rightaws</tt>.
+      # To specify RightAws::S3 as the storage mechanism for a model, set the acts_as_attachment <tt>:storage</tt> option to <tt>:rights3</tt>.
       #
       #   class Photo < ActiveRecord::Base
-      #     has_attachment :storage => :rightaws
+      #     has_attachment :storage => :rights3
       #   end
       #
       # === Customizing the path
@@ -44,7 +44,7 @@ module Technoweenie # :nodoc:
       # option:
       #
       #   class Photo < ActiveRecord::Base
-      #     has_attachment :storage => :rightaws, :path_prefix => 'my/custom/path'
+      #     has_attachment :storage => :rights3, :path_prefix => 'my/custom/path'
       #   end
       #
       # Which would result in URLs like <tt>http(s)://:server/:bucket_name/my/custom/path/:id/:filename.</tt>
@@ -60,8 +60,8 @@ module Technoweenie # :nodoc:
       # Of course, all the usual configuration options apply, such as content_type and thumbnails:
       #
       #   class Photo < ActiveRecord::Base
-      #     has_attachment :storage => :rightaws, :content_type => ['application/pdf', :image], :resize_to => 'x50'
-      #     has_attachment :storage => :rightaws, :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
+      #     has_attachment :storage => :rights3, :content_type => ['application/pdf', :image], :resize_to => 'x50'
+      #     has_attachment :storage => :rights3, :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
       #   end
       #
       # === Accessing S3 URLs
@@ -85,8 +85,9 @@ module Technoweenie # :nodoc:
       #
       # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the bucket name as part of the path.
       # You can retrieve the bucket name using the <tt>bucket_name</tt> method.
-      Module RightawsBackend
-        class RequiredLibraryNotFoundError < StandardError; end
+      Module Rights3Backend
+        class RequiredLibraryNotFoundError < StandardError
+        end
 
         def self.included(base) #:nodoc:
           mattr_reader :bucket_name, :s3_config
@@ -134,15 +135,15 @@ module Technoweenie # :nodoc:
 
         module ClassMethods
           def s3_protocol
-            Technoweenie::AttachmentFu::Backends::RightawsBackend.protocol
+            Technoweenie::AttachmentFu::Backends::Rights3Backend.protocol
           end
 
           def s3_hostname
-            Technoweenie::AttachmentFu::Backends::RightawsBackend.hostname
+            Technoweenie::AttachmentFu::Backends::Rights3Backend.hostname
           end
 
           def s3_port_string
-            Technoweenie::AttachmentFu::Backends::RightawsBackend.port_string
+            Technoweenie::AttachmentFu::Backends::Rights3Backend.port_string
           end
         end
 
@@ -216,15 +217,15 @@ module Technoweenie # :nodoc:
         end
 
         def s3_protocol
-          Technoweenie::AttachmentFu::Backends::RightawsBackend.protocol
+          Technoweenie::AttachmentFu::Backends::Rights3Backend.protocol
         end
 
         def s3_hostname
-          Technoweenie::AttachmentFu::Backends::RightawsBackend.hostname
+          Technoweenie::AttachmentFu::Backends::Rights3Backend.hostname
         end
 
         def s3_port_string
-          Technoweenie::AttachmentFu::Backends::RightawsBackend.port_string
+          Technoweenie::AttachmentFu::Backends::Rights3Backend.port_string
         end
 
         protected
@@ -246,13 +247,10 @@ module Technoweenie # :nodoc:
 
           def save_to_storage
             if save_attachment?
-              s3_connection.bucket(bucket_name).put(
-                full_filename,
-                (temp_path ? open(temp_path, 'rb') { |io| io.read } : temp_data),
-                {},
-                attachment_options[:s3_access],
-                {'content-type' => content_type}
-              )
+              if temp_path then
+                temp_data = open(temp_path, 'rb') { |io| io.read }
+              end
+              s3_connection.bucket(bucket_name).put(full_filename, temp_data, {}, attachment_options[:s3_access], {'content-type' => content_type})
             end
 
             @old_filename = nil
