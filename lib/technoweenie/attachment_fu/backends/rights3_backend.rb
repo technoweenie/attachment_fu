@@ -107,18 +107,18 @@ module Technoweenie # :nodoc:
         end
 
         def self.protocol
-          @protocol ||= (s3_config[:protocol] || @@s3_connection.interface.DEFAULT_PROTOCOL) + '://'
+          @protocol ||= (s3_config[:protocol] || RightAws::S3Interface::DEFAULT_PROTOCOL) + '://'
         end
 
         def self.hostname
-          @hostname ||= s3_config[:server] || @@s3_connection.interface.DEFAULT_HOST
+          @hostname ||= s3_config[:server] || RightAws::S3Interface::DEFAULT_HOST
         end
 
         def self.port_string
           if @port_string.nil? then
             if s3_config[:port].nil? then
               if s3_config[:protocol].nil? then
-                @port_string = ":#{@@s3_connection.interface.DEFAULT_PORT}"
+                @port_string = ":#{RightAws::S3Interface::DEFAULT_PORT}"
               else
                 if s3_config[:protocol] == 'http://' then
                   @port_string = ':80'
