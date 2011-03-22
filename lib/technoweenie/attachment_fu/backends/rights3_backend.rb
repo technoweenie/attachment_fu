@@ -107,18 +107,18 @@ module Technoweenie # :nodoc:
         end
 
         def self.protocol
-          @protocol ||= (s3_config[:protocol] || s3_connection.interface.DEFAULT_PROTOCOL) + '://'
+          @protocol ||= (s3_config[:protocol] || @@s3_connection.interface.DEFAULT_PROTOCOL) + '://'
         end
 
         def self.hostname
-          @hostname ||= s3_config[:server] || s3_connection.interface.DEFAULT_HOST
+          @hostname ||= s3_config[:server] || @@s3_connection.interface.DEFAULT_HOST
         end
 
         def self.port_string
           if @port_string.nil? then
             if s3_config[:port].nil? then
               if s3_config[:protocol].nil? then
-                @port_string = ":#{s3_connection.interface.DEFAULT_PORT}"
+                @port_string = ":#{@@s3_connection.interface.DEFAULT_PORT}"
               else
                 if s3_config[:protocol] == 'http://' then
                   @port_string = ':80'
@@ -218,7 +218,7 @@ module Technoweenie # :nodoc:
           options   = args.extract_options!
           thumbnail = args.shift
           options[:expires_in] ||= 5.minutes
-          s3_generator.bucket(bucket_name).get(full_filename(thumbnail), options[:expires_in])
+          @@s3_generator.bucket(bucket_name).get(full_filename(thumbnail), options[:expires_in])
         end
 
         def create_temp_file
@@ -226,7 +226,7 @@ module Technoweenie # :nodoc:
         end
 
         def current_data
-          s3_connection.bucket(bucket_name).key(full_filename).data
+          @@s3_connection.bucket(bucket_name).key(full_filename).data
         end
 
         def s3_protocol
@@ -244,7 +244,7 @@ module Technoweenie # :nodoc:
         protected
           # Called in the after_destroy callback
           def destroy_file
-            s3_connection.bucket(bucket_name).key(full_filename).delete
+            @@s3_connection.bucket(bucket_name).key(full_filename).delete
           end
 
           def rename_file
@@ -252,7 +252,7 @@ module Technoweenie # :nodoc:
 
             old_full_filename = File.join(base_path, @old_filename)
 
-            s3_connection.bucket(bucket_name).key(old_full_filename).rename(full_filename)
+            @@s3_connection.bucket(bucket_name).key(old_full_filename).rename(full_filename)
 
             @old_filename = nil
             true
@@ -263,7 +263,7 @@ module Technoweenie # :nodoc:
               if temp_path then
                 temp_data = open(temp_path, 'rb') { |io| io.read }
               end
-              s3_connection.bucket(bucket_name).put(full_filename, temp_data, {}, attachment_options[:s3_access], {'content-type' => content_type})
+              @@s3_connection.bucket(bucket_name).put(full_filename, temp_data, {}, attachment_options[:s3_access], {'content-type' => content_type})
             end
 
             @old_filename = nil
