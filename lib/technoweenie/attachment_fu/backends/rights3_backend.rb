@@ -155,17 +155,6 @@ module Technoweenie # :nodoc:
           end
         end
 
-        module InstanceMethods
-          def attachment_attributes_valid?
-            [:size, :content_type].each do |attr_name|
-              enum = attachment_options[attr_name]
-              # Call to default_error_messages replaced with call to I18n.translate('activerecord.errors.messages')
-              # errors.add attr_name, ActiveRecord::Errors.default_error_messages[:inclusion] unless enum.nil? || enum.include?(send(attr_name))
-              errors.add attr_name, I18n.translate('activerecord.errors.messages')[:inclusion] unless enum.nil? || enum.include?(send(attr_name))
-            end
-          end
-        end
-
         # Overwrites the base filename writer in order to store the old filename
         def filename=(value)
           @old_filename = filename unless filename.nil? || @old_filename
