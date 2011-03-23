@@ -199,7 +199,13 @@ module Technoweenie # :nodoc:
             require 'right_aws'
 
             params = s3_config.slice(:server, :port)
-            params[:protocol] = (s3_config[:use_ssl] ? 'https' : 'http')
+            if s3_config[:use_ssl]
+              params[:protocol] = 'https'
+              params[:port] ||= '443'
+            else
+              params[:protocol] = 'http'
+              params[:port] ||= '80'
+            end
             @@s3_connection = RightAws::S3.new(s3_config[:access_key_id], s3_config[:secret_access_key], params)
             @@s3_generator = RightAws::S3Generator.new(s3_config[:access_key_id], s3_config[:secret_access_key], params)
           rescue LoadError
