@@ -261,7 +261,7 @@ module Technoweenie # :nodoc:
           @old_filename = filename unless filename.nil? || @old_filename
           # square brackets cause problems in Firefox, so replace them.
           value = value.gsub('[', '(').gsub(']', ')')
-          write_attribute :filename, sanitize_filename(value)
+          write_attribute :filename, value
         end
 
         # The attachment ID used in the full path of a file
@@ -349,7 +349,19 @@ module Technoweenie # :nodoc:
             S3Object.url_for(full_filename(thumbnail), bucket_name, options)
           else
             options[:expires_in] ||= 5.minutes
-            @@s3_generator.bucket(bucket_name).get(full_filename(thumbnail), options[:expires_in])
+            begin
+              # Ensure that the filename is only using the ISO-8859-1 character set.
+              # If it is using any other character, Iconv::IllegalSequence will be thrown.
+              Iconv.conv('ISO-8859-1', 'UTF-8', filename)
+              # Note that even though we are restricted to characters in the ISO-8859-1 character set,
+              # we send the header itself as UTF-8.
+              response_params = {'response-content-disposition' => 'attachment; filename="' + filename + '"'}
+            rescue Iconv::IllegalSequence
+              # The filename uses characters that are not supported by ISO-8859-1, so we
+              # cannot set the response-content-disposition header.
+              response_params = {}
+            end
+            @@s3_generator.bucket(bucket_name).get(full_filename(thumbnail), options[:expires_in], {}, response_params)
           end
         end
 
