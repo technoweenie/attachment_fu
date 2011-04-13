@@ -202,7 +202,10 @@ module Technoweenie # :nodoc:
 
         # Called in the after_destroy callback
         def destroy_file
-          container.delete_object(full_filename)
+          begin
+            container.delete_object(full_filename)
+          rescue CloudFiles::Exception::NoSuchObject => e
+          end
         end
 
         def rename_file
@@ -210,7 +213,10 @@ module Technoweenie # :nodoc:
           return unless @old_filename && @old_filename != filename
 
           old_full_filename = File.join(base_path, @old_filename)
-          container.delete_object(old_full_filename)
+          begin
+            container.delete_object(old_full_filename)
+          rescue CloudFiles::Exception::NoSuchObject => e
+          end
 
           @old_filename = nil
           true

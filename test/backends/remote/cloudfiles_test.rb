@@ -75,7 +75,15 @@ class CloudfilesTest < ActiveSupport::TestCase
 
     test_against_subclass :test_should_delete_attachment_from_cloud_files_when_attachment_record_destroyed, CloudFilesAttachment
 
+    def test_should_rescue_from_deleted_objects_in_cloudfiles(klass = CloudFilesAttachment)
+      attachment_model klass
 
+      attachment = upload_file :filename => '/files/rails.png'
+      attachment.send(:get_storage_delegator, :default).destroy_file
+      assert attachment.destroy
+    end
+
+    test_against_subclass :test_should_rescue_from_deleted_objects_in_cloudfiles, CloudFilesAttachment
 
     protected
       def http_response_for(url)
