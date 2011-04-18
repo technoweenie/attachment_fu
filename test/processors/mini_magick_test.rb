@@ -24,6 +24,21 @@ class MiniMagickTest < ActiveSupport::TestCase
       assert_equal 40, geo.height
     end
 
+    def test_should_not_process_under_save_without_process(klass = ImageThumbnailCrop)
+      attachment_model klass
+
+      attachment = upload_file :filename => '/files/rails.png'
+      assert attachment.image?
+
+      thumbnail = attachment.thumbnails.first
+      attachment.uploaded_data = fixture_file_upload('/files/foo.txt')
+      attachment.save_without_processing
+      thumbnail.save_without_processing
+      assert attachment.thumbnails.first
+      thumbnail.reload
+      assert thumbnail
+    end
+
     def test_should_crop_image(klass = ImageThumbnailCrop)
       attachment_model klass
       attachment = upload_file :filename => '/files/rails.png'

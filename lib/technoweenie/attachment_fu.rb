@@ -493,6 +493,12 @@ module Technoweenie # :nodoc:
         self.class.with_image(temp_path, &block)
       end
 
+      def save_without_processing
+        without_processing do
+          save
+        end
+      end
+
       protected
         # Generates a unique filename for a Tempfile.
         def random_tempfile_filename
@@ -550,9 +556,19 @@ module Technoweenie # :nodoc:
           self.respond_to?(:_process_attachment)
         end
 
+        def without_processing
+          begin
+            @no_processing = true
+            yield
+          ensure
+            @no_processing = false
+          end
+        end
+
+
         def process_attachment
           @saved_attachment ||= save_attachment?
-          if @saved_attachment && has_attachment_processor?
+          if @saved_attachment && has_attachment_processor? && !@no_processing
             self._process_attachment
           end
           true
@@ -648,7 +664,7 @@ module Technoweenie # :nodoc:
           if @saved_attachment
             set_size_from_temp_path
 
-            if has_attachment_processor? && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
+            if has_attachment_processor? && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil? && !@no_processing
               temp_file = temp_path || create_temp_file
               attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
             end
