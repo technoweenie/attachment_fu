@@ -85,6 +85,23 @@ class CloudfilesTest < ActiveSupport::TestCase
 
     test_against_subclass :test_should_rescue_from_deleted_objects_in_cloudfiles, CloudFilesAttachment
 
+    def test_should_retry_once_on_cf_deletion_failure(klass = CloudFilesAttachment)
+      attachment_model klass
+      attachment = upload_file :filename => '/files/rails.png'
+
+      delegator = attachment.send(:get_storage_delegator, :default)
+      CloudFiles::Container.any_instance.stubs(:delete_object).raises(CloudFiles::Exception::InvalidResponse)
+
+      assert_raises CloudFiles::Exception::InvalidResponse do
+        attachment.destroy
+      end
+
+      CloudFiles::Container.any_instance.stubs(:delete_object).raises(CloudFiles::Exception::InvalidResponse).then.returns(true)
+      assert attachment.destroy
+    end
+
+    test_against_subclass :test_should_retry_once_on_cf_deletion_failure, CloudFilesAttachment
+
     protected
       def http_response_for(url)
         url = URI.parse(url)

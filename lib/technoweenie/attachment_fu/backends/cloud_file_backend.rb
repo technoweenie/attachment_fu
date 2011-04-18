@@ -202,9 +202,17 @@ module Technoweenie # :nodoc:
 
         # Called in the after_destroy callback
         def destroy_file
+          retried = false
           begin
             container.delete_object(full_filename)
           rescue CloudFiles::Exception::NoSuchObject => e
+          rescue CloudFiles::Exception::InvalidResponse => e
+            if retried
+              raise e
+            else
+              retried = true
+              retry
+            end
           end
         end
 
