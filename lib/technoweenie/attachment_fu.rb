@@ -494,9 +494,11 @@ module Technoweenie # :nodoc:
       end
 
       def save_without_processing
-        without_processing do
-          save
-        end
+        without_processing { save }
+      end
+
+      def save_without_processing!
+        without_processing { save! }
       end
 
       protected
