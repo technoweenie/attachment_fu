@@ -469,12 +469,8 @@ module Technoweenie # :nodoc:
         stores.include?(backend)
       end
 
-      def stores=(input)
-        if input.is_a?(Symbol)
-          @target_attachment_stores = [input]
-        else
-          @target_attachment_stores = input.map(&:to_sym)
-        end
+      def stores=(*input)
+        @target_attachment_stores = input.flatten.map(&:to_sym)
       end
 
 

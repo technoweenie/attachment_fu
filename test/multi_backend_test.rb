@@ -2,6 +2,25 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'test_helper'))
 
 class MultiBackendTest < ActiveSupport::TestCase
 
+  def test_stores_equals_should_accept_liberally
+    attachment_model MultiStoreAttachmentTwoDefaults
+    assert_created do
+      attachment = upload_file :filename => '/files/rails.png'
+
+      attachment.stores = ['fs']
+      assert_equal([:fs], attachment.instance_variable_get("@target_attachment_stores"))
+
+      attachment.stores = 'fs'
+      assert_equal([:fs], attachment.instance_variable_get("@target_attachment_stores"))
+
+      attachment.stores = :fs
+      assert_equal([:fs], attachment.instance_variable_get("@target_attachment_stores"))
+
+      attachment.stores = [:fs, :two]
+      assert_equal([:fs, :two], attachment.instance_variable_get("@target_attachment_stores"))
+    end
+  end
+
   def test_should_save_in_multiple_stores
     attachment_model MultiStoreAttachmentTwoDefaults
     assert_created do
