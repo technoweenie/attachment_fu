@@ -1,3 +1,5 @@
+require 'digest/md5'
+
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     @@default_processors = %w(ImageScience Rmagick MiniMagick Gd2 CoreImage)
@@ -230,6 +232,7 @@ module Technoweenie # :nodoc:
         base.before_update :rename_files
         base.before_validation :set_size_from_temp_path
         base.before_validation :process_attachment_migrations, :process_attachment
+        base.before_validation :generate_md5, :if => Proc.new {|a| a.new_record?}
         base.after_save :after_process_attachment
         base.after_destroy :destroy_files
         if defined?(::ActiveSupport::Callbacks)
@@ -497,6 +500,10 @@ module Technoweenie # :nodoc:
         without_processing { save! }
       end
 
+      def generate_md5
+        self.md5 = md5_from_file(temp_path)
+      end
+
       protected
         # Generates a unique filename for a Tempfile.
         def random_tempfile_filename
@@ -756,6 +763,14 @@ module Technoweenie # :nodoc:
         # Removes the thumbnails for the attachment, if it has any
         def destroy_thumbnails
           self.thumbnails.each { |thumbnail| thumbnail.destroy } if thumbnailable?
+        end
+
+        def md5_from_file(path)
+          digest = Digest::MD5.new
+          File.open(path) do |file|
+            digest << file.read(4096) until file.eof?
+          end
+          digest.hexdigest
         end
     end
   end

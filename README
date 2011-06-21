@@ -112,6 +112,7 @@ Fields for attachment_fu metadata tables...
                             #                                   :thumb => '100x100>' }
                             # [ Elsewhere ]
                             # @user.avatar.thumbnails.first.thumbnail #=> 'small'
+  md5,            :string   # md5 hash for the attachment
   that reference files stored in the database (:db_file):
     db_file_id,   :integer  # id of the file in the database (foreign key)
     
