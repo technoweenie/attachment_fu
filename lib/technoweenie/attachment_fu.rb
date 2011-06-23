@@ -232,7 +232,7 @@ module Technoweenie # :nodoc:
         base.before_update :rename_files
         base.before_validation :set_size_from_temp_path
         base.before_validation :process_attachment_migrations, :process_attachment
-        base.before_validation :generate_md5, :if => Proc.new {|a| a.new_record?}
+        base.before_validation :generate_md5, :if => Proc.new {|a| a.respond_to?(:md5) && a.new_record?}
         base.after_save :after_process_attachment
         base.after_destroy :destroy_files
         if defined?(::ActiveSupport::Callbacks)
@@ -501,7 +501,7 @@ module Technoweenie # :nodoc:
       end
 
       def generate_md5
-        self.md5 = md5_from_file(temp_path)
+        self.md5 = md5_from_file(temp_path || create_temp_file) rescue nil
       end
 
       protected
