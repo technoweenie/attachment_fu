@@ -291,6 +291,7 @@ module Technoweenie # :nodoc:
 
       def new_tempfile(file)
         basename, ext = [File.basename(file), File.extname(file)]
+
         Tempfile.new([basename, ext], Technoweenie::AttachmentFu.tempfile_path)
       end
 
