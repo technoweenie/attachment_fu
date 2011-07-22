@@ -40,7 +40,7 @@ module Technoweenie # :nodoc:
             commands.strip unless attachment_options[:keep_profile]
 
             # gif are not handled correct, this is a hack, but it seems to work.
-            if img.output =~ / GIF /
+            if img['format'] == 'GIF'
               img.format("png")
             end
 
