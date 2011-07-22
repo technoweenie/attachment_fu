@@ -289,9 +289,15 @@ module Technoweenie # :nodoc:
         attachment_options[:thumbnail_class]
       end
 
+      def new_tempfile(file)
+        basename, ext = [File.basename(file), File.extname(file)]
+        Tempfile.new([basename, ext], Technoweenie::AttachmentFu.tempfile_path)
+      end
+
+
       # Copies the given file path to a new tempfile, returning the closed tempfile.
       def copy_to_temp_file(file, temp_base_name)
-        tmp = Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path)
+        tmp = new_tempfile(temp_base_name)
         tmp.close
         FileUtils.cp file, tmp.path
         tmp
@@ -299,7 +305,7 @@ module Technoweenie # :nodoc:
 
       # Writes the given data to a new tempfile, returning the closed tempfile.
       def write_to_temp_file(data, temp_base_name)
-        tmp = Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path)
+        tmp = new_tempfile(temp_base_name)
         tmp.binmode
         tmp.write data
         tmp.close
