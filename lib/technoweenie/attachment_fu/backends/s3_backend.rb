@@ -293,7 +293,7 @@ module Technoweenie # :nodoc:
           if attachment_options[:cloudfront]
             cloudfront_url(args)
           else
-            s3_url(args)
+            s3_url(*args)
           end
         end
 
