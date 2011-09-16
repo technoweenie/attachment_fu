@@ -60,7 +60,6 @@ Gem::Specification.new do |s|
     vendor/red_artisan/core_image/filters/scale.rb
     vendor/red_artisan/core_image/filters/watermark.rb
   )
-  s.has_rdoc = true
   s.homepage = %q{http://github.com/tdd/attachment_fu}
   s.rdoc_options = ["--inline-source", "--charset=UTF-8"]
   s.require_paths = ["lib"]
