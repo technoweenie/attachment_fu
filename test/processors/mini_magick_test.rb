@@ -124,9 +124,4 @@ class MiniMagickTest < ActiveSupport::TestCase
     # image_aspect > 1 && thumb_aspect > 1     && image_aspect < thumb_aspect
     {:data => [9.0,3.0,5.0,1.0], :height => 1.8, :yoffset => 0.6} # 3a
   ]
-
-
-
-
-
 end
