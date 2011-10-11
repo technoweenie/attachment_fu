@@ -129,8 +129,8 @@ module Technoweenie # :nodoc:
           end
         end
 
-        # TBD -- should support multiple containers for different configs.  I think same thing w/ S3 stuff
         def container_name
+          return @obj.database_container_name if @obj.respond_to?(:database_container_name) && @obj.database_container_name
           @@cloudfiles_config[:container_name]
         end
 
