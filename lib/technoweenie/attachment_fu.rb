@@ -87,7 +87,7 @@ module Technoweenie # :nodoc:
         options[:size]             ||= (options[:min_size]..options[:max_size])
         options[:thumbnails]       ||= {}
         options[:thumbnail_class]  ||= self
-        options[:s3_access]        ||= :public_read
+        options[:s3_access]        ||= :private
         options[:cloudfront]       ||= false
         options[:store_name]       ||= :default
         options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?

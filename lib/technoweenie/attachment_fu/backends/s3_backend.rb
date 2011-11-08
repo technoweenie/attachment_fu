@@ -378,7 +378,8 @@ module Technoweenie # :nodoc:
               (temp_path ? File.open(temp_path) : temp_data),
               bucket_name,
               :content_type => content_type,
-              :access => attachment_options[:s3_access]
+              :access => attachment_options[:s3_access],
+              "x-amz-server-side-encryption" => "AES256" # this a band-aid
             )
           end
 
