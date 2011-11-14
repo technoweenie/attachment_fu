@@ -455,11 +455,16 @@ module Technoweenie # :nodoc:
       end
 
       # supports backwards compat -- we pretend that methods are mixed in.  Might screw with someone using respond_to? though.
-      ONE_STORE_METHODS = [:public_filename, :full_filename, :current_data, :base_path, :attachment_path_id, :partitioned_path, :cloudfront_url,
+      ONE_STORE_METHODS = [:full_filename, :current_data, :base_path, :attachment_path_id, :partitioned_path, :cloudfront_url,
                            :authenticated_s3_url, :s3_config, :cloudfiles_config, :container_name, :cloudfiles_url, :cloudfiles_storage_url,  :cloudfiles_authtoken, :s3_url, :bucket_name]
 
       ONE_STORE_METHODS.each do |method|
         eval("def #{method}(*args) ; on_one_store(:#{method}, nil, *args) ; end")
+      end
+
+      # backward compatibility, only defined on FileSystemBackend
+      def public_filename(*args)
+        on_one_store :public_filename, :fs, *args
       end
 
       def supports_multiple_stores?
