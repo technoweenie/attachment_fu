@@ -55,13 +55,20 @@ module Technoweenie # :nodoc:
           else
             path_id = attachment_path_id
             if path_id.is_a?(Integer)
-              # Primary key is an integer. Split it after padding it with 0.
-              ("%08d" % path_id).scan(/..../) + args
+              partitioned_path_for_fixnum(path_id, args)
             else
               # Primary key is a String. Hash it, then split it into 4 components.
               hash = Digest::SHA512.hexdigest(path_id.to_s)
               [hash[0..31], hash[32..63], hash[64..95], hash[96..127]] + args
             end
+          end
+        end
+
+        def partitioned_path_for_fixnum(path_id, args)
+          if path_id <= 9999_9999
+            ("%08d" % path_id).scan(/..../) + args
+          else
+            ("%012d" % path_id).scan(/..../) + args
           end
         end
 
