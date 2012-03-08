@@ -12,12 +12,12 @@ module Technoweenie # :nodoc:
           def with_image(file, &block)
             begin
               binary_data = file.is_a?(MiniMagick::Image) ? file : MiniMagick::Image.open(file) unless !Object.const_defined?(:MiniMagick)
-            rescue
+              block.call binary_data if block && binary_data
+            rescue Exception => e
               # Log the failure to load the image.
               logger.debug("Exception working with image: #{$!}")
               binary_data = nil
             end
-            block.call binary_data if block && binary_data
           ensure
             !binary_data.nil?
           end
