@@ -14,4 +14,14 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib", "vendor"]
   s.rubygems_version = %q{1.3.1}
   s.summary = %q{Adds has_attachment properties to ActiveRecord}
+
+  s.add_runtime_dependency("activerecord")
+  s.add_runtime_dependency("activesupport")
+  s.add_runtime_dependency("actionpack")
+  s.add_development_dependency("rake")
+  s.add_development_dependency("appraisal")
+  s.add_development_dependency("mocha")
+  s.add_development_dependency("mysql")
+  s.add_development_dependency("mini_magick", "~> 3.3")
+
 end

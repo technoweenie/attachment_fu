@@ -1,4 +1,7 @@
 require 'digest/md5'
+require 'active_support'
+require 'active_support/core_ext'
+require 'active_support/dependencies'
 
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
@@ -676,6 +679,17 @@ module Technoweenie # :nodoc:
           end
         end
 
+        def logger
+          @logger ||= begin
+            if Kernel.const_defined?(:Rails)
+              Rails.logger
+            else
+              Logger.new($stdout)
+            end
+          end
+        end
+
+
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
           if @saved_attachment
@@ -698,7 +712,7 @@ module Technoweenie # :nodoc:
                       store.save_to_storage
                     }
                   rescue Exception => e
-                    Rails.logger.error("Exception saving #{self.filename} to #{name}: #{e.inspect}")
+                    logger.error("Exception saving #{self.filename} to #{name}: #{e.inspect}")
                     new_stores = stores.reject { |s| s == name.to_sym }.join(",")
                     write_attribute(:stores, new_stores)
                     self.class.update_all({:stores => new_stores}, ["id = ?", self.id])
