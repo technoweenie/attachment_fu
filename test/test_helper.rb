@@ -1,4 +1,6 @@
-$:.unshift(File.dirname(__FILE__) + '/../lib')
+require 'rubygems'
+require 'bundler'
+Bundler.setup
 
 ENV['RAILS_ENV'] = 'test'
 
@@ -12,8 +14,8 @@ require 'active_record'
 require 'active_record/fixtures'
 
 require 'action_controller'
-require 'action_controller/test_process'
 
+require 'ruby-debug'
 require 'attachment_fu'
 require 'mocha'
 require 'logger'
@@ -66,11 +68,12 @@ class ActiveSupport::TestCase #:nodoc:
 
   def fixture_file_upload(path, mime_type = nil, binary = false)
     fixture_path = ActionController::TestCase.send(:fixture_path) if ActionController::TestCase.respond_to?(:fixture_path)
-    ActionController::TestUploadedFile.new("#{fixture_path}#{path}", mime_type, binary)
+    file_klass = ActionController.const_defined?(:TestUploadedFile) ? ActionController::TestUploadedFile : Rack::Test::UploadedFile
+    file_klass.new("#{fixture_path}#{path}", mime_type, binary)
   end
 
   def setup
-    AttachmentTest.saves = 0
+    system("rm -Rf #{File.dirname(__FILE__) + "/../vendor/plugins/attachment_fu/test/files"}")
     DbFile.transaction { [AttachmentTest, FileAttachment, OrphanAttachment, MinimalAttachment, DbFile].each { |klass| klass.delete_all } }
     attachment_model self.class.attachment_model
   end

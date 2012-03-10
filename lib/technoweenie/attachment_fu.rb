@@ -2,6 +2,7 @@ require 'digest/md5'
 require 'active_support'
 require 'active_support/core_ext'
 require 'active_support/dependencies'
+require 'timeout'
 
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
@@ -229,61 +230,16 @@ module Technoweenie # :nodoc:
       end
 
       def self.extended(base)
-        base.class_inheritable_accessor :attachment_options
-        base.class_inheritable_accessor :attachment_backends
+        base.class_attribute :attachment_options
+        base.class_attribute :attachment_backends
         base.before_destroy :destroy_thumbnails
         base.before_update :rename_files
         base.before_validation :set_size_from_temp_path
-        base.before_validation :process_attachment_migrations, :process_attachment
+        base.before_validation :process_attachment, :process_attachment_moves
         base.before_validation :generate_md5, :if => Proc.new {|a| a.respond_to?(:md5) && a.new_record?}
         base.after_save :after_process_attachment
         base.after_destroy :destroy_files
-        if defined?(::ActiveSupport::Callbacks)
-          base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
-        end
       end
-
-      unless defined?(::ActiveSupport::Callbacks)
-        # Callback after an image has been resized.
-        #
-        #   class Foo < ActiveRecord::Base
-        #     acts_as_attachment
-        #     after_resize do |record, img|
-        #       record.aspect_ratio = img.columns.to_f / img.rows.to_f
-        #     end
-        #   end
-        def after_resize(&block)
-          write_inheritable_array(:after_resize, [block])
-        end
-
-        # Callback after an attachment has been saved either to the file system or the DB.
-        # Only called if the file has been changed, not necessarily if the record is updated.
-        #
-        #   class Foo < ActiveRecord::Base
-        #     acts_as_attachment
-        #     after_attachment_saved do |record|
-        #       ...
-        #     end
-        #   end
-        def after_attachment_saved(&block)
-          write_inheritable_array(:after_attachment_saved, [block])
-        end
-
-        # Callback before a thumbnail is saved.  Use this to pass any necessary extra attributes that may be required.
-        #
-        #   class Foo < ActiveRecord::Base
-        #     acts_as_attachment
-        #     before_thumbnail_saved do |thumbnail|
-        #       record = thumbnail.parent
-        #       ...
-        #     end
-        #   end
-        def before_thumbnail_saved(&block)
-          write_inheritable_array(:before_thumbnail_saved, [block])
-        end
-
-      end
-
 
       # Get the thumbnail class, which is the current attachment class by default.
       # Configure this with the :thumbnail_class option.
@@ -318,10 +274,6 @@ module Technoweenie # :nodoc:
     end
 
     module InstanceMethods
-      def self.included(base)
-        base.define_callbacks *[:after_resize, :after_attachment_saved, :before_thumbnail_saved] if base.respond_to?(:define_callbacks)
-      end
-
       # Checks whether the attachment's content type is an image content type
       def image?
         self.class.image?(content_type)
@@ -359,9 +311,8 @@ module Technoweenie # :nodoc:
           :content_type             => content_type,
           :filename                 => thumbnail_name_for(file_name_suffix),
           :thumbnail_resize_options => size
-        }, false)
+        })
         thumb.stores = stores
-        callback_with_args :before_thumbnail_saved, thumb
         thumb.save!
 
         thumb
@@ -377,7 +328,8 @@ module Technoweenie # :nodoc:
         with_each_store(true) do |store|
           store.notify_rename if store.respond_to?(:notify_rename)
         end
-        write_attribute :filename, sanitize_filename(new_name)
+
+        write_attribute :filename, sanitize_filename(new_name) if column_for_attribute(:filename)
       end
 
       # Returns the width/height in a suitable format for the image_tag helper: (100x100)
@@ -474,23 +426,42 @@ module Technoweenie # :nodoc:
         has_attribute?(:stores)
       end
 
+      def to_store_list(input)
+        return [] if input.nil?
+        input = input.split(",") if input.is_a?(String)
+        input.map(&:to_sym)
+      end
+
+      private :to_store_list
+
       def stores
-        if !has_attribute?(:stores)
+        if !supports_multiple_stores?
           [self.class.attachment_backends.keys.first]
         else
           stores = read_attribute(:stores) || ''
-          stores.split(',').map(&:to_sym)
+          to_store_list(stores)
+        end
+      end
+
+      def old_stores
+        if new_record?
+          []
+        elsif !supports_multiple_stores?
+          [self.class.attachment_backends.keys.first]
+        else
+          to_store_list(stores_was)
         end
       end
 
       def stored_in?(backend)
-        stores.include?(backend)
+        old_stores.include?(backend)
       end
 
       def stores=(*input)
-        @target_attachment_stores = input.flatten.map(&:to_sym)
+        if supports_multiple_stores?
+          write_attribute(:stores, input.flatten.map(&:to_s).join(','))
+        end
       end
-
 
       # Creates a temp file with the current data.
       def create_temp_file
@@ -645,29 +616,23 @@ module Technoweenie # :nodoc:
           end
         end
 
-        def process_attachment_migrations
-          new_stores = nil
+        def process_attachment_moves
+          return true if !supports_multiple_stores?
           if new_record?
-            @old_attachment_stores = []
-            @target_attachment_stores ||= default_attachment_stores
-            raise "Please configure one attachment store as :default" if @target_attachment_stores.empty?
+            @saved_attachment = true
+            self.stores = default_attachment_stores if self.stores.empty?
+            raise "Please configure one attachment store as :default" if stores.empty?
+            true
           else
-            @old_attachment_stores = stores
-            @target_attachment_stores ||= stores
-          end
+            # update -- if we've set uploaded_data =, we don't need to run these checks
+            return true if @saved_attachment
 
-          if Set.new(@target_attachment_stores) != Set.new(@old_attachment_stores)
-            if !new_record? && !save_attachment?
+            if Set.new(old_stores) != Set.new(stores)
               data = current_data
               set_temp_data(data) if data
+              @saved_attachment = true
             end
-
-            write_attribute(:stores, @target_attachment_stores.join(','))
-            @saved_attachment = save_attachment?
           end
-
-          @target_attachment_stores = nil
-          true
         end
 
         def default_attachment_stores
@@ -692,6 +657,7 @@ module Technoweenie # :nodoc:
 
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
+          debugger if $debug_me
           if @saved_attachment
             set_size_from_temp_path
 
@@ -699,6 +665,7 @@ module Technoweenie # :nodoc:
               temp_file = temp_path || create_temp_file
               attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
             end
+
             with_each_store do |store|
               name = store.attachment_options[:store_name]
 
@@ -718,7 +685,7 @@ module Technoweenie # :nodoc:
                     self.class.update_all({:stores => new_stores}, ["id = ?", self.id])
                   end
                 end
-              elsif @old_attachment_stores.include?(name) # needs a delete
+              elsif stores_was && to_store_list(stores_was).include?(name) # needs a delete
                 store.destroy_file
               end
             end
@@ -727,7 +694,6 @@ module Technoweenie # :nodoc:
             @saved_attachment = nil
             @old_attachment_stores = nil
             @target_attachment_stores = nil
-            callback :after_attachment_saved
           end
         end
 
@@ -749,40 +715,6 @@ module Technoweenie # :nodoc:
             resize_image(img, attachment_options[:resize_to])
           elsif thumbnail_resize_options # thumbnail
             resize_image(img, thumbnail_resize_options)
-          end
-        end
-
-        # Yanked from ActiveRecord::Callbacks, modified so I can pass args to the callbacks besides self.
-        # Only accept blocks, however
-        if ActiveSupport.const_defined?(:Callbacks)
-          # Rails 2.1 and beyond!
-          def callback_with_args(method, arg = self)
-            notify(method)
-
-            result = run_callbacks(method, { :object => arg }) { |result, object| result == false }
-
-            if result != false && respond_to_without_attributes?(method)
-              result = send(method)
-            end
-
-            result
-          end
-
-          def run_callbacks(kind, options = {}, &block)
-            options.reverse_merge!( :object => self )
-            self.class.send("#{kind}_callback_chain").run(options[:object], options, &block)
-          end
-        else
-          # Rails 2.0
-          def callback_with_args(method, arg = self)
-            notify(method)
-
-            result = nil
-            callbacks_for(method).each do |callback|
-              result = callback.call(self, arg)
-              return false if result == false
-            end
-            result
           end
         end
 

@@ -8,16 +8,16 @@ class MultiBackendTest < ActiveSupport::TestCase
       attachment = upload_file :filename => '/files/rails.png'
 
       attachment.stores = ['fs']
-      assert_equal([:fs], attachment.instance_variable_get("@target_attachment_stores"))
+      assert_equal([:fs], attachment.stores)
 
       attachment.stores = 'fs'
-      assert_equal([:fs], attachment.instance_variable_get("@target_attachment_stores"))
+      assert_equal([:fs], attachment.stores)
 
       attachment.stores = :fs
-      assert_equal([:fs], attachment.instance_variable_get("@target_attachment_stores"))
+      assert_equal([:fs], attachment.stores)
 
       attachment.stores = [:fs, :two]
-      assert_equal([:fs, :two], attachment.instance_variable_get("@target_attachment_stores"))
+      assert_equal([:fs, :two], attachment.stores)
     end
   end
 
@@ -65,6 +65,8 @@ class MultiBackendTest < ActiveSupport::TestCase
     assert !File.exist?(attachment.fs.full_filename)
 
     attachment.stores = [:dbfile, :fs]
+    #$debug_me = true
+    #debugger
     attachment.save
     assert File.exist?(attachment.fs.full_filename)
     assert attachment.db_file

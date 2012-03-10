@@ -1,11 +1,6 @@
 class AttachmentTest < ActiveRecord::Base
-  @@saves = 0
-  cattr_accessor :saves
   has_attachment :processor => :rmagick
   validates_as_attachment
-  after_attachment_saved do |record|
-    self.saves += 1
-  end
 end
 
 class SmallAttachment < AttachmentTest
@@ -34,46 +29,11 @@ end
 
 class ImageWithThumbsAttachment < AttachmentTest
   has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
-  after_resize do |record, img|
-   # record.aspect_ratio = img.columns.to_f / img.rows.to_f
-  end
 end
 
 class FileAttachment < ActiveRecord::Base
   has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
   validates_as_attachment
-end
-
-class FileAttachmentWithStringId < ActiveRecord::Base
-  set_table_name 'file_attachments_with_string_id'
-  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
-  validates_as_attachment
-
-  before_validation :auto_generate_id
-  before_save :auto_generate_id
-  @@last_id = 0
-
-  private
-    def auto_generate_id
-      @@last_id += 1
-      self.id = "id_#{@@last_id}"
-    end
-end
-
-class FileAttachmentWithUuid < ActiveRecord::Base
-  set_table_name 'file_attachments_with_string_id'
-  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick, :uuid_primary_key => true
-  validates_as_attachment
-
-  before_validation :auto_generate_id
-  before_save :auto_generate_id
-  @@last_id = 0
-
-  private
-    def auto_generate_id
-      @@last_id += 1
-      self.id = "%0127dx" % @@last_id
-    end
 end
 
 class ImageFileAttachment < FileAttachment
@@ -84,9 +44,6 @@ end
 class ImageWithThumbsFileAttachment < FileAttachment
   has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
     :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
-  after_resize do |record, img|
-  #  record.aspect_ratio = img.columns.to_f / img.rows.to_f
-  end
 end
 
 class ImageWithThumbsClassFileAttachment < FileAttachment
