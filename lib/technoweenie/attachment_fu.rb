@@ -657,7 +657,6 @@ module Technoweenie # :nodoc:
 
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
-          debugger if $debug_me
           if @saved_attachment
             set_size_from_temp_path
 
