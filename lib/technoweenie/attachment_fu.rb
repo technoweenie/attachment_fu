@@ -646,7 +646,7 @@ module Technoweenie # :nodoc:
 
         def logger
           @logger ||= begin
-            if Kernel.const_defined?(:Rails)
+            if Object.const_defined?(:Rails)
               Rails.logger
             else
               Logger.new($stdout)
