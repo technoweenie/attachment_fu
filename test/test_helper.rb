@@ -1,13 +1,25 @@
-$:.unshift(File.dirname(__FILE__) + '/../lib')
+require 'rubygems'
+require 'bundler'
+Bundler.setup
 
 ENV['RAILS_ENV'] = 'test'
-ENV['RAILS_ROOT'] ||= File.dirname(__FILE__) + '/../../../..'
+
+# to-do: strip from rails 3 tests
+RAILS_ROOT=File.expand_path("..", File.dirname(__FILE__))
 
 require 'test/unit'
-require File.expand_path(File.join(ENV['RAILS_ROOT'], 'config/environment.rb'))
+require 'active_support'
+require 'active_support/test_case'
+require 'active_record'
 require 'active_record/fixtures'
-require 'action_controller/test_process'
+
+require 'action_controller'
+
+require 'ruby-debug'
+require 'attachment_fu'
 require 'mocha'
+require 'logger'
+
 
 config = YAML::load(IO.read(File.dirname(__FILE__) + '/database.yml'))
 ActiveRecord::Base.logger = Logger.new(File.dirname(__FILE__) + "/debug.log")
@@ -25,6 +37,11 @@ db_adapter ||=
       require 'sqlite3'
       'sqlite3'
     rescue MissingSourceFile
+      begin
+        require 'mysql'
+        'mysql'
+      rescue MissingSourceFile
+      end
     end
   end
 
@@ -36,13 +53,11 @@ ActiveRecord::Base.establish_connection(config[db_adapter])
 
 load(File.dirname(__FILE__) + "/schema.rb")
 
-#ActiveSupport::TestCase.fixture_path = File.dirname(__FILE__) + "/fixtures"
-
 class ActiveSupport::TestCase #:nodoc:
-  include ActionController::TestProcess
   include ActiveRecord::TestFixtures
   self.fixture_path = File.dirname(__FILE__) + "/fixtures"
   $LOAD_PATH.unshift(ActiveSupport::TestCase.fixture_path)
+
   def create_fixtures(*table_names)
     if block_given?
       Fixtures.create_fixtures(ActiveSupport::TestCase.fixture_path, table_names) { yield }
@@ -51,8 +66,14 @@ class ActiveSupport::TestCase #:nodoc:
     end
   end
 
+  def fixture_file_upload(path, mime_type = nil, binary = false)
+    fixture_path = ActionController::TestCase.send(:fixture_path) if ActionController::TestCase.respond_to?(:fixture_path)
+    file_klass = ActionController.const_defined?(:TestUploadedFile) ? ActionController::TestUploadedFile : Rack::Test::UploadedFile
+    file_klass.new("#{fixture_path}#{path}", mime_type, binary)
+  end
+
   def setup
-    AttachmentTest.saves = 0
+    system("rm -Rf #{File.dirname(__FILE__) + "/../vendor/plugins/attachment_fu/test/files"}")
     DbFile.transaction { [AttachmentTest, FileAttachment, OrphanAttachment, MinimalAttachment, DbFile].each { |klass| klass.delete_all } }
     attachment_model self.class.attachment_model
   end
@@ -155,3 +176,4 @@ end
 
 require File.join(File.dirname(__FILE__), 'fixtures/attachment')
 require File.join(File.dirname(__FILE__), 'base_attachment_tests')
+

@@ -88,7 +88,7 @@ class MiniMagickTest < ActiveSupport::TestCase
       attachment_model MiniMagickAttachmentWithValidation
       attachment = upload_file :filename => '/files/corrupt.png'
       assert !attachment.valid?
-      assert attachment.errors.on(:content_type)
+      assert attachment.errors[:content_type]
     end
   else
     def test_flunk

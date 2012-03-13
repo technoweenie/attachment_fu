@@ -16,4 +16,3 @@ mysql:
   :username: root
   :password:
   :database: attachment_fu_plugin_test
-  :socket: /var/mysql/mysql.sock
