@@ -624,7 +624,7 @@ module Technoweenie # :nodoc:
             if self.stores.empty?
               self.stores = default_attachment_stores
             else
-              self.stores <<= default_attachment_stores
+              self.stores |= default_attachment_stores
             end
             raise "Please configure one attachment store as :default" if stores.empty?
             true
