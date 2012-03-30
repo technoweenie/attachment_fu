@@ -459,7 +459,7 @@ module Technoweenie # :nodoc:
 
       def stores=(*input)
         if supports_multiple_stores?
-          write_attribute(:stores, input.flatten.map(&:to_s).join(','))
+          write_attribute(:stores, input.flatten.uniq.map(&:to_s).join(','))
         end
       end
 
@@ -620,7 +620,11 @@ module Technoweenie # :nodoc:
           return true if !supports_multiple_stores?
           if new_record?
             @saved_attachment = true
-            self.stores = default_attachment_stores if self.stores.empty?
+            if self.stores.empty?
+              self.stores = default_attachment_stores
+            else
+              self.stores <<= default_attachment_stores
+            end
             raise "Please configure one attachment store as :default" if stores.empty?
             true
           else
