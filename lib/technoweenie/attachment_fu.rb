@@ -429,6 +429,7 @@ module Technoweenie # :nodoc:
       def to_store_list(input)
         return [] if input.nil?
         input = input.split(",") if input.is_a?(String)
+        input.flatten! if input.is_a?(Array)
         input.map(&:to_sym)
       end
 
