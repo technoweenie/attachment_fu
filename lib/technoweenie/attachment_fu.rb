@@ -621,11 +621,7 @@ module Technoweenie # :nodoc:
           return true if !supports_multiple_stores?
           if new_record?
             @saved_attachment = true
-            if self.stores.empty?
-              self.stores = default_attachment_stores
-            else
-              self.stores |= default_attachment_stores
-            end
+            self.stores = default_attachment_stores
             raise "Please configure one attachment store as :default" if stores.empty?
             true
           else
