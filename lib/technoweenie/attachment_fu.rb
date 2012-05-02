@@ -7,7 +7,11 @@ require 'timeout'
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     @@default_processors = %w(ImageScience Rmagick MiniMagick Gd2 CoreImage)
-    @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
+    if defined?(Rails)
+      @@tempfile_path      = File.join(Rails.root.to_s, 'tmp', 'attachment_fu')
+    else
+      @@tempfile_path      = File.join(RAILS_ROOT, 'tmp', 'attachment_fu')
+    end
     @@content_types      = [
       'image/jpeg',
       'image/pjpeg',
