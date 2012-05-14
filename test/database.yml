@@ -3,7 +3,7 @@ sqlite:
   :dbfile: attachment_fu_plugin.sqlite.db
 sqlite3:
   :adapter: sqlite3
-  :dbfile: attachment_fu_plugin.sqlite3.db
+  :database: attachment_fu_plugin.sqlite3.db
 postgresql:
   :adapter: postgresql
   :username: postgres
@@ -13,6 +13,6 @@ postgresql:
 mysql:
   :adapter: mysql
   :host: localhost
-  :username: rails
+  :username: root
   :password:
   :database: attachment_fu_plugin_test

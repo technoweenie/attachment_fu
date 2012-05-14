@@ -1,79 +1,39 @@
-class Attachment < ActiveRecord::Base
-  @@saves = 0
-  cattr_accessor :saves
+class AttachmentTest < ActiveRecord::Base
   has_attachment :processor => :rmagick
   validates_as_attachment
-  after_attachment_saved do |record|
-    self.saves += 1
-  end
 end
 
-class SmallAttachment < Attachment
+class SmallAttachment < AttachmentTest
   has_attachment :max_size => 1.kilobyte
 end
 
-class BigAttachment < Attachment
+class BigAttachment < AttachmentTest
   has_attachment :size => 1.megabyte..2.megabytes
 end
 
-class PdfAttachment < Attachment
+class PdfAttachment < AttachmentTest
   has_attachment :content_type => 'pdf'
 end
 
-class DocAttachment < Attachment
+class DocAttachment < AttachmentTest
   has_attachment :content_type => %w(pdf doc txt)
 end
 
-class ImageAttachment < Attachment
+class ImageAttachment < AttachmentTest
   has_attachment :content_type => :image, :resize_to => [50,50]
 end
 
-class ImageOrPdfAttachment < Attachment
+class ImageOrPdfAttachment < AttachmentTest
   has_attachment :content_type => ['pdf', :image], :resize_to => 'x50'
 end
 
-class ImageWithThumbsAttachment < Attachment
+class ImageWithThumbsAttachment < AttachmentTest
   has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
-  after_resize do |record, img|
-   # record.aspect_ratio = img.columns.to_f / img.rows.to_f
-  end
 end
 
 class FileAttachment < ActiveRecord::Base
   has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
   validates_as_attachment
-end
-
-class FileAttachmentWithStringId < ActiveRecord::Base
-  set_table_name 'file_attachments_with_string_id'
-  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
-  validates_as_attachment
-  
-  before_validation :auto_generate_id
-  before_save :auto_generate_id
-  @@last_id = 0
-  
-  private
-    def auto_generate_id
-      @@last_id += 1
-      self.id = "id_#{@@last_id}"
-    end
-end
-
-class FileAttachmentWithUuid < ActiveRecord::Base
-  set_table_name 'file_attachments_with_string_id'
-  has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick, :uuid_primary_key => true
-  validates_as_attachment
-  
-  before_validation :auto_generate_id
-  before_save :auto_generate_id
-  @@last_id = 0
-  
-  private
-    def auto_generate_id
-      @@last_id += 1
-      self.id = "%0127dx" % @@last_id
-    end
 end
 
 class ImageFileAttachment < FileAttachment
@@ -84,9 +44,6 @@ end
 class ImageWithThumbsFileAttachment < FileAttachment
   has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
     :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
-  after_resize do |record, img|
-  #  record.aspect_ratio = img.columns.to_f / img.rows.to_f
-  end
 end
 
 class ImageWithThumbsClassFileAttachment < FileAttachment
@@ -110,10 +67,35 @@ end
 class MinimalAttachment < ActiveRecord::Base
   has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :processor => :rmagick
   validates_as_attachment
-  
+
   def filename
     "#{id}.file"
   end
+end
+
+
+class MultiStoreAttachment < ActiveRecord::Base
+  set_table_name "multi_store_attachments"
+end
+
+class MultiStoreAttachmentTwoDefaults < MultiStoreAttachment
+  has_attachment :store_name => :dbfile, :default => true
+  has_attachment :store_name => :fs, :default => true, :path_prefix => 'vendor/plugins/attachment_fu/test/files'
+end
+
+class MultiStoreAttachmentTwoFilesystems < MultiStoreAttachment
+  has_attachment :store_name => :fs1, :default => true, :path_prefix => 'vendor/plugins/attachment_fu/test/files1'
+  has_attachment :store_name => :fs2, :default => true, :path_prefix => 'vendor/plugins/attachment_fu/test/files2'
+end
+
+class MultiStoreAttachmentNoDefault < MultiStoreAttachment
+  has_attachment :store_name => :store1
+  has_attachment :store_name => :store2, :path_prefix => 'vendor/plugins/attachment_fu/test/files'
+end
+
+class MultiStoreAttachmentWithThumbnails < MultiStoreAttachment
+  has_attachment :store_name => :fs1, :default => true, :path_prefix => 'vendor/plugins/attachment_fu/test/files1', :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
+  has_attachment :store_name => :fs2, :default => true, :path_prefix => 'vendor/plugins/attachment_fu/test/files2', :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }, :resize_to => [55,55]
 end
 
 begin
@@ -141,6 +123,13 @@ begin
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
       :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>' }, :resize_to => 55
   end
+
+  class MiniMagickAttachmentWithValidation < ActiveRecord::Base
+    set_table_name "mini_magick_attachments"
+    has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files', :content_type => :image,
+      :processor => :mini_magick, :thumbnails => { :thumb => [50, 51], :geometry => '31>' }, :resize_to => 55
+    validates_as_attachment
+  end
 rescue MissingSourceFile
   puts $!.message
   puts "no Mini Magick"
@@ -165,7 +154,7 @@ begin
   class ImageThumbnailCrop < MiniMagickAttachment
     has_attachment :path_prefix => 'vendor/plugins/attachment_fu/test/files',
     :thumbnails => { :square => "50x50c", :vertical => "30x60c", :horizontal => "60x30c"}
-    
+
     # TODO this is a bad duplication, this method is in the MiniMagick Processor
     def self.calculate_offset(image_width,image_height,image_aspect,thumb_width,thumb_height,thumb_aspect)
     # only crop if image is not smaller in both dimensions
@@ -179,7 +168,7 @@ begin
         command = "#{thumb_width}x#{image_height}+#{offset}+0"
 
       # normal thumbnail generation
-      # calculate height and offset y, width is fixed                 
+      # calculate height and offset y, width is fixed
       elsif (image_aspect <= thumb_aspect or image_width < thumb_width) and image_height > thumb_height
         height = image_width / thumb_aspect
         offset = (image_height / 2) - (height / 2)
@@ -198,6 +187,15 @@ begin
 rescue MissingSourceFile
 end
 
+begin
+  class MogileFSAttachment < ActiveRecord::Base
+    has_attachment :storage => :mogile_fs, :processor => :rmagick, :mogile_config_path => File.join(File.dirname(__FILE__), '../mogilefs.yml')
+    validates_as_attachment
+  end
+rescue
+  ENV["TEST_MOGILE"] = "false"
+  puts "MogileFS error: #{$!}"
+end
 
 
 begin
@@ -205,22 +203,29 @@ begin
     has_attachment :storage => :s3, :processor => :rmagick, :s3_config_path => File.join(File.dirname(__FILE__), '../amazon_s3.yml')
     validates_as_attachment
   end
-  
-  class CloudFilesAttachment < ActiveRecord::Base
-    has_attachment :storage => :cloud_files, :processor => :rmagick, :cloudfiles_config_path => File.join(File.dirname(__FILE__), '../rackspace_cloudfiles.yml')
-    validates_as_attachment
-  end
 
   class S3WithPathPrefixAttachment < S3Attachment
     has_attachment :storage => :s3, :path_prefix => 'some/custom/path/prefix', :processor => :rmagick
     validates_as_attachment
   end
-  
-  class CloudFilesWithPathPrefixAttachment < CloudFilesAttachment
-    has_attachment :storage => :cloud_files, :path_prefix => 'some/custom/path/prefix', :processor => :rmagick
-    validates_as_attachment
-  end
-  
 rescue
+  ENV["TEST_S3"] = "false"
   puts "S3 error: #{$!}"
 end
+
+begin
+  class CloudFilesAttachment < ActiveRecord::Base
+    has_attachment :storage => :cloud_files, :processor => :rmagick, :cloudfiles_config_path => File.join(File.dirname(__FILE__), '../rackspace_cloudfiles.yml')
+    validates_as_attachment
+  end
+
+
+  class CloudFilesWithPathPrefixAttachment < CloudFilesAttachment
+    has_attachment :storage => :cloud_files, :path_prefix => 'some/custom/path/prefix', :processor => :rmagick, :cloudfiles_config_path => File.join(File.dirname(__FILE__), '../rackspace_cloudfiles.yml')
+    validates_as_attachment
+  end
+rescue
+  ENV["TEST_CLOUDFILES"] = "false"
+  puts "CloudFiles error: #{$!}"
+end
+

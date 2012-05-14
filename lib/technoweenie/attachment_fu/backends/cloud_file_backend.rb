@@ -9,13 +9,13 @@ module Technoweenie # :nodoc:
       #
       # == Requirements
       #
-      # Requires the {Cloud Files Gem}[http://www.mosso.com/cloudfiles.jsp] by Rackspace 
+      # Requires the {Cloud Files Gem}[http://www.mosso.com/cloudfiles.jsp] by Rackspace
       #
       # == Configuration
       #
       # Configuration is done via <tt>RAILS_ROOT/config/rackspace_cloudfiles.yml</tt> and is loaded according to the <tt>RAILS_ENV</tt>.
       # The minimum connection options that you must specify are a container name, your Mosso login name and your Mosso API key.
-      # You can sign up for Cloud Files and get access keys by visiting https://www.mosso.com/buy.htm 
+      # You can sign up for Cloud Files and get access keys by visiting https://www.mosso.com/buy.htm
       #
       # Example configuration (RAILS_ROOT/config/rackspace_cloudfiles.yml)
       #
@@ -102,12 +102,12 @@ module Technoweenie # :nodoc:
       #
       # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the container name as part of the path.
       # You can retrieve the container name using the <tt>container_name</tt> method.
-      module CloudFileBackend
+      class CloudFileBackend < BackendDelegator
         class RequiredLibraryNotFoundError < StandardError; end
         class ConfigFileNotFoundError < StandardError; end
 
-        def self.included(base) #:nodoc:
-          mattr_reader :container_name, :cloudfiles_config
+        cattr_reader :cloudfiles_config, :container_name
+        def self.included_in_base(base) #:nodoc:
 
           begin
             require 'cloudfiles'
@@ -115,29 +115,50 @@ module Technoweenie # :nodoc:
             raise RequiredLibraryNotFoundError.new('CloudFiles could not be loaded')
           end
 
-          begin
+          opts = base.attachment_options
+          if opts[:cloudfiles_options]
+            @@cloudfiles_config = opts[:cloudfiles_options]
+          elsif opts[:cloudfiles_username] && opts[:cloudfiles_api_key] && opts[:cloudfiles_container_name]
+            @@cloudfiles_config = {:container_name => opts[:cloudfiles_container_name],
+                                   :username => opts[:cloudfiles_username],
+                                   :api_key => opts[:cloudfiles_api_key]}
+          else
             @@cloudfiles_config_path = base.attachment_options[:cloudfiles_config_path] || (RAILS_ROOT + '/config/rackspace_cloudfiles.yml')
             @@cloudfiles_config = @@cloudfiles_config = YAML.load(ERB.new(File.read(@@cloudfiles_config_path)).result)[RAILS_ENV].symbolize_keys
-          rescue
-            #raise ConfigFileNotFoundError.new('File %s not found' % @@cloudfiles_config_path)
+            base.attachment_options[:cloudfiles_container_name] = @@cloudfiles_config[:container_name]
           end
+        end
 
-          @@container_name = @@cloudfiles_config[:container_name]
-          @@cf = CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
-          @@container = @@cf.container(@@container_name)
-          
-          base.before_update :rename_file
+        def container_name
+          return @obj.database_container_name if @obj.respond_to?(:database_container_name) && @obj.database_container_name
+          @@cloudfiles_config[:container_name]
+        end
+
+        def self.connection
+          @@cf ||= CloudFiles::Connection.new(@@cloudfiles_config)
+        end
+
+        def container
+          self.class.connection.container(container_name)
+        end
+
+        def cloudfiles_authtoken
+          self.class.connection.authtoken
+        end
+
+        def cloudfiles_storage_url
+          cx = self.class.connection
+          cx.storagescheme + "://" + (cx.storageport ? "" : ":#{cx.storageport}") + cx.storagehost + cx.storagepath
         end
 
         # Overwrites the base filename writer in order to store the old filename
-        def filename=(value)
+        def notify_rename
           @old_filename = filename unless filename.nil? || @old_filename
-          write_attribute :filename, sanitize_filename(value)
         end
 
         # The attachment ID used in the full path of a file
         def attachment_path_id
-          ((respond_to?(:parent_id) && parent_id) || id).to_s
+          ((respond_to?(:parent_id) && parent_id) || @obj.id).to_s
         end
 
         # The pseudo hierarchy containing the file relative to the container name
@@ -163,48 +184,61 @@ module Technoweenie # :nodoc:
         #
         # If you are trying to get the URL for a nonpublic container, nil will be returned.
         def cloudfiles_url(thumbnail = nil)
-          if @@container.public?
-            File.join(@@container.cdn_url, full_filename(thumbnail))
+          if container.public?
+            File.join(container.cdn_url, full_filename(thumbnail))
           else
             nil
           end
         end
-        alias :public_filename :cloudfiles_url
+        alias :public_url :cloudfiles_url
 
         def create_temp_file
           write_to_temp_file current_data
         end
 
         def current_data
-          @@container.get_object(full_filename).data
+          container.get_object(full_filename).data
         end
 
-        protected
-          # Called in the after_destroy callback
-          def destroy_file
-            @@container.delete_object(full_filename)
-          end
-
-          def rename_file
-            # Cloud Files doesn't rename right now, so we'll just nuke.
-            return unless @old_filename && @old_filename != filename
-
-            old_full_filename = File.join(base_path, @old_filename)
-            @@container.delete_object(old_full_filename)
-
-            @old_filename = nil
-            true
-          end
-
-          def save_to_storage
-            if save_attachment?
-              @object = @@container.create_object(full_filename)
-              @object.write((temp_path ? File.open(temp_path) : temp_data))
+        # Called in the after_destroy callback
+        def destroy_file
+          retried = false
+          begin
+            container.delete_object(full_filename)
+          rescue CloudFiles::Exception::NoSuchObject => e
+          rescue CloudFiles::Exception::InvalidResponse => e
+            if retried
+              raise e
+            else
+              retried = true
+              retry
             end
-
-            @old_filename = nil
-            true
           end
+        end
+
+        def rename_file
+          # Cloud Files doesn't rename right now, so we'll just nuke.
+          return unless @old_filename && @old_filename != filename
+
+          old_full_filename = File.join(base_path, @old_filename)
+          begin
+            container.delete_object(old_full_filename)
+          rescue CloudFiles::Exception::NoSuchObject => e
+          end
+
+          @old_filename = nil
+          true
+        end
+
+        def save_to_storage
+          if save_attachment?
+            @object = container.create_object(full_filename)
+            @object.write((temp_path ? File.open(temp_path) : temp_data))
+          end
+
+          @old_filename = nil
+          true
+        end
       end
     end
   end

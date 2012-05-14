@@ -1,6 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'test_helper'))
 
-class GD2Test < Test::Unit::TestCase
+class GD2Test < ActiveSupport::TestCase
   attachment_model GD2Attachment
 
   if Object.const_defined?(:GD2)
