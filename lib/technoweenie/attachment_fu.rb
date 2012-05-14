@@ -532,7 +532,7 @@ module Technoweenie # :nodoc:
                 enum.to_s
             end
 
-            msg = Object.const_defined?(:I18n) ?  I18n.translate("activerecord.errors.messages.inclusion.with_attributes", :attribute => I18n.translate("activerecord.attributes.attachments.#{attr_name}")) :
+            msg = Object.const_defined?(:I18n) ?  I18n.translate("activerecord.errors.messages.inclusion_with_attribute", :attribute => I18n.translate("activerecord.attributes.attachments.#{attr_name}")) :
                                                         ActiveRecord::Errors.default_error_messages[:inclusion]
             unless enum.nil? || enum.include?(send(attr_name))
               errors.add attr_name, msg + " (#{enum_str})"
