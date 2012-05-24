@@ -184,7 +184,11 @@ module Technoweenie # :nodoc:
 
           begin
             @@s3_config_path = base.attachment_options[:s3_config_path] || (RAILS_ROOT + '/config/amazon_s3.yml')
-            @@s3_config = @@s3_config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)[RAILS_ENV].symbolize_keys
+
+            config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)
+            config = config[base.attachment_options[:scope]] if base.attachment_options[:scope]
+
+            @@s3_config = config[RAILS_ENV].symbolize_keys
           #rescue
           #  raise ConfigFileNotFoundError.new('File %s not found' % @@s3_config_path)
           end
