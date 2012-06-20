@@ -688,7 +688,7 @@ module Technoweenie # :nodoc:
                     self.class.update_all({:stores => new_stores}, ["id = ?", self.id])
                   end
                 end
-              elsif stores_was && to_store_list(stores_was).include?(name) # needs a delete
+              elsif stores_was && to_store_list(stores_was).include?(name) && store.current_data # needs a delete
                 store.destroy_file
               end
             end
