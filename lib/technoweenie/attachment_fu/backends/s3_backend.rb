@@ -158,9 +158,9 @@ module Technoweenie # :nodoc:
       #
       # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the bucket name as part of the path.
       # You can retrieve the bucket name using the <tt>bucket_name</tt> method.
-      # 
+      #
       # === Accessing CloudFront URLs
-      # 
+      #
       # You can get an object's CloudFront URL using the cloudfront_url accessor.  Using the example from above:
       # @postcard.cloudfront_url # => http://XXXX.cloudfront.net/photos/1/mexico.jpg
       #
@@ -176,21 +176,13 @@ module Technoweenie # :nodoc:
           mattr_reader :bucket_name, :s3_config
 
           begin
-            require 'aws/s3'
-            include AWS::S3
-          rescue LoadError
-            raise RequiredLibraryNotFoundError.new('AWS::S3 could not be loaded')
-          end
-
-          begin
             @@s3_config_path = base.attachment_options[:s3_config_path] || (RAILS_ROOT + '/config/amazon_s3.yml')
-            @@s3_config = @@s3_config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)[RAILS_ENV].symbolize_keys
+            @@s3_config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)[RAILS_ENV].symbolize_keys
           #rescue
           #  raise ConfigFileNotFoundError.new('File %s not found' % @@s3_config_path)
           end
 
           bucket_key = base.attachment_options[:bucket_key]
-
           if bucket_key and s3_config[bucket_key.to_sym]
             eval_string = "def bucket_name()\n  \"#{s3_config[bucket_key.to_sym]}\"\nend"
           else
@@ -198,9 +190,21 @@ module Technoweenie # :nodoc:
           end
           base.class_eval(eval_string, __FILE__, __LINE__)
 
-          Base.establish_connection!(s3_config.slice(:access_key_id, :secret_access_key, :server, :port, :use_ssl, :persistent, :proxy))
+          begin
+            require 'right_aws'
 
-          # Bucket.create(@@bucket_name)
+            @@s3_connection = RightAws::S3.new(s3_config[:access_key_id], s3_config[:secret_access_key])
+            @@s3_generator = RightAws::S3Generator.new(s3_config[:access_key_id], s3_config[:secret_access_key])
+          rescue LoadError
+            begin
+              require 'aws/s3'
+              include AWS::S3
+
+              Base.establish_connection!(s3_config.slice(:access_key_id, :secret_access_key, :server, :port, :use_ssl, :persistent, :proxy))
+            rescue LoadError
+              raise RequiredLibraryNotFoundError.new('neither RightAws nor AWS::S3 could be loaded')
+            end
+          end
 
           base.before_update :rename_file
         end
@@ -210,13 +214,13 @@ module Technoweenie # :nodoc:
         end
 
         def self.hostname
-          @hostname ||= s3_config[:server] || AWS::S3::DEFAULT_HOST
+          @hostname ||= s3_config[:server] || (defined?(AWS::S3) ? AWS::S3::DEFAULT_HOST : RightAws::S3Interface::DEFAULT_HOST)
         end
 
         def self.port_string
           @port_string ||= (s3_config[:port].nil? || s3_config[:port] == (s3_config[:use_ssl] ? 443 : 80)) ? '' : ":#{s3_config[:port]}"
         end
-        
+
         def self.distribution_domain
           @distribution_domain = s3_config[:distribution_domain]
         end
@@ -233,7 +237,7 @@ module Technoweenie # :nodoc:
           def s3_port_string
             Technoweenie::AttachmentFu::Backends::S3Backend.port_string
           end
-          
+
           def cloudfront_distribution_domain
             Technoweenie::AttachmentFu::Backends::S3Backend.distribution_domain
           end
@@ -242,6 +246,8 @@ module Technoweenie # :nodoc:
         # Overwrites the base filename writer in order to store the old filename
         def filename=(value)
           @old_filename = filename unless filename.nil? || @old_filename
+          # square brackets cause problems in Firefox, so replace them.
+          value = value.gsub('[', '(').gsub(']', ')')
           write_attribute :filename, sanitize_filename(value)
         end
 
@@ -275,7 +281,7 @@ module Technoweenie # :nodoc:
         def s3_url(thumbnail = nil)
           File.join(s3_protocol + s3_hostname + s3_port_string, bucket_name, full_filename(thumbnail))
         end
-        
+
         # All public objects are accessible via a GET request to CloudFront. You can generate a
         # url for an object using the cloudfront_url method.
         #
@@ -288,7 +294,7 @@ module Technoweenie # :nodoc:
         def cloudfront_url(thumbnail = nil)
           "http://" + cloudfront_distribution_domain + "/" + full_filename(thumbnail)
         end
-        
+
         def public_filename(*args)
           if attachment_options[:cloudfront]
             cloudfront_url(args)
@@ -325,7 +331,13 @@ module Technoweenie # :nodoc:
           options   = args.extract_options!
           options[:expires_in] = options[:expires_in].to_i if options[:expires_in]
           thumbnail = args.shift
-          S3Object.url_for(full_filename(thumbnail), bucket_name, options)
+
+          if defined?(S3Object)
+            S3Object.url_for(full_filename(thumbnail), bucket_name, options)
+          else
+            options[:expires_in] ||= 5.minutes
+            @@s3_generator.bucket(bucket_name).get(full_filename(thumbnail), options[:expires_in])
+          end
         end
 
         def create_temp_file
@@ -333,7 +345,11 @@ module Technoweenie # :nodoc:
         end
 
         def current_data
-          S3Object.value full_filename, bucket_name
+          if defined?(S3Object)
+            S3Object.value full_filename, bucket_name
+          else
+            @@s3_connection.bucket(bucket_name).key(full_filename).data
+          end
         end
 
         def s3_protocol
@@ -347,7 +363,7 @@ module Technoweenie # :nodoc:
         def s3_port_string
           Technoweenie::AttachmentFu::Backends::S3Backend.port_string
         end
-        
+
         def cloudfront_distribution_domain
           Technoweenie::AttachmentFu::Backends::S3Backend.distribution_domain
         end
@@ -355,7 +371,11 @@ module Technoweenie # :nodoc:
         protected
           # Called in the after_destroy callback
           def destroy_file
-            S3Object.delete full_filename, bucket_name
+            if defined?(S3Object)
+              S3Object.delete full_filename, bucket_name
+            else
+              @@s3_connection.bucket(bucket_name).key(full_filename).delete
+            end
           end
 
           def rename_file
@@ -363,12 +383,16 @@ module Technoweenie # :nodoc:
 
             old_full_filename = File.join(base_path, @old_filename)
 
-            S3Object.rename(
-              old_full_filename,
-              full_filename,
-              bucket_name,
-              :access => attachment_options[:s3_access]
-            )
+            if defined?(S3Object)
+              S3Object.rename(
+                old_full_filename,
+                full_filename,
+                bucket_name,
+                :access => attachment_options[:s3_access]
+              )
+            else
+              @@s3_connection.bucket(bucket_name).key(old_full_filename).rename(full_filename)
+            end
 
             @old_filename = nil
             true
@@ -376,13 +400,27 @@ module Technoweenie # :nodoc:
 
           def save_to_storage
             if save_attachment?
-              S3Object.store(
-                full_filename,
-                (temp_path ? File.open(temp_path) : temp_data),
-                bucket_name,
-                :content_type => content_type,
-                :access => attachment_options[:s3_access]
-              )
+              if temp_path then
+                temp_data = open(temp_path, 'rb') { |io| io.read }
+              end
+
+              if defined?(S3Object)
+                S3Object.store(
+                  full_filename,
+                  temp_data,
+                  bucket_name,
+                  :content_type => content_type,
+                  :access => attachment_options[:s3_access]
+                )
+              else
+                @@s3_connection.bucket(bucket_name).put(
+                  full_filename,
+                  temp_data,
+                  {},
+                  attachment_options[:s3_access],
+                  {'content-type' => content_type}
+                )
+              end
             end
 
             @old_filename = nil
