@@ -489,7 +489,7 @@ module Technoweenie # :nodoc:
 
           def run_callbacks(kind, options = {}, &block)
             options.reverse_merge!( :object => self )
-            self.class.send("#{kind}_callback_chain").run(options[:object], options, &block)
+            self.class.send("#{kind}_callback_chain").run(options[:object], options, &block) if self.class.respond_to?("#{kind}_callback_chain")
           end
         else
           # Rails 2.0

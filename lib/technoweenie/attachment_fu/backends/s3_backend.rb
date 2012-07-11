@@ -183,7 +183,7 @@ module Technoweenie # :nodoc:
           end
 
           begin
-            @@s3_config_path = base.attachment_options[:s3_config_path] || (RAILS_ROOT + '/config/amazon_s3.yml')
+            @@s3_config_path = base.attachment_options[:s3_config_path] || (RAILS_ROOT.to_s + '/config/amazon_s3.yml')
             @@s3_config = @@s3_config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)[RAILS_ENV].symbolize_keys
           #rescue
           #  raise ConfigFileNotFoundError.new('File %s not found' % @@s3_config_path)
@@ -293,7 +293,7 @@ module Technoweenie # :nodoc:
           if attachment_options[:cloudfront]
             cloudfront_url(args)
           else
-            s3_url(args)
+            s3_url(*args)
           end
         end
 
