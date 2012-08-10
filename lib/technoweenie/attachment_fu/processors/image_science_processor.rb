@@ -38,7 +38,7 @@ module Technoweenie # :nodoc:
             grab_dimensions = lambda do |img|
               self.width  = img.width  if respond_to?(:width)
               self.height = img.height if respond_to?(:height)
-              img.save self.temp_path
+              img.save_with_quality self.temp_path, ImageScience::JPEG_QUALITYGOOD
               self.size = File.size(self.temp_path)
               callback_with_args :after_resize, img
             end
