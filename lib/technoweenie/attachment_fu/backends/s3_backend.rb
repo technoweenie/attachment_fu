@@ -353,6 +353,10 @@ module Technoweenie # :nodoc:
         # Called in the after_destroy callback
         def destroy_file
           S3Object.delete full_filename, bucket_name
+        rescue Errno::ECONNRESET
+          retries ||= 0
+          retries += 1
+          retry if retries <= 1
         end
 
         def rename_file
