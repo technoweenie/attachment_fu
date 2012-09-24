@@ -22,7 +22,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency("appraisal")
   s.add_development_dependency("mocha")
   s.add_development_dependency("mysql")
-  s.add_development_dependency("ruby-debug")
   s.add_development_dependency("mini_magick", "~> 3.3")
-
 end
