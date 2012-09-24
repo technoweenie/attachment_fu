@@ -73,12 +73,13 @@ class ActiveSupport::TestCase #:nodoc:
   end
 
   def setup
-    system("rm -Rf #{File.dirname(__FILE__) + "/../vendor/plugins/attachment_fu/test/files"}")
+    system("rm -Rf #{File.dirname(__FILE__) + "/../vendor/plugins"}")
     DbFile.transaction { [AttachmentTest, FileAttachment, OrphanAttachment, MinimalAttachment, DbFile].each { |klass| klass.delete_all } }
     attachment_model self.class.attachment_model
   end
 
   def teardown
+    system("rm -Rf #{File.dirname(__FILE__) + "/../vendor/plugins"}")
     FileUtils.rm_rf File.join(File.dirname(__FILE__), 'files')
   end
 
@@ -176,4 +177,3 @@ end
 
 require File.join(File.dirname(__FILE__), 'fixtures/attachment')
 require File.join(File.dirname(__FILE__), 'base_attachment_tests')
-
