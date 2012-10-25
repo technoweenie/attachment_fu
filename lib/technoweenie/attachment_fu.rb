@@ -290,11 +290,11 @@ module Technoweenie # :nodoc:
         thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
         find_or_initialize_thumbnail(file_name_suffix).tap do |thumb|
           thumb.temp_paths.unshift temp_file
-          thumb.send(:'attributes=', {
+          thumb.send(:assign_attributes, {
             :content_type             => content_type,
             :filename                 => thumbnail_name_for(file_name_suffix),
             :thumbnail_resize_options => size
-          }, false)
+          }, :without_protection => true)
           callback_with_args :before_thumbnail_saved, thumb
           thumb.save!
         end
