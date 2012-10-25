@@ -36,8 +36,27 @@ module Technoweenie # :nodoc:
           end if image?
         end
 
-        # Performs the actual resizing operation for a thumbnail
+        # Override image resizing method so we can support the crop option
+        # Thanks: http://stuff-things.net/2008/02/21/quick-and-dirty-cropping-images-with-attachment_fu/
         def resize_image(img, size)
+          img.delete_profile('*')
+
+          # resize_image take size in a number of formats, we just want
+          # Strings in the form of "crop: WxH"
+          if (size.is_a?(String) && size =~ /^crop: (\d*)x(\d*)/i) ||
+              (size.is_a?(Array) && size.first.is_a?(String) &&
+                size.first =~ /^crop: (\d*)x(\d*)/i)
+            img.crop_resized!($1.to_i, $2.to_i)
+            # We need to save the resized image in the same way the
+            # orignal does.
+            self.temp_path = write_to_temp_file(img.to_blob { self.quality = 80 })
+          else
+            old_resize_image(img, size) # Otherwise let attachment_fu handle it
+          end
+        end
+
+        # Performs the actual resizing operation for a thumbnail
+        def old_resize_image(img, size)
           size = size.first if size.is_a?(Array) && size.length == 1 && !size.first.is_a?(Fixnum)
           if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
             size = [size, size] if size.is_a?(Fixnum)
@@ -49,7 +68,7 @@ module Technoweenie # :nodoc:
             img.change_geometry(size.to_s) { |cols, rows, image| image.resize!(cols<1 ? 1 : cols, rows<1 ? 1 : rows) }
           end
           img.strip! unless attachment_options[:keep_profile]
-          temp_paths.unshift write_to_temp_file(img.to_blob)
+          temp_paths.unshift write_to_temp_file(img.to_blob { self.quality = 80 })
         end
       end
     end
