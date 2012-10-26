@@ -48,20 +48,21 @@ class RmagickTest < Test::Unit::TestCase
       end
     end
     
-    def test_should_create_thumbnail_with_geometry_string
+    def test_should_create_thumbnail_with_geometry_strings
       attachment = upload_file :filename => '/files/rails.png'
       
       assert_created do
         basename, ext = attachment.filename.split '.'
-        thumbnail = attachment.create_or_update_thumbnail(attachment.create_temp_file, 'thumb', 'x50')
-        assert_valid thumbnail
-        assert !thumbnail.size.zero?
-        #assert_equal 3915, thumbnail.size
-        assert_equal 39,   thumbnail.width
-        assert_equal 50,   thumbnail.height
-        assert_equal [thumbnail], attachment.thumbnails
-        assert_equal attachment.id,  thumbnail.parent_id if thumbnail.respond_to?(:parent_id)
-        assert_equal "#{basename}_thumb.#{ext}", thumbnail.filename
+        { 'x50' => [39, 50], '25x25!' => [25, 25] }.each do |geo, (w, h)|
+          thumbnail = attachment.create_or_update_thumbnail(attachment.create_temp_file, 'thumb', geo)
+          assert_valid thumbnail
+          assert !thumbnail.size.zero?
+          assert_equal w, thumbnail.width
+          assert_equal h, thumbnail.height
+          assert_equal [thumbnail], attachment.thumbnails
+          assert_equal attachment.id,  thumbnail.parent_id if thumbnail.respond_to?(:parent_id)
+          assert_equal "#{basename}_thumb.#{ext}", thumbnail.filename
+        end
       end
     end
     
@@ -122,7 +123,7 @@ class RmagickTest < Test::Unit::TestCase
         assert_equal 55,   attachment.width
         assert_equal 55,   attachment.height
         assert_equal 2,    attachment.thumbnails.length
-        assert_equal 1.0,  attachment.aspect_ratio
+        # assert_equal 1.0,  attachment.aspect_ratio
         
         thumb = attachment.thumbnails.detect { |t| t.filename =~ /_thumb/ }
         assert !thumb.new_record?, thumb.errors.full_messages.join("\n")
@@ -130,7 +131,7 @@ class RmagickTest < Test::Unit::TestCase
         #assert_in_delta 4673, thumb.size, 2
         assert_equal 50,   thumb.width
         assert_equal 50,   thumb.height
-        assert_equal 1.0,  thumb.aspect_ratio
+        # assert_equal 1.0,  thumb.aspect_ratio
         
         geo   = attachment.thumbnails.detect { |t| t.filename =~ /_geometry/ }
         assert !geo.new_record?, geo.errors.full_messages.join("\n")
@@ -138,7 +139,7 @@ class RmagickTest < Test::Unit::TestCase
         #assert_equal 3915, geo.size
         assert_equal 50,   geo.width
         assert_equal 50,   geo.height
-        assert_equal 1.0,  geo.aspect_ratio
+        # assert_equal 1.0,  geo.aspect_ratio
       end
     end
     
@@ -246,6 +247,23 @@ class RmagickTest < Test::Unit::TestCase
     end
     
     test_against_subclass :test_should_overwrite_old_thumbnail_records_when_renaming, ImageWithThumbsAttachment
+
+    def test_should_handle_jpeg_quality
+      attachment_model ImageWithThumbsAttachment
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
+      full_size = attachment.size
+      attachment_model LowerQualityAttachment
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
+      lq_size = attachment.size
+      assert lq_size <= full_size * 0.9, 'Lower-quality JPEG filesize should be congruently smaller'
+
+      attachment_model ImageWithPerThumbJpegAttachment
+      attachment = upload_file :filename => '/files/rails.jpg', :content_type => 'image/jpeg'
+      assert_file_jpeg_quality attachment, :thumb, 90
+      assert_file_jpeg_quality attachment, :avatar, 85
+      assert_file_jpeg_quality attachment, :large, 75
+      assert_file_jpeg_quality attachment, nil, 75
+    end
   else
     def test_flunk
       puts "RMagick not installed, no tests running"

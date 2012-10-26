@@ -13,6 +13,7 @@ module Technoweenie # :nodoc:
           def with_image(file, &block)
             begin
               binary_data = file.is_a?(Magick::Image) ? file : Magick::Image.read(file).first unless !Object.const_defined?(:Magick)
+              binary_data && binary_data.auto_orient!
             rescue
               # Log the failure to load the image.  This should match ::Magick::ImageMagickError
               # but that would cause acts_as_attachment to require rmagick.
@@ -49,7 +50,9 @@ module Technoweenie # :nodoc:
             img.crop_resized!($1.to_i, $2.to_i)
             # We need to save the resized image in the same way the
             # orignal does.
-            self.temp_path = write_to_temp_file(img.to_blob { self.quality = 80 })
+            quality = img.format.to_s[/JPEG/] && get_jpeg_quality
+            out_file = write_to_temp_file(img.to_blob { self.quality = quality if quality })
+            self.temp_paths.unshift out_file
           else
             old_resize_image(img, size) # Otherwise let attachment_fu handle it
           end
@@ -67,8 +70,13 @@ module Technoweenie # :nodoc:
           else
             img.change_geometry(size.to_s) { |cols, rows, image| image.resize!(cols<1 ? 1 : cols, rows<1 ? 1 : rows) }
           end
+          self.width  = img.columns if respond_to?(:width)
+          self.height = img.rows    if respond_to?(:height)
           img.strip! unless attachment_options[:keep_profile]
-          temp_paths.unshift write_to_temp_file(img.to_blob { self.quality = 80 })
+          quality = img.format.to_s[/JPEG/] && get_jpeg_quality
+          out_file = write_to_temp_file(img.to_blob { self.quality = quality if quality })
+          temp_paths.unshift out_file
+          self.size = File.size(self.temp_path)
         end
       end
     end

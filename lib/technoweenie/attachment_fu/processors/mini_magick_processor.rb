@@ -38,13 +38,14 @@ module Technoweenie # :nodoc:
         # Performs the actual resizing operation for a thumbnail
         def resize_image(img, size)
           size = size.first if size.is_a?(Array) && size.length == 1
+          format = img[:format]
           img.combine_options do |commands|
             commands.strip unless attachment_options[:keep_profile]
 
-            # gif are not handled correct, this is a hack, but it seems to work.
-            if img.output =~ / GIF /
-              img.format("png")
-            end           
+            # GIF is not handled correctly, so we move to PNG, as in other processors…
+            if format == 'GIF'
+              commands.format('PNG')
+            end
             
             if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
               if size.is_a?(Fixnum)
@@ -95,7 +96,16 @@ module Technoweenie # :nodoc:
               commands.resize(size.to_s)
             end
           end
+          dims = img[:dimensions]
+          self.width  = dims[0] if respond_to?(:width)
+          self.height = dims[1] if respond_to?(:height)
+          # Has to be done this far so we get proper dimensions
+          if format == 'JPEG'
+            quality = get_jpeg_quality
+            img.quality(quality) if quality
+          end
           temp_paths.unshift img
+          self.size = File.size(self.temp_path)
         end
 
         def calculate_offset(image_width,image_height,image_aspect,thumb_width,thumb_height,thumb_aspect)

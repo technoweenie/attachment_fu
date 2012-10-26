@@ -46,7 +46,20 @@ module Technoweenie # :nodoc:
       # *  <tt>:max_size</tt> - Maximum size allowed.  1.megabyte is the default.
       # *  <tt>:size</tt> - Range of sizes allowed.  (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
       # *  <tt>:resize_to</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
-      # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of filename suffixes and RMagick resizing options.
+      # *  <tt>:jpeg_quality</tt> - Used to provide explicit JPEG quality for thumbnail/resize saves.  Can have multiple formats:
+      #      * Integer from 0 (basically crap) to 100 (basically lossless, fat files).
+      #      * When relying on ImageScience, you can also use one of its +JPEG_xxx+ constants for predefined ratios/settings.
+      #      * You can also use a Hash, with keys being either  thumbnail symbols (I repeat: _symbols_) or surface boundaries.
+      #        A surface boundary is a string starting with either '<' or '>=', followed by a number of pixels.  This lets you
+      #        specify per-thumbnail or per-general-thumbnail-"size" JPEG qualities. (which can be useful when you have a
+      #        _lot_ of thumbnail options).  Surface example:  +{ '<2000' => 90, '>=2000' => 75 }+.
+      #      Defaults vary depending on the processor (ImageScience: 100%, Rmagick/MiniMagick/Gd2: 75%,
+      #      CoreImage: auto-adjust). Note that only tdd-image_science (available from GitHub) currently supports explicit JPEG quality;
+      #      the default image_science currently forces 100%.
+      # *  <tt>:thumbnails</tt> - Specifies a set of thumbnails to generate.  This accepts a hash of filename suffixes and
+      #      RMagick resizing options.  If you have a polymorphic parent relationship, you can provide parent-type-specific
+      #      thumbnail settings by using a pair with the type string as key and a Hash of thumbnail definitions as value.
+      #      AttachmentFu automatically detects your first polymorphic +belongs_to+ relationship.
       # *  <tt>:thumbnail_class</tt> - Set what class to use for thumbnails.  This attachment class is used by default.
       # *  <tt>:path_prefix</tt> - path to store the uploaded files.  Uses public/#{table_name} by default for the filesystem, and just #{table_name}
       #      for the S3 backend.  Setting this sets the :storage to :file_system.
@@ -251,6 +264,13 @@ module Technoweenie # :nodoc:
           tmp.close
         end
       end
+
+      def polymorphic_relation_type_column
+        return @@_polymorphic_relation_type_column if defined?(@@_polymorphic_relation_type_column)
+        # Checked against ActiveRecord 1.15.6 through Edge @ 2009-08-05.
+        ref = reflections.values.detect { |r| r.macro == :belongs_to && r.options[:polymorphic] }
+        @@_polymorphic_relation_type_column = ref && ref.options[:foreign_type]
+      end
     end
 
     module InstanceMethods
@@ -281,7 +301,7 @@ module Technoweenie # :nodoc:
           ext = s; ''
         end
         # ImageScience doesn't create gif thumbnails, only pngs
-        ext.sub!(/gif$/, 'png') if attachment_options[:processor] == "ImageScience"
+        ext.sub!(/gif$/i, 'png') if attachment_options[:processor] == "ImageScience"
         "#{basename}_#{thumbnail}#{ext}"
       end
 
@@ -453,7 +473,22 @@ module Technoweenie # :nodoc:
           if @saved_attachment
             if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
               temp_file = temp_path || create_temp_file
-              attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail(temp_file, suffix, *size) }
+              attachment_options[:thumbnails].each { |suffix, size|
+                if size.is_a?(Symbol)
+                  parent_type = polymorphic_parent_type
+                  next unless parent_type && [parent_type, parent_type.tableize].include?(suffix.to_s) && respond_to?(size)
+                  size = send(size)
+                end
+                if size.is_a?(Hash)
+                  parent_type = polymorphic_parent_type
+                  next unless parent_type && [parent_type, parent_type.tableize].include?(suffix.to_s)
+                  size.each { |ppt_suffix, ppt_size|
+                    create_or_update_thumbnail(temp_file, ppt_suffix, *ppt_size)
+                  }
+                else
+                  create_or_update_thumbnail(temp_file, suffix, *size)
+                end
+              }
             end
             save_to_storage
             @temp_paths.clear
@@ -515,6 +550,27 @@ module Technoweenie # :nodoc:
         # Removes the thumbnails for the attachment, if it has any
         def destroy_thumbnails
           self.thumbnails.each { |thumbnail| thumbnail.destroy } if thumbnailable?
+        end
+
+        def polymorphic_parent_type
+          rel_name = self.class.polymorphic_relation_type_column
+          rel_name && send(rel_name)
+        end
+
+        def get_jpeg_quality(require_0_to_100 = true)
+          quality = attachment_options[:jpeg_quality]
+          if quality.is_a?(Hash)
+            sbl_quality  = thumbnail && quality[thumbnail.to_sym]
+            sbl_quality  = nil if sbl_quality && require_0_to_100 && !sbl_quality.to_i.between?(0, 100)
+            surface      = (width || 1) * (height || 1)
+            size_quality = quality.detect { |k, v|
+              next unless k.is_a?(String) && k =~ /^(<|>=)(\d+)$/
+              op, threshold = $1, $2.to_i
+              surface.send(op, threshold)
+            }
+            quality = sbl_quality || size_quality && size_quality[1]
+          end
+          return quality && (!require_0_to_100 || quality.to_i.between?(0, 100)) ? quality : nil
         end
     end
   end

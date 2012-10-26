@@ -22,39 +22,80 @@ attachment_fu models
 ====================
 
 For all three of these storage options a table of metadata is required.  This table will contain information about the file (hence the 'meta') and its location.  This table has no restrictions on naming, unlike the extra table required for database storage, which must have a table name of db_files (and by convention a model of DbFile).
-  
+
 In the model there are two methods made available by this plugins: has_attachment and validates_as_attachment.
 
 has_attachment(options = {})
   This method accepts the options in a hash:
-    :content_type     # Allowed content types.
-                      # Allows all by default.  Use :image to allow all standard image types.
-    :min_size         # Minimum size allowed.
-                      # 1 byte is the default.
-    :max_size         # Maximum size allowed.
-                      # 1.megabyte is the default.
-    :size             # Range of sizes allowed.
-                      # (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
-    :resize_to        # Used by RMagick to resize images.
-                      # Pass either an array of width/height, or a geometry string.
-    :thumbnails       # Specifies a set of thumbnails to generate.
-                      # This accepts a hash of filename suffixes and RMagick resizing options.
-                      # This option need only be included if you want thumbnailing.
-    :thumbnail_class  # Set which model class to use for thumbnails.
-                      # This current attachment class is used by default.
-    :path_prefix      # Path to store the uploaded files in.
-                      # Uses public/#{table_name} by default for the filesystem, and just #{table_name} for the S3 and Cloud Files backend.  
-                      # Setting this sets the :storage to :file_system.
-    :partition        # Whether to partiton files in directories like /0000/0001/image.jpg. Default is true. Only applicable to the :file_system backend.
-    :storage          # Specifies the storage system to use..
-                      # Defaults to :db_file.  Options are :file_system, :db_file, :s3, and :cloud_files.
-    :cloudfront       # If using S3 for storage, this option allows for serving the files via Amazon CloudFront.
-                      # Defaults to false.
-    :processor        # Sets the image processor to use for resizing of the attached image.
-                      # Options include ImageScience, Rmagick, and MiniMagick.  Default is whatever is installed.
-    :uuid_primary_key # If your model's primary key is a 128-bit UUID in hexadecimal format, then set this to true.
-    :association_options  # attachment_fu automatically defines associations with thumbnails with has_many and belongs_to. If there are any additional options that you want to pass to these methods, then specify them here.
-    
+    :content_type         # Allowed content types.
+                          # Allows all by default.  Use :image to allow all standard image types.
+                          #
+    :min_size             # Minimum size allowed.
+                          # 1 byte is the default.
+                          #
+    :max_size             # Maximum size allowed.
+                          # 1.megabyte is the default.
+                          #
+    :size                 # Range of sizes allowed.
+                          # (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
+                          #
+    :resize_to            # Used by RMagick to resize images.
+                          # Pass either an array of width/height, or a geometry string.
+                          #
+    :thumbnails           # Specifies a set of thumbnails to generate.
+                          # This accepts a hash of filename suffixes and RMagick resizing options.
+                          # This option need only be included if you want thumbnailing.
+                          # If you have a polymorphic parent relationship, you can provide parent-type-specific
+                          # thumbnail settings by using a pair with the type string as key and a Hash of thumbnail
+                          # definitions, or a method symbol, as value. The method symbol will call the named
+                          # method in order to get a dynamically-built Hash of thumbnail definitions, which gives
+                          # you full flexibility.
+                          # AttachmentFu automatically detects your first polymorphic +belongs_to+ relationship.
+                          #
+    :thumbnail_class      # Set which model class to use for thumbnails.
+                          # This current attachment class is used by default.
+                          #
+    :jpeg_quality         # Used to provide explicit JPEG quality for thumbnail/resize saves.  Can have multiple
+                          # formats:
+                          # * Integer from 0 (basically crap) to 100 (basically lossless, fat files).
+                          # * When relying on tdd-image_science, you can also use one of its +JPEG_xxx+ constants
+                          #   for predefined ratios/settings.
+                          # * You can also use a Hash, with keys being either  thumbnail symbols (I repeat:
+                          #   _symbols_) or surface boundaries.  A surface boundary is a string starting with either
+                          #   '<' or '>=', followed by a number of pixels.  This lets you specify per-thumbnail or
+                          #   per-general-thumbnail-"size" JPEG qualities. (which can be useful when you have a
+                          #   _lot_ of thumbnail options).  Surface example: +{ '<2000' => 90, '>=2000' => 75 }+.
+                          #
+                          # Defaults vary depending on the processor (ImageScience: 100%,
+                          # Rmagick/MiniMagick/Gd2: 75%, CoreImage: auto-adjust).
+                          # Note that only tdd-image_science (available from GitHub) currently supports explicit
+                          # JPEG quality; the default image_science currently forces 100%.
+                          #
+    :path_prefix          # Path to store the uploaded files in.
+                          # Uses public/#{table_name} by default for the filesystem, and just #{table_name} for the
+                          # S3 and Cloud Files backend.
+                          # Setting this sets the :storage to :file_system.
+                          #
+    :partition            # Whether to partiton files in directories like /0000/0001/image.jpg. Default is true.
+                          # Only applicable to the :file_system backend.
+                          #
+    :storage              # Specifies the storage system to use..
+                          # Defaults to :db_file.  Options are :file_system, :db_file, :s3, and :cloud_files.
+                          #
+    :cloudfront           # If using S3 for storage, this option allows for serving the files via Amazon CloudFront.
+                          # Defaults to false.
+                          #
+    :processor            # Sets the image processor to use for resizing of the attached image.
+                          # Options include ImageScience, Rmagick, MiniMagick, Gd2 and CoreImage.  Default is
+                          # whatever is installed.
+                          #
+    :uuid_primary_key     # If your model's primary key is a 128-bit UUID in hexadecimal format, then set this to
+                          # true.
+                          #
+    :association_options  # attachment_fu automatically defines associations with thumbnails with has_many and
+                          # belongs_to. If there are any additional options that you want to pass to these methods,
+                          # then specify them here.
+
 
   Examples:
     has_attachment :max_size => 1.kilobyte
@@ -65,7 +106,7 @@ has_attachment(options = {})
     has_attachment :content_type => ['application/pdf', :image], :resize_to => 'x50'
     has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
     has_attachment :storage => :file_system, :path_prefix => 'public/files'
-    has_attachment :storage => :file_system, :path_prefix => 'public/files', 
+    has_attachment :storage => :file_system, :path_prefix => 'public/files',
                    :content_type => :image, :resize_to => [50,50], :partition => false
     has_attachment :storage => :file_system, :path_prefix => 'public/files',
                    :thumbnails => { :thumb => [50, 50], :geometry => 'x50' }
@@ -73,9 +114,28 @@ has_attachment(options = {})
     has_attachment :store => :s3, :cloudfront => true
     has_attachment :storage => :cloud_files
 
+    # Let's say we have a polymorphic belongs_to, e.g. called 'imageable', where imageable_type (or whatever the
+    # :foreign_type option was set to) can be, among other things, 'Product', 'User' or 'Editorial', each of which
+    # should have extra thumbnails:
+
+    has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50',
+      :products   => { :large_thumb => '169x169!', :zoomed => '500x500>' },
+      :editorials => { :fullsize => '150x100>' },
+      :users      => { :avatar => '64x64!' } }
+
+    # JPEG qualities…
+
+    has_attachment :jpeg_quality => 75
+    has_attachment :jpeg_quality => 80 | ImageScience::JPEG_PROGRESSIVE
+    has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' },
+      :jpeg_quality => { nil => 75, :thumb => 90, :geometry => 90 }
+    has_attachment :thumbnails => { :thumb => [50, 50], :geometry => 'x50' },
+      :jpeg_quality => { '<2000' => 90, '>=2000' => 75 }
+}
+
 validates_as_attachment
   This method prevents files outside of the valid range (:min_size to :max_size, or the :size range) from being saved.  It does not however, halt the upload of such files.  They will be uploaded into memory regardless of size before validation.
-  
+
   Example:
     validates_as_attachment
 
@@ -94,12 +154,12 @@ Fields for attachment_fu metadata tables...
   that reference images that will be thumbnailed:
     parent_id,    :integer  # id of parent image (on the same table, a self-referencing foreign-key).
                             # Only populated if the current object is a thumbnail.
-    thumbnail,    :string   # the 'type' of thumbnail this attachment record describes.  
+    thumbnail,    :string   # the 'type' of thumbnail this attachment record describes.
                             # Only populated if the current object is a thumbnail.
                             # Usage:
                             # [ In Model 'Avatar' ]
-                            #   has_attachment :content_type => :image, 
-                            #                  :storage => :file_system, 
+                            #   has_attachment :content_type => :image,
+                            #                  :storage => :file_system,
                             #                  :max_size => 500.kilobytes,
                             #                  :resize_to => '320x200>',
                             #                  :thumbnails => { :small => '10x10>',
@@ -108,7 +168,7 @@ Fields for attachment_fu metadata tables...
                             # @user.avatar.thumbnails.first.thumbnail #=> 'small'
   that reference files stored in the database (:db_file):
     db_file_id,   :integer  # id of the file in the database (foreign key)
-    
+
 Field for attachment_fu db_files table:
   data, :binary # binary file data, for use in database file storage
 
@@ -122,7 +182,7 @@ There are two parts of the upload form that differ from typical usage.
   1. Include ':multipart => true' in the html options of the form_for tag.
     Example:
       <% form_for(:attachment_metadata, :url => { :action => "create" }, :html => { :multipart => true }) do |form| %>
-      
+
   2. Use the file_field helper with :uploaded_data as the field name.
     Example:
       <%= form.file_field :uploaded_data %>
@@ -150,7 +210,7 @@ Example:
   def readme
     send_file '/path/to/readme.txt', :type => 'plain/text', :disposition => 'inline'
   end
-  
+
 See the possible values for send_file for reference.
 
 
@@ -163,7 +223,7 @@ Example in controller:
     @attachable_file = AttachmentMetadataModel.new(params[:attachable])
     if @attachable_file.save
       flash[:notice] = 'Attachment was successfully created.'
-      redirect_to attachable_url(@attachable_file)     
+      redirect_to attachable_url(@attachable_file)
     else
       render :action => :new
     end
@@ -172,12 +232,12 @@ Example in controller:
 attachement_fu scripting
 ====================================
 
-You may wish to import a large number of images or attachments. 
-The following example shows how to upload a file from a script. 
+You may wish to import a large number of images or attachments.
+The following example shows how to upload a file from a script.
 
 #!/usr/bin/env ./script/runner
 
-# required to use ActionController::TestUploadedFile 
+# required to use ActionController::TestUploadedFile
 require 'action_controller'
 require 'action_controller/test_process.rb'
 
