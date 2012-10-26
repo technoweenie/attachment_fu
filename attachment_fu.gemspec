@@ -15,11 +15,11 @@ Gem::Specification.new do |s|
     LICENSE
     README
     Rakefile
-    init.rb
     install.rb
     amazon_s3.yml.tpl
     rackspace_cloudfiles.yml.tpl
     lib/geometry.rb
+	lib/pothoven-attachment_fu.rb
     lib/technoweenie/attachment_fu/backends/cloud_file_backend.rb
     lib/technoweenie/attachment_fu/backends/db_file_backend.rb
     lib/technoweenie/attachment_fu/backends/file_system_backend.rb
@@ -63,7 +63,7 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://github.com/pothoven/attachment_fu}
   s.rdoc_options = ["--inline-source", "--charset=UTF-8"]
   s.require_paths = ["lib"]
-  # s.rubyforge_project = %q{attachment_fu}
+  s.rubyforge_project = "nowarning"
   s.rubygems_version = %q{1.3.5}
   s.summary = %q{attachment_fu as a gem}
 
