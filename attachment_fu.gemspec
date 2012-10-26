@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.version = "3.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Rick Olson", "Christophe Porteneuve", "Steven Pothoven"]
+  s.authors = ["Rick Olson", "Steven Pothoven"]
   s.date = %q{2012-10-26}
   s.description = %q{This is a fork of Rick Olson’s attachment_fu adding Ruby 1.9 and Rails 3.2 support as well as some other enhancements.}
   s.email = %q{steven@pothoven.net}
@@ -60,7 +60,7 @@ Gem::Specification.new do |s|
     vendor/red_artisan/core_image/filters/scale.rb
     vendor/red_artisan/core_image/filters/watermark.rb
   )
-  s.homepage = %q{http://github.com/tdd/attachment_fu}
+  s.homepage = %q{http://github.com/pothoven/attachment_fu}
   s.rdoc_options = ["--inline-source", "--charset=UTF-8"]
   s.require_paths = ["lib"]
   # s.rubyforge_project = %q{attachment_fu}
