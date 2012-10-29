@@ -96,7 +96,7 @@ module Technoweenie # :nodoc:
         options[:thumbnail_class]  ||= self
         options[:s3_access]        ||= :public_read
         options[:cloudfront]       ||= false
-        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
+        options[:content_type] = [options[:content_type]].flatten.collect! { |t| t == :image ? ::Technoweenie::AttachmentFu.content_types : t }.flatten unless options[:content_type].nil?
 
         unless options[:thumbnails].is_a?(Hash)
           raise ArgumentError, ":thumbnails option should be a hash: e.g. :thumbnails => { :foo => '50x50' }"
@@ -132,16 +132,16 @@ module Technoweenie # :nodoc:
           m.belongs_to :parent, :class_name => "::#{base_class}" unless options[:thumbnails].empty?
         end
 
-        storage_mod = Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
+        storage_mod = ::Technoweenie::AttachmentFu::Backends.const_get("#{options[:storage].to_s.classify}Backend")
         include storage_mod unless included_modules.include?(storage_mod)
 
         case attachment_options[:processor]
         when :none, nil
-          processors = Technoweenie::AttachmentFu.default_processors.dup
+          processors = ::Technoweenie::AttachmentFu.default_processors.dup
           begin
             if processors.any?
               attachment_options[:processor] = processors.first
-              processor_mod = Technoweenie::AttachmentFu::Processors.const_get("#{attachment_options[:processor].to_s.classify}Processor")
+              processor_mod = ::Technoweenie::AttachmentFu::Processors.const_get("#{attachment_options[:processor].to_s.classify}Processor")
               include processor_mod unless included_modules.include?(processor_mod)
             end
           rescue Object, Exception
@@ -152,7 +152,7 @@ module Technoweenie # :nodoc:
           end
         else
           begin
-            processor_mod = Technoweenie::AttachmentFu::Processors.const_get("#{attachment_options[:processor].to_s.classify}Processor")
+            processor_mod = ::Technoweenie::AttachmentFu::Processors.const_get("#{attachment_options[:processor].to_s.classify}Processor")
             include processor_mod unless included_modules.include?(processor_mod)
           rescue Object, Exception
             raise unless load_related_exception?($!)
@@ -176,7 +176,7 @@ module Technoweenie # :nodoc:
     end
 
     module ClassMethods
-      delegate :content_types, :to => Technoweenie::AttachmentFu
+      delegate :content_types, :to => ::Technoweenie::AttachmentFu
 
       # Performs common validations for attachment models.
       def validates_as_attachment
@@ -250,7 +250,7 @@ module Technoweenie # :nodoc:
 
       # Copies the given file path to a new tempfile, returning the closed tempfile.
       def copy_to_temp_file(file, temp_base_name)
-        Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path).tap do |tmp|
+        Tempfile.new(temp_base_name, ::Technoweenie::AttachmentFu.tempfile_path).tap do |tmp|
           tmp.close
           FileUtils.cp file, tmp.path
         end
@@ -258,7 +258,7 @@ module Technoweenie # :nodoc:
 
       # Writes the given data to a new tempfile, returning the closed tempfile.
       def write_to_temp_file(data, temp_base_name)
-        Tempfile.new(temp_base_name, Technoweenie::AttachmentFu.tempfile_path).tap do |tmp|
+        Tempfile.new(temp_base_name, ::Technoweenie::AttachmentFu.tempfile_path).tap do |tmp|
           tmp.binmode
           tmp.write data
           tmp.close
