@@ -45,7 +45,8 @@ module Technoweenie # :nodoc:
       # *  <tt>:min_size</tt> - Minimum size allowed.  1 byte is the default.
       # *  <tt>:max_size</tt> - Maximum size allowed.  1.megabyte is the default.
       # *  <tt>:size</tt> - Range of sizes allowed.  (1..1.megabyte) is the default.  This overrides the :min_size and :max_size options.
-      # *  <tt>:resize_to</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.
+      # *  <tt>:resize_to</tt> - Used by RMagick to resize images.  Pass either an array of width/height, or a geometry string.  Prefix geometry string with 'c' to crop image, ex. 'c100x100'
+      # *  <tt>:sharpen_on_resize</tt> - When using RMagick, setting to true will sharpen images after resizing.
       # *  <tt>:jpeg_quality</tt> - Used to provide explicit JPEG quality for thumbnail/resize saves.  Can have multiple formats:
       #      * Integer from 0 (basically crap) to 100 (basically lossless, fat files).
       #      * When relying on ImageScience, you can also use one of its +JPEG_xxx+ constants for predefined ratios/settings.
