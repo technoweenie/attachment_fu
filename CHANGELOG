@@ -1,7 +1,6 @@
 * Nov 15, 2012 *
 * Removed 'crop:' option as already included when prefixing geometry with a 'c'.  Add note to docs.
 * Added option to sharpen resized images ':sharpen_on_resize'
-* Removed old init code that causes a asset:precompile error for sprockets (per https://github.com/rails/rails/issues/6989)
 
 * Oct 26, 2012 *
 * Merged with https://github.com/tdd/attachment_fu fork to include GEM support for use in Rails 3.2, and bumped version to 3.2.x to indicate Rails 3.2 support.
