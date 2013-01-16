@@ -415,6 +415,14 @@ module Technoweenie # :nodoc:
         self.class.with_image(temp_path, &block)
       end
 
+      # Stub for removing public access to image.  This should be defined in the backend module.
+      def make_private!
+      end
+
+      # Stub for making image publicly accessible.  This should be defined in the backend module.
+      def make_public!
+      end
+
       protected
         # Generates a unique filename for a Tempfile.
         def random_tempfile_filename

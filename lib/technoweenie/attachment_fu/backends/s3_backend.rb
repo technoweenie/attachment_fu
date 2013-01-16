@@ -356,6 +356,26 @@ module Technoweenie # :nodoc:
           Technoweenie::AttachmentFu::Backends::S3Backend.distribution_domain
         end
 
+        def make_public!
+          public_read = ACL::Grant.grant(:public_read)
+          policy = S3Object.acl full_filename, bucket_name
+
+          if !policy.grants.include?(public_read)
+            policy.grants << public_read
+            S3Object.acl full_filename, bucket_name, policy
+          end
+        end
+
+        def make_private!
+          public_read = ACL::Grant.grant(:public_read)
+          policy = S3Object.acl full_filename, bucket_name
+
+          if policy.grants.include?(public_read)
+            policy.grants.delete(public_read)
+            S3Object.acl full_filename, bucket_name, policy
+          end
+        end
+
         protected
           # Called in the after_destroy callback
           def destroy_file
