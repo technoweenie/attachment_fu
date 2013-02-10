@@ -196,7 +196,7 @@ module Technoweenie # :nodoc:
         base.before_validation :set_size_from_temp_path
         base.after_destroy :destroy_file
         base.after_validation :process_attachment
-        base.before_save :after_process_attachment
+        base.after_save :after_process_attachment
         #if defined?(::ActiveSupport::Callbacks)
         #  base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
         #end
