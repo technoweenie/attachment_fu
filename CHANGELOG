@@ -1,3 +1,6 @@
+* Feb 19, 2013 *
+* Pull in changes from https://github.com/itkin/attachment_fu fork to fix mini magick
+
 * Nov 15, 2012 *
 * Removed 'crop:' option as already included when prefixing geometry with a 'c'.  Add note to docs.
 * Added option to sharpen resized images ':sharpen_on_resize'

@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{pothoven-attachment_fu}
-  s.version = "3.2.4"
+  s.version = "3.2.5"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Rick Olson", "Steven Pothoven"]
-  s.date = %q{2012-10-26}
+  s.date = %q{2013-02-19}
   s.description = %q{This is a fork of Rick Olson’s attachment_fu adding Ruby 1.9 and Rails 3.2 support as well as some other enhancements.}
   s.email = %q{steven@pothoven.net}
   s.extra_rdoc_files = ["README"]
