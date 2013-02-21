@@ -41,7 +41,9 @@ has_attachment(options = {})
                           #
     :resize_to            # Used by RMagick to resize images.
                           # Pass either an array of width/height, or a geometry string.
+                          # Note: prefixing geometry string with a 'c' will crop the image to specified size.
                           #
+    :sharpen_on_resize    # RMagick only.  Sharpens image after it is resized if this is set to true.
     :thumbnails           # Specifies a set of thumbnails to generate.
                           # This accepts a hash of filename suffixes and RMagick resizing options.
                           # This option need only be included if you want thumbnailing.
