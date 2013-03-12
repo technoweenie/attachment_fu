@@ -1,3 +1,6 @@
+* Mar 12, 2013 *
+* Pull in changes from https://github.com/aalong/attachment_fu to use Ruby 1.9.2 Tempfile naming strategy to fix conflicts with Sprockets (see https://github.com/aalong/attachment_fu/commit/938ec3b8597fbf82b1de8c98de12c4688463450a)
+
 * Feb 19, 2013 *
 * Pull in changes from https://github.com/itkin/attachment_fu fork to fix mini magick
 
