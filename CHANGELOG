@@ -1,6 +1,6 @@
 * Apr 10, 2013 *
 * Ruby 2 compatibility fix
-* Removed some lingering occurrences of RAILS_ROOT
+* Removed some lingering occurrences of RAILS_ROOT and RAILS_ENV
 * clean up of gemspec file
 * no longer package unnecessary files like the test files
 

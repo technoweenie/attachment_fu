@@ -4,10 +4,10 @@ Gem::Specification.new do |s|
   s.name			  = %q{pothoven-attachment_fu}
   s.authors			  = ["Rick Olson", "Steven Pothoven"]
   s.summary			  = %q{attachment_fu as a gem}
-  s.description		  = %q{This is a fork of Rick Olson’s attachment_fu adding Ruby 1.9 and Rails 3.2 support as well as some other enhancements.}
+  s.description		  = %q{This is a fork of Rick Olson's attachment_fu adding Ruby 1.9 and Rails 3.2 support as well as some other enhancements.}
   s.email			  = %q{steven@pothoven.net}
   s.homepage		  = %q{http://github.com/pothoven/attachment_fu}
-  s.version			  = "3.2.7"
+  s.version			  = "3.2.8"
   s.date			  = %q{2013-04-10}
 
   s.files			  = Dir.glob("{lib,vendor}/**/*") + %w( CHANGELOG LICENSE README amazon_s3.yml.tpl rackspace_cloudfiles.yml.tpl )
