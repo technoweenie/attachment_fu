@@ -1,3 +1,9 @@
+* Apr 10, 2013 *
+* Ruby 2 compatibility fix
+* Removed some lingering occurrences of RAILS_ROOT
+* clean up of gemspec file
+* no longer package unnecessary files like the test files
+
 * Mar 12, 2013 *
 * Pull in changes from https://github.com/aalong/attachment_fu to use Ruby 1.9.2 Tempfile naming strategy to fix conflicts with Sprockets (see https://github.com/aalong/attachment_fu/commit/938ec3b8597fbf82b1de8c98de12c4688463450a)
 
