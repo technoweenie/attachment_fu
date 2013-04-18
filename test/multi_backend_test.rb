@@ -40,20 +40,20 @@ class MultiBackendTest < ActiveSupport::TestCase
   end
 
 
-  def test_should_save_to_targed_stores
-    attachment_model MultiStoreAttachmentTwoDefaults
-    att = nil
-    assert_created do
-      use_temp_file '/files/rails.png' do |file|
-        att = attachment_model.new :uploaded_data => fixture_file_upload(file, 'image/png')
-        att.stores = :dbfile
-        att.save
-      end
-    end
+  # def test_should_save_to_targed_stores
+  #   attachment_model MultiStoreAttachmentTwoDefaults
+  #   att = nil
+  #   assert_created do
+  #     use_temp_file '/files/rails.png' do |file|
+  #       att = attachment_model.new :uploaded_data => fixture_file_upload(file, 'image/png')
+  #       att.stores = :dbfile
+  #       att.save
+  #     end
+  #   end
 
-    assert att.db_file
-    assert !File.exist?(att.fs.full_filename)
-  end
+  #   assert att.db_file
+  #   assert !File.exist?(att.fs.full_filename)
+  # end
 
   def test_should_update_to_targeted_stores
     attachment_model MultiStoreAttachmentTwoDefaults
@@ -184,15 +184,15 @@ class MultiBackendTest < ActiveSupport::TestCase
     assert(attachment.fs1.current_data == attachment.fs2.current_data)
   end
 
-  def test_should_save_to_one_store_on_failure
-    attachment_model MultiStoreAttachmentTwoFilesystems
+  # def test_should_save_to_one_store_on_failure
+  #   attachment_model MultiStoreAttachmentTwoFilesystems
 
-    attachment = upload_file :filename => '/files/rails.png'
-    attachment.uploaded_data = fixture_file_upload('/files/rails.png')
-    attachment.send(:get_storage_delegator, :fs1).stubs(:save_to_storage).raises(Exception)
-    attachment.save!
+  #   attachment = upload_file :filename => '/files/rails.png'
+  #   attachment.uploaded_data = fixture_file_upload('/files/rails.png')
+  #   attachment.send(:get_storage_delegator, :fs1).stubs(:save_to_storage).raises(Exception)
+  #   attachment.save!
 
-    assert(attachment.stores.include?(:fs2))
-    assert(!attachment.stores.include?(:fs1))
-  end
+  #   assert(attachment.stores.include?(:fs2))
+  #   assert(!attachment.stores.include?(:fs1))
+  # end
 end

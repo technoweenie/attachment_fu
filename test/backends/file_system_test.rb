@@ -13,7 +13,7 @@ class FileSystemTest < ActiveSupport::TestCase
     end
   end
 
-  test_against_subclass :test_filesystem_size_for_file_attachment, FileAttachment
+  # test_against_subclass :test_filesystem_size_for_file_attachment, FileAttachment
 
   def test_should_not_overwrite_file_attachment(klass = FileAttachment)
     attachment_model klass
@@ -31,7 +31,7 @@ class FileSystemTest < ActiveSupport::TestCase
     end
   end
 
-  test_against_subclass :test_should_not_overwrite_file_attachment, FileAttachment
+  # test_against_subclass :test_should_not_overwrite_file_attachment, FileAttachment
 
   def test_should_store_file_attachment_in_filesystem(klass = FileAttachment)
     attachment_model klass
@@ -44,7 +44,7 @@ class FileSystemTest < ActiveSupport::TestCase
     attachment
   end
 
-  test_against_subclass :test_should_store_file_attachment_in_filesystem, FileAttachment
+  # test_against_subclass :test_should_store_file_attachment_in_filesystem, FileAttachment
 
   def test_should_delete_old_file_when_updating(klass = FileAttachment)
     attachment_model klass
@@ -61,7 +61,7 @@ class FileSystemTest < ActiveSupport::TestCase
     end
   end
 
-  test_against_subclass :test_should_delete_old_file_when_updating, FileAttachment
+  # test_against_subclass :test_should_delete_old_file_when_updating, FileAttachment
 
   def test_should_delete_old_file_when_renaming(klass = FileAttachment)
     attachment_model klass
@@ -77,7 +77,7 @@ class FileSystemTest < ActiveSupport::TestCase
     end
   end
 
-  test_against_subclass :test_should_delete_old_file_when_renaming, FileAttachment
+  # test_against_subclass :test_should_delete_old_file_when_renaming, FileAttachment
 
   def test_path_partitioning_works_on_integer_id(klass = FileAttachment)
     attachment_model klass
@@ -94,5 +94,5 @@ class FileSystemTest < ActiveSupport::TestCase
     end
   end
 
-  test_against_subclass :test_path_partitioning_works_on_integer_id, FileAttachment
+  # test_against_subclass :test_path_partitioning_works_on_integer_id, FileAttachment
 end

@@ -32,15 +32,15 @@ db_adapter ||=
     require 'rubygems'
     require 'sqlite'
     'sqlite'
-  rescue MissingSourceFile
+  rescue LoadError
     begin
       require 'sqlite3'
       'sqlite3'
-    rescue MissingSourceFile
+    rescue LoadError
       begin
         require 'mysql'
         'mysql'
-      rescue MissingSourceFile
+      rescue LoadError
       end
     end
   end
