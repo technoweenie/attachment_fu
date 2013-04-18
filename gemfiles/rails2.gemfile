@@ -2,6 +2,8 @@
 
 source :rubygems
 
+gem "debugger", :platform=>[:ruby_19, :ruby_20]
+gem "ruby-debug", :platform=>:ruby_18
 gem "activerecord", "2.3.14"
 gem "activesupport", "2.3.14"
 gem "actionpack", "2.3.14"

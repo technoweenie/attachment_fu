@@ -9,15 +9,32 @@ PATH
 GEM
   remote: http://rubygems.org/
   specs:
-    actionpack (2.3.14)
-      activesupport (= 2.3.14)
-      rack (~> 1.1.0)
-    activerecord (2.3.14)
-      activesupport (= 2.3.14)
-    activesupport (2.3.14)
+    abstract (1.0.0)
+    actionpack (3.0.20)
+      activemodel (= 3.0.20)
+      activesupport (= 3.0.20)
+      builder (~> 2.1.2)
+      erubis (~> 2.6.6)
+      i18n (~> 0.5.0)
+      rack (~> 1.2.5)
+      rack-mount (~> 0.6.14)
+      rack-test (~> 0.5.7)
+      tzinfo (~> 0.3.23)
+    activemodel (3.0.20)
+      activesupport (= 3.0.20)
+      builder (~> 2.1.2)
+      i18n (~> 0.5.0)
+    activerecord (3.0.20)
+      activemodel (= 3.0.20)
+      activesupport (= 3.0.20)
+      arel (~> 2.0.10)
+      tzinfo (~> 0.3.23)
+    activesupport (3.0.20)
     appraisal (0.5.2)
       bundler
       rake
+    arel (2.0.10)
+    builder (2.1.2)
     columnize (0.3.6)
     debugger (1.5.0)
       columnize (>= 0.3.1)
@@ -25,6 +42,9 @@ GEM
       debugger-ruby_core_source (~> 1.2.0)
     debugger-linecache (1.2.0)
     debugger-ruby_core_source (1.2.0)
+    erubis (2.6.6)
+      abstract (>= 1.0.0)
+    i18n (0.5.0)
     linecache (0.46)
       rbx-require-relative (> 0.0.4)
     metaclass (0.0.1)
@@ -33,7 +53,11 @@ GEM
     mocha (0.13.3)
       metaclass (~> 0.0.1)
     mysql (2.9.1)
-    rack (1.1.6)
+    rack (1.2.8)
+    rack-mount (0.6.14)
+      rack (>= 1.0.0)
+    rack-test (0.5.7)
+      rack (>= 1.0)
     rake (10.0.4)
     rbx-require-relative (0.0.9)
     ruby-debug (0.10.4)
@@ -42,14 +66,15 @@ GEM
     ruby-debug-base (0.10.4)
       linecache (>= 0.3)
     subexec (0.2.3)
+    tzinfo (0.3.37)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  actionpack (= 2.3.14)
-  activerecord (= 2.3.14)
-  activesupport (= 2.3.14)
+  actionpack (~> 3.0.2)
+  activerecord (~> 3.0.2)
+  activesupport (~> 3.0.2)
   appraisal
   attachment_fu!
   debugger

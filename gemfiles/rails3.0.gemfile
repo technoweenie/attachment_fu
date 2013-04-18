@@ -4,8 +4,8 @@ source :rubygems
 
 gem "debugger", :platform=>[:ruby_19, :ruby_20]
 gem "ruby-debug", :platform=>:ruby_18
-gem "activerecord", "~> 3.2.2"
-gem "activesupport", "~> 3.2.2"
-gem "actionpack", "~> 3.2.2"
+gem "activerecord", "~> 3.0.2"
+gem "activesupport", "~> 3.0.2"
+gem "actionpack", "~> 3.0.2"
 
 gemspec :path=>"../"

@@ -9,3 +9,9 @@ appraise "rails3.2" do
   gem "activesupport", "~> 3.2.2"
   gem "actionpack", "~> 3.2.2"
 end
+
+appraise "rails3.0" do
+  gem "activerecord", "~> 3.0.2"
+  gem "activesupport", "~> 3.0.2"
+  gem "actionpack", "~> 3.0.2"
+end
