@@ -421,11 +421,6 @@ module Technoweenie # :nodoc:
         eval("def #{method}(*args) ; on_one_store(:#{method}, nil, *args) ; end")
       end
 
-      # backward compatibility, only defined on FileSystemBackend
-      def public_filename(*args)
-        on_one_store :public_filename, :fs, *args
-      end
-
       def supports_multiple_stores?
         has_attribute?(:stores)
       end
