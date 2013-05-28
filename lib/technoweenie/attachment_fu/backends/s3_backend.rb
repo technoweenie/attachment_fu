@@ -405,6 +405,7 @@ module Technoweenie # :nodoc:
                 (temp_path ? File.open(temp_path) : temp_data),
                 bucket_name,
                 :content_type => content_type,
+                :cache_control => attachment_options[:cache_control],
                 :access => attachment_options[:s3_access]
               )
             end
