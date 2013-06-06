@@ -97,6 +97,12 @@ class GeometryTest < Test::Unit::TestCase
       "100>" => [50, 64]
   end
 
+  def test_should_resize_with_aspect
+    assert_geometry 50, 64,
+      "35x35!" => [35, 35],
+      "70x70!" => [70, 70]
+  end
+
   protected
     def assert_geometry(width, height, values)
       values.each do |geo, result|

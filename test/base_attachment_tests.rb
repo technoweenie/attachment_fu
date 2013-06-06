@@ -1,10 +1,10 @@
 module BaseAttachmentTests
   def test_should_create_file_from_uploaded_file
     assert_created do
-      attachment = upload_file :filename => '/files/foo.txt'
+      attachment = upload_file :filename => '/files/foo.txt', :content_type => 'text/plain'
       assert_valid attachment
       assert !attachment.db_file.new_record? if attachment.respond_to?(:db_file)
-      assert  attachment.image?
+      assert !attachment.image?
       assert !attachment.size.zero?
       #assert_equal 3, attachment.size
       assert_nil      attachment.width
@@ -14,10 +14,10 @@ module BaseAttachmentTests
   
   def test_should_create_file_from_merb_temp_file
     assert_created do
-      attachment = upload_merb_file :filename => '/files/foo.txt'
+      attachment = upload_merb_file :filename => '/files/foo.txt', :content_type => 'text/plain'
       assert_valid attachment
       assert !attachment.db_file.new_record? if attachment.respond_to?(:db_file)
-      assert  attachment.image?
+      assert !attachment.image?
       assert !attachment.size.zero?
       #assert_equal 3, attachment.size
       assert_nil      attachment.width
@@ -55,7 +55,7 @@ module BaseAttachmentTests
     assert_not_created do # no new db_file records
       use_temp_file 'files/rails.png' do |file|
         attachment.filename = 'rails2.png'
-        attachment.temp_paths.unshift File.join(fixture_path, file)
+        attachment.temp_paths.unshift File.join(FIXTURE_PATH, file)
         attachment.save!
       end
     end

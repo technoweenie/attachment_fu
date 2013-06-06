@@ -32,7 +32,7 @@ module Technoweenie # :nodoc:
             # pngs for thumbnails.  It has something to do with trying to save gifs
             # with a larger palette than 256 colors, which is all the gif format
             # supports.
-            filename.sub! /gif$/, 'png'
+            filename.sub! /gif$/i, 'png'
             content_type.sub!(/gif$/, 'png')
             temp_paths.unshift write_to_temp_file(filename)
             grab_dimensions = lambda do |img|

@@ -9,15 +9,15 @@ module Technoweenie # :nodoc:
       #
       # == Requirements
       #
-      # Requires the {Cloud Files Gem}[http://www.mosso.com/cloudfiles.jsp] by Rackspace 
+      # Requires the {Cloud Files Gem}[http://www.mosso.com/cloudfiles.jsp] by Rackspace
       #
       # == Configuration
       #
-      # Configuration is done via <tt>RAILS_ROOT/config/rackspace_cloudfiles.yml</tt> and is loaded according to the <tt>RAILS_ENV</tt>.
+      # Configuration is done via <tt>Rails.root.to_s/config/rackspace_cloudfiles.yml</tt> and is loaded according to the <tt>#{Rails.env}</tt>.
       # The minimum connection options that you must specify are a container name, your Mosso login name and your Mosso API key.
-      # You can sign up for Cloud Files and get access keys by visiting https://www.mosso.com/buy.htm 
+      # You can sign up for Cloud Files and get access keys by visiting https://www.mosso.com/buy.htm
       #
-      # Example configuration (RAILS_ROOT/config/rackspace_cloudfiles.yml)
+      # Example configuration (Rails.root.to_s/config/rackspace_cloudfiles.yml)
       #
       #   development:
       #     container_name: appname_development
@@ -36,7 +36,7 @@ module Technoweenie # :nodoc:
       #
       # You can change the location of the config path by passing a full path to the :cloudfiles_config_path option.
       #
-      #   has_attachment :storage => :cloud_files, :cloudfiles_config_path => (RAILS_ROOT + '/config/mosso.yml')
+      #   has_attachment :storage => :cloud_files, :cloudfiles_config_path => (Rails.root.to_s + '/config/mosso.yml')
       #
       # === Required configuration parameters
       #
@@ -116,9 +116,9 @@ module Technoweenie # :nodoc:
           end
 
           begin
-            @@cloudfiles_config_path = base.attachment_options[:cloudfiles_config_path] || (RAILS_ROOT + '/config/rackspace_cloudfiles.yml')
+            @@cloudfiles_config_path = base.attachment_options[:cloudfiles_config_path] || (Rails.root.to_s + '/config/rackspace_cloudfiles.yml')
 
-            config = YAML.load(ERB.new(File.read(@@cloudfiles_config_path)).result)[RAILS_ENV]
+            config = YAML.load(ERB.new(File.read(@@cloudfiles_config_path)).result)[Rails.env]
             config = config[base.attachment_options[:config_scope]] if base.attachment_options[:config_scope]
 
             @@cloudfiles_config = config.symbolize_keys
@@ -129,7 +129,7 @@ module Technoweenie # :nodoc:
           @@container_name = @@cloudfiles_config[:container_name]
           @@cf = CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
           @@container = @@cf.container(@@container_name)
-          
+
           base.before_update :rename_file
         end
 
