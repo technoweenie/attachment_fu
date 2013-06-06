@@ -199,6 +199,7 @@ module Technoweenie # :nodoc:
         base.after_destroy :destroy_file
         base.after_validation :process_attachment
         base.after_save :after_process_attachment
+	base.attr_accessible :uploaded_data
         #if defined?(::ActiveSupport::Callbacks)
         #  base.define_callbacks :after_resize, :after_attachment_saved, :before_thumbnail_saved
         #end
@@ -351,7 +352,7 @@ module Technoweenie # :nodoc:
 
       # Returns true if the attachment data will be written to the storage system on the next save
       def save_attachment?
-        File.file?(temp_path.class == String ? temp_path : temp_path.to_filename)
+        File.file?(temp_path.to_s)
       end
 
       # nil placeholder in case this field is used in a form.
@@ -383,7 +384,9 @@ module Technoweenie # :nodoc:
           file_data.rewind
           set_temp_data file_data.read
         else
-          file_data.respond_to?(:tempfile) ? self.temp_paths.unshift( file_data.tempfile.path ) : self.temp_paths.unshift( file_data.path )
+          self.temp_paths.unshift file_data
+          # line below is mod introduced by pethoven and breaks our things
+          #file_data.respond_to?(:tempfile) ? self.temp_paths.unshift( file_data.tempfile.path ) : self.temp_paths.unshift( file_data.path )
         end
       end
 
@@ -498,6 +501,7 @@ module Technoweenie # :nodoc:
         def after_process_attachment
           if @saved_attachment
             attachment_options[:background] ? delay(:generate_thumbnails) : generate_thumbnails
+
             # THIS METHOD IS REPLACING generate_thumbnails METHOD IN POTHOVEN REPO
             # if respond_to?(:process_attachment_with_processing, true) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
             #   temp_file = temp_path || create_temp_file
@@ -518,6 +522,7 @@ module Technoweenie # :nodoc:
             #     end
             #   }
             # end
+
             save_to_storage
             @temp_paths.clear
             @saved_attachment = nil
