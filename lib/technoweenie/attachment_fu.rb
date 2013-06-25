@@ -543,7 +543,7 @@ module Technoweenie # :nodoc:
         end
 
         def has_attachment_processor?
-          self.respond_to?(:_process_attachment)
+          self.respond_to?(:_process_attachment, true)
         end
 
         def without_processing
