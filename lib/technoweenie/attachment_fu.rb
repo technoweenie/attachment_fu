@@ -490,6 +490,16 @@ module Technoweenie # :nodoc:
         self.md5 = md5_from_file(temp_path || create_temp_file) rescue nil
       end
 
+      def logger
+        @logger ||= begin
+          if Object.const_defined?(:Rails)
+            Rails.logger
+          else
+            Logger.new($stdout)
+          end
+        end
+      end
+
       protected
         # Generates a unique filename for a Tempfile.
         def random_tempfile_filename
@@ -554,7 +564,6 @@ module Technoweenie # :nodoc:
             @no_processing = false
           end
         end
-
 
         def process_attachment
           @saved_attachment ||= save_attachment?
@@ -640,16 +649,6 @@ module Technoweenie # :nodoc:
             [backends.keys.first]
           else
             backends.map { |k, v| v[:options][:default] ? k : nil }.compact
-          end
-        end
-
-        def logger
-          @logger ||= begin
-            if Object.const_defined?(:Rails)
-              Rails.logger
-            else
-              Logger.new($stdout)
-            end
           end
         end
 

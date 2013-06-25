@@ -61,6 +61,12 @@ class FileSystemTest < ActiveSupport::TestCase
     end
   end
 
+  def test_should_allow_delegators_to_log(klass = FileAttachment)
+    attachment_model klass
+    attachment   = upload_file :filename => '/files/rails.png'
+    assert attachment.respond_to?(:logger)
+  end
+
   # test_against_subclass :test_should_delete_old_file_when_updating, FileAttachment
 
   def test_should_delete_old_file_when_renaming(klass = FileAttachment)
