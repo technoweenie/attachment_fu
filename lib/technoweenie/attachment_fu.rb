@@ -500,7 +500,11 @@ module Technoweenie # :nodoc:
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
           if @saved_attachment
-            attachment_options[:background] ? delay(:generate_thumbnails) : generate_thumbnails
+            if attachment_options[:background]
+              self.delay.generate_thumbnails
+            else
+              self.generate_thumbnails
+            end
 
             # THIS METHOD IS REPLACING generate_thumbnails METHOD IN POTHOVEN REPO
             # if respond_to?(:process_attachment_with_processing, true) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
