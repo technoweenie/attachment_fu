@@ -187,8 +187,7 @@ module Technoweenie # :nodoc:
         def self.included_in_base(base) #:nodoc:
 
           begin
-            require 'aws/s3'
-            include AWS::S3
+            require 'aws-sdk'
           rescue LoadError
             raise RequiredLibraryNotFoundError.new('AWS::S3 could not be loaded')
           end
@@ -196,16 +195,18 @@ module Technoweenie # :nodoc:
           if base.attachment_options[:s3_access_key] && base.attachment_options[:s3_secret_key]
             @@s3_config = {:access_key_id => base.attachment_options[:s3_access_key],
                            :secret_access_key => base.attachment_options[:s3_secret_key],
-                           :distribution_domain => base.attachment_options[:s3_distribution_domain]}
+                           :distribution_domain => base.attachment_options[:s3_distribution_domain],
+                           :region => base.attachment_options[:s3_region]
+            }
           else
             @@s3_config_path = base.attachment_options[:s3_config_path] || (RAILS_ROOT + '/config/amazon_s3.yml')
             @@s3_config = @@s3_config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)[RAILS_ENV].symbolize_keys
           end
 
-          Base.establish_connection!(s3_config.slice(:access_key_id, :secret_access_key, :server, :port, :use_ssl, :persistent, :proxy))
+        end
 
-          # Bucket.create(@@bucket_name)
-
+        def connection
+          @s3 ||= AWS::S3.new(@@s3_config)
         end
 
         def self.protocol
@@ -327,11 +328,15 @@ module Technoweenie # :nodoc:
           options   = args.extract_options!
           options[:expires_in] = options[:expires_in].to_i if options[:expires_in]
           thumbnail = args.shift
-          S3Object.url_for(full_filename(thumbnail), bucket_name, options)
+          self.bucket.objects[full_filename(thumbnail)].url_for(options)
+        end
+
+        def bucket
+          @bucket_c ||= self.connection.buckets[bucket_name]
         end
 
         def current_data
-          S3Object.value full_filename, bucket_name
+          self.bucket.objects[full_filename].read
         end
 
         def s3_protocol
@@ -352,7 +357,7 @@ module Technoweenie # :nodoc:
 
         # Called in the after_destroy callback
         def destroy_file
-          S3Object.delete full_filename, bucket_name
+          self.bucket.objects[full_filename].delete
         rescue Errno::ECONNRESET
           retries ||= 0
           retries += 1
@@ -364,11 +369,8 @@ module Technoweenie # :nodoc:
 
           old_full_filename = File.join(base_path, @old_filename)
 
-          S3Object.rename(
+          self.bucket.objects[full_filename].rename(
             old_full_filename,
-            full_filename,
-            bucket_name,
-            :access => attachment_options[:s3_access]
           )
 
           @old_filename = nil
@@ -377,14 +379,12 @@ module Technoweenie # :nodoc:
 
         def save_to_storage
           if save_attachment?
-            S3Object.store(
-              full_filename,
-              (temp_path ? File.open(temp_path) : temp_data),
-              bucket_name,
-              :content_type => content_type,
-              :access => attachment_options[:s3_access],
-              "x-amz-server-side-encryption" => "AES256" # this a band-aid
-            )
+            obj = self.bucket.objects[full_filename]
+            if temp_path
+              obj.write(:file => temp_path)
+            else
+              obj.write(temp_data)
+            end
           end
 
           @old_filename = nil
