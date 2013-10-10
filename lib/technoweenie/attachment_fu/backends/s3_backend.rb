@@ -172,7 +172,7 @@ module Technoweenie # :nodoc:
         class RequiredLibraryNotFoundError < StandardError; end
         class ConfigFileNotFoundError < StandardError; end
 
-        attr_reader :s3_config
+        attr_accessor :s3_config
         attr_reader :bucket_name
 
         def initialize(obj, opts)
@@ -180,6 +180,9 @@ module Technoweenie # :nodoc:
           # all the options from our attachments.yml come in through the opts argument here.
           @bucket_name = opts[:bucket_name]
           super(obj, opts)
+          opts[:access_key_id] = opts[:s3_access_key] if opts.has_key? :s3_access_key
+          opts[:secret_access_key] = opts[:s3_secret_key] if opts.has_key? :s3_secret_key
+          self.s3_config = opts
         end
 
         def self.included_in_base(base) #:nodoc:
@@ -193,7 +196,7 @@ module Technoweenie # :nodoc:
         end
 
         def connection
-          @s3 ||= AWS::S3.new(@@s3_config)
+          @s3 ||= AWS::S3.new(s3_config)
         end
 
         def self.protocol
