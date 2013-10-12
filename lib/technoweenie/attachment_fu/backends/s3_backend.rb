@@ -350,9 +350,9 @@ module Technoweenie # :nodoc:
           if save_attachment?
             obj = bucket.objects[full_filename]
             if temp_path
-              obj.write(:file => temp_path)
+              obj.write(:file => temp_path, :content_type => content_type, :server_side_encryption => :aes256)
             else
-              obj.write(temp_data)
+              obj.write(temp_data, :content_type => content_type, :server_side_encryption => :aes256)
             end
           end
 
