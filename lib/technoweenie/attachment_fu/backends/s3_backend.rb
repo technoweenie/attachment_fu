@@ -199,19 +199,19 @@ module Technoweenie # :nodoc:
           @s3 ||= AWS::S3.new(s3_config)
         end
 
-        def self.protocol
+        def protocol
           @protocol ||= s3_config[:use_ssl] ? 'https://' : 'http://'
         end
 
-        def self.hostname
+        def hostname
           connection.client.endpoint
         end
 
-        def self.port_string
+        def port_string
           connection.client.port
         end
 
-        def self.distribution_domain
+        def distribution_domain
           @distribution_domain = s3_config[:distribution_domain]
         end
         def s3_protocol
