@@ -1,4 +1,4 @@
-source :rubygems
+source 'https://rubygems.org'
 gemspec
 
 gem "debugger",      :platform => [:ruby_19, :ruby_20]
