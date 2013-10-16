@@ -198,3 +198,16 @@ mimetype = "image/jpeg"
 # This will "upload" the file at path and create the new model.
 @attachable = AttachmentMetadataModel.new(:uploaded_data => ActionController::TestUploadedFile.new(path, mimetype))
 @attachable.save
+
+Testing
+======
+
+Instructions for running the s3 tests.
+
+1. ensure mysql is installed, and the 'root' user has no password
+2. create the database named `attachment_fu_plugin_test`
+3. copy amazon_s3.yml.tpl to test/amazon_s3.yml
+4. update test/amazon_s3.yml with your bucket name and s3 credentials
+5. run the test script `test/backends/remote/s3_test.rb`
+
+You can run all the test, or just `rake test` but most of the tests are disabled unless you setup their dependencies and config files.
