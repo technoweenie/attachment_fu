@@ -178,11 +178,23 @@ module Technoweenie # :nodoc:
         def initialize(obj, opts)
           # zendesk classic rails usage note
           # all the options from our attachments.yml come in through the opts argument here.
-          @bucket_name = opts[:bucket_name]
           super(obj, opts)
-          opts[:access_key_id] = opts[:s3_access_key] if opts.has_key? :s3_access_key
-          opts[:secret_access_key] = opts[:s3_secret_key] if opts.has_key? :s3_secret_key
-          self.s3_config = opts
+
+          if @@s3_config_path
+            # config from file.
+            self.s3_config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)[ENV['RAILS_ENV']].symbolize_keys
+          else
+            # config entirely through initializer
+
+            # a few options need renaming.
+            opts[:access_key_id] = opts[:s3_access_key] if opts.has_key? :s3_access_key
+            opts[:secret_access_key] = opts[:s3_secret_key] if opts.has_key? :s3_secret_key
+
+            self.s3_config = opts
+          end
+
+          @bucket_name = self.s3_config[:bucket_name]
+
         end
 
         def self.included_in_base(base) #:nodoc:
@@ -191,6 +203,10 @@ module Technoweenie # :nodoc:
             require 'aws-sdk'
           rescue LoadError
             raise RequiredLibraryNotFoundError.new('AWS::SDK could not be loaded')
+          end
+
+          if base.attachment_options[:s3_config_path]
+            @@s3_config_path = base.attachment_options[:s3_config_path] || (RAILS_ROOT + '/config/amazon_s3.yml')
           end
 
         end
