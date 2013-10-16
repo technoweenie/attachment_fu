@@ -208,7 +208,7 @@ module Technoweenie # :nodoc:
         end
 
         def port_string
-          connection.client.port
+          connection.client.port.to_s
         end
 
         def distribution_domain
@@ -315,7 +315,7 @@ module Technoweenie # :nodoc:
           options   = args.extract_options!
           options[:expires_in] = options[:expires_in].to_i if options[:expires_in]
           thumbnail = args.shift
-          self.bucket.objects[full_filename(thumbnail)].url_for(:get,options)
+          self.bucket.objects[full_filename(thumbnail)].url_for(:get,options).to_s
         end
 
         def bucket
