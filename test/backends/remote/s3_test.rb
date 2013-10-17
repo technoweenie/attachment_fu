@@ -1,5 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'test_helper'))
 require 'net/http'
+require 'open-uri'
 
 class S3Test < ActiveSupport::TestCase
   def self.test_S3?
@@ -84,6 +85,14 @@ class S3Test < ActiveSupport::TestCase
     end
 
     test_against_subclass :test_should_save_attachment, S3Attachment
+
+    def test_authenticated_url
+      attachment = upload_file :filename => '/files/rails.png'
+      assert_valid attachment
+
+      url = attachment.authenticated_s3_url(:use_ssl => true, :expires_in => 1.hour)
+      assert URI.parse(url).read.size > 0
+    end
 
     def test_should_delete_attachment_from_s3_when_attachment_record_destroyed(klass = S3Attachment)
       attachment_model klass
