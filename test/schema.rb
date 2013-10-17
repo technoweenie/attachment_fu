@@ -19,7 +19,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :size,            :integer
     t.column :width,           :integer
     t.column :height,          :integer
-    t.column :type,            :string
     t.column :aspect_ratio,    :float
   end
   
@@ -32,7 +31,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :size,            :integer
     t.column :width,           :integer
     t.column :height,          :integer
-    t.column :type,            :string
     t.column :aspect_ratio,    :float
   end
 
@@ -44,7 +42,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :size,            :integer
     t.column :width,           :integer
     t.column :height,          :integer
-    t.column :type,            :string
   end
 
   create_table :image_science_attachments, :force => true do |t|
@@ -55,7 +52,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :size,            :integer
     t.column :width,           :integer
     t.column :height,          :integer
-    t.column :type,            :string
   end
 
   create_table :core_image_attachments, :force => true do |t|
@@ -66,7 +62,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :size,            :integer
     t.column :width,           :integer
     t.column :height,          :integer
-    t.column :type,            :string
   end
   
   create_table :mini_magick_attachments, :force => true do |t|
@@ -77,7 +72,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :size,            :integer
     t.column :width,           :integer
     t.column :height,          :integer
-    t.column :type,            :string
   end
 
   create_table :mini_magick_attachments, :force => true do |t|
@@ -88,7 +82,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :size,            :integer
     t.column :width,           :integer
     t.column :height,          :integer
-    t.column :type,            :string
   end
 
   create_table :orphan_attachments, :force => true do |t|
@@ -115,7 +108,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :size,            :integer
     t.column :width,           :integer
     t.column :height,          :integer
-    t.column :type,            :string
     t.column :aspect_ratio,    :float
   end
 
@@ -127,7 +119,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :size,            :integer
     t.column :width,           :integer
     t.column :height,          :integer
-    t.column :type,            :string
     t.column :aspect_ratio,    :float
   end
   
@@ -139,7 +130,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.column :size,            :integer
     t.column :width,           :integer
     t.column :height,          :integer
-    t.column :type,            :string
     t.column :aspect_ratio,    :float
   end
   
