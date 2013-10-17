@@ -15,7 +15,6 @@ require 'active_record/fixtures'
 
 require 'action_controller'
 
-require 'ruby-debug'
 require 'attachment_fu'
 require 'mocha/setup'
 require 'logger'

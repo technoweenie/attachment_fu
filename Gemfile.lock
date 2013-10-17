@@ -40,21 +40,12 @@ GEM
       nokogiri (>= 1.4.4, < 1.6.0)
       uuidtools (~> 2.1)
     builder (3.0.4)
-    columnize (0.3.6)
-    debugger (1.5.0)
-      columnize (>= 0.3.1)
-      debugger-linecache (~> 1.2.0)
-      debugger-ruby_core_source (~> 1.2.0)
-    debugger-linecache (1.2.0)
-    debugger-ruby_core_source (1.2.0)
     erubis (2.7.0)
     hashie (2.0.5)
     hike (1.2.2)
     i18n (0.6.1)
     journey (1.0.4)
     json (1.8.0)
-    linecache (0.46)
-      rbx-require-relative (> 0.0.4)
     metaclass (0.0.1)
     mini_magick (3.5.0)
       subexec (~> 0.2.1)
@@ -78,12 +69,6 @@ GEM
     rack-test (0.6.2)
       rack (>= 1.0)
     rake (10.0.4)
-    rbx-require-relative (0.0.9)
-    ruby-debug (0.10.4)
-      columnize (>= 0.1)
-      ruby-debug-base (~> 0.10.4.0)
-    ruby-debug-base (0.10.4)
-      linecache (>= 0.3)
     sprockets (2.2.2)
       hike (~> 1.2)
       multi_json (~> 1.0)
@@ -101,10 +86,8 @@ DEPENDENCIES
   appraisal
   attachment_fu!
   aws-sdk
-  debugger
   mini_magick (~> 3.3)
   minitest-reporters
   mocha
   mysql
   rake
-  ruby-debug

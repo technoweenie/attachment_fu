@@ -40,7 +40,7 @@ class S3Test < ActiveSupport::TestCase
     def test_should_create_valid_url(klass = S3Attachment)
       attachment_model klass
       attachment = upload_file :filename => '/files/rails.png'
-      assert_equal "#{attachment.s3_protocol}#{attachment.s3_hostname}#{attachment.s3_port_string}/#{attachment.bucket_name}/#{attachment.full_filename}", attachment.s3_url
+      assert_equal "#{attachment.s3_protocol}#{attachment.s3_hostname}:#{attachment.s3_port_string}/#{attachment.bucket_name}/#{attachment.full_filename}", attachment.s3_url
     end
 
     test_against_subclass :test_should_create_valid_url, S3Attachment
@@ -109,7 +109,7 @@ class S3Test < ActiveSupport::TestCase
     protected
       def http_response_for(url)
         url = URI.parse(url)
-        Net::HTTP.start(url.host, url.port) {|http| http.request_head(url.path) }
+        Net::HTTP.start(url.host, url.port, :use_ssl => true ) {|http| http.request_head(url.path) }
       end
       
   else

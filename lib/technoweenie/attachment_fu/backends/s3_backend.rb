@@ -279,7 +279,7 @@ module Technoweenie # :nodoc:
         #
         # The optional thumbnail argument will output the thumbnail's filename (if any).
         def s3_url(thumbnail = nil)
-          File.join(s3_protocol + s3_hostname + s3_port_string, bucket_name, full_filename(thumbnail))
+          File.join(s3_protocol + s3_hostname + ':' + s3_port_string, bucket_name, full_filename(thumbnail))
         end
 
         # All public objects are accessible via a GET request to CloudFront. You can generate a
