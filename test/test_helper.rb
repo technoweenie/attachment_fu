@@ -15,10 +15,12 @@ require 'active_record/fixtures'
 
 require 'action_controller'
 
-require 'ruby-debug'
 require 'attachment_fu'
-require 'mocha'
+require 'mocha/setup'
 require 'logger'
+
+require "minitest/reporters"
+MiniTest::Reporters.use!
 
 
 config = YAML::load(IO.read(File.dirname(__FILE__) + '/database.yml'))

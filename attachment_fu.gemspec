@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.authors = ["Technoweenie"]
   s.date = %q{2010-12-28}
   s.description = %q{Adds has_attachment (file store) properties to ActiveRecord.  Supports local file, file-in-db, S3 and Cloudfiles backends.}
-  s.files = ["README", "init.rb", "CHANGELOG"] + Dir["lib/**/*.rb"] + Dir["vendor/**/*.rb"]
+  s.files = ["README.md", "init.rb", "CHANGELOG"] + Dir["lib/**/*.rb"] + Dir["vendor/**/*.rb"]
   s.has_rdoc = false
   s.homepage = %q{http://github.com/zendesk/attachment_fu}
   s.require_paths = ["lib", "vendor"]
