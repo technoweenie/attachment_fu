@@ -202,6 +202,9 @@ mimetype = "image/jpeg"
 Testing
 ======
 
+S3 Test
+-----
+
 Instructions for running the s3 tests.
 
 1. ensure mysql is installed, and the 'root' user has no password
@@ -211,3 +214,12 @@ Instructions for running the s3 tests.
 5. run the test script `test/backends/remote/s3_test.rb`
 
 You can run all the test, or just `rake test` but most of the tests are disabled unless you setup their dependencies and config files.
+
+
+CloudFiles tests
+------
+
+ensure that your test container is set 'public'
+
+
+

@@ -40,6 +40,8 @@ GEM
       nokogiri (>= 1.4.4, < 1.6.0)
       uuidtools (~> 2.1)
     builder (3.0.4)
+    cloudfiles (1.4.16)
+      mime-types (>= 1.16)
     erubis (2.7.0)
     hashie (2.0.5)
     hike (1.2.2)
@@ -47,6 +49,7 @@ GEM
     journey (1.0.4)
     json (1.8.0)
     metaclass (0.0.1)
+    mime-types (1.25)
     mini_magick (3.5.0)
       subexec (~> 0.2.1)
     minitest (4.7.4)
@@ -86,6 +89,7 @@ DEPENDENCIES
   appraisal
   attachment_fu!
   aws-sdk
+  cloudfiles
   mini_magick (~> 3.3)
   minitest-reporters
   mocha

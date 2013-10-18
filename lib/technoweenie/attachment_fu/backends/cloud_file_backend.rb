@@ -124,7 +124,7 @@ module Technoweenie # :nodoc:
                                    :api_key => opts[:cloudfiles_api_key]}
           else
             @@cloudfiles_config_path = base.attachment_options[:cloudfiles_config_path] || (RAILS_ROOT + '/config/rackspace_cloudfiles.yml')
-            @@cloudfiles_config = @@cloudfiles_config = YAML.load(ERB.new(File.read(@@cloudfiles_config_path)).result)[RAILS_ENV].symbolize_keys
+            @@cloudfiles_config = @@cloudfiles_config = YAML.load(ERB.new(File.read(@@cloudfiles_config_path)).result)[ENV['RAILS_ENV']].symbolize_keys
             base.attachment_options[:cloudfiles_container_name] = @@cloudfiles_config[:container_name]
           end
         end
