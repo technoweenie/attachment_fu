@@ -174,6 +174,8 @@ module Technoweenie # :nodoc:
 
         attr_accessor :s3_config
         attr_reader :bucket_name
+        
+        @@s3_config_path = nil
 
         def initialize(obj, opts)
           # zendesk classic rails usage note
