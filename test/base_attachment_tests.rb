@@ -30,9 +30,10 @@ module BaseAttachmentTests
       attachment = upload_file :filename => '/files/rails.png'
       assert_valid attachment
       assert attachment.size > 0, "no data was set"
-      
+     
       attachment.set_temp_data 'wtf'
       assert attachment.save_attachment?
+
       attachment.save!
       
       assert_equal 'wtf', attachment_model.find(attachment.id).send(:current_data)

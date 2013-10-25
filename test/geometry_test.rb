@@ -1,7 +1,7 @@
 require 'test/unit'
 require File.expand_path(File.join(File.dirname(__FILE__), '../lib/geometry')) unless Object.const_defined?(:Geometry)
 
-class GeometryTest < Test::Unit::TestCase
+class GeometryTest < ActiveSupport::TestCase
   def test_should_resize
     assert_geometry 50, 64,
       "50x50"   => [39, 50],

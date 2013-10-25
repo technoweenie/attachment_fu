@@ -1,0 +1,97 @@
+PATH
+  remote: .
+  specs:
+    attachment_fu (1.0.0)
+      actionpack
+      activerecord
+      activesupport
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    actionpack (3.2.13)
+      activemodel (= 3.2.13)
+      activesupport (= 3.2.13)
+      builder (~> 3.0.0)
+      erubis (~> 2.7.0)
+      journey (~> 1.0.4)
+      rack (~> 1.4.5)
+      rack-cache (~> 1.2)
+      rack-test (~> 0.6.1)
+      sprockets (~> 2.2.1)
+    activemodel (3.2.13)
+      activesupport (= 3.2.13)
+      builder (~> 3.0.0)
+    activerecord (3.2.13)
+      activemodel (= 3.2.13)
+      activesupport (= 3.2.13)
+      arel (~> 3.0.2)
+      tzinfo (~> 0.3.29)
+    activesupport (3.2.13)
+      i18n (= 0.6.1)
+      multi_json (~> 1.0)
+    ansi (1.4.3)
+    appraisal (0.5.2)
+      bundler
+      rake
+    arel (3.0.2)
+    aws-sdk (1.20.0)
+      json (~> 1.4)
+      nokogiri (>= 1.4.4, < 1.6.0)
+      uuidtools (~> 2.1)
+    builder (3.0.4)
+    cloudfiles (1.4.16)
+      mime-types (>= 1.16)
+    erubis (2.7.0)
+    hashie (2.0.5)
+    hike (1.2.2)
+    i18n (0.6.1)
+    journey (1.0.4)
+    json (1.8.0)
+    metaclass (0.0.1)
+    mime-types (1.25)
+    mini_magick (3.5.0)
+      subexec (~> 0.2.1)
+    minitest (4.7.4)
+    minitest-reporters (0.14.20)
+      ansi
+      builder
+      minitest (>= 2.12, < 5.0)
+      powerbar
+    mocha (0.13.3)
+      metaclass (~> 0.0.1)
+    multi_json (1.7.2)
+    mysql (2.9.1)
+    nokogiri (1.5.10)
+    powerbar (1.0.11)
+      ansi (~> 1.4.0)
+      hashie (>= 1.1.0)
+    rack (1.4.5)
+    rack-cache (1.2)
+      rack (>= 0.4)
+    rack-test (0.6.2)
+      rack (>= 1.0)
+    rake (10.0.4)
+    sprockets (2.2.2)
+      hike (~> 1.2)
+      multi_json (~> 1.0)
+      rack (~> 1.0)
+      tilt (~> 1.1, != 1.3.0)
+    subexec (0.2.3)
+    tilt (1.3.7)
+    tzinfo (0.3.37)
+    uuidtools (2.1.4)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  appraisal
+  attachment_fu!
+  aws-sdk
+  cloudfiles
+  mini_magick (~> 3.3)
+  minitest-reporters
+  mocha
+  mysql
+  rake

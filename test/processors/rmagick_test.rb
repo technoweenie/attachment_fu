@@ -1,7 +1,7 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'test_helper'))
 
-class RmagickTest < Test::Unit::TestCase
-  attachment_model Attachment
+class RmagickTest < ActiveSupport::TestCase
+  attachment_model AttachmentTest
 
   if Object.const_defined?(:Magick)
     def test_should_create_image_from_uploaded_file
