@@ -500,7 +500,6 @@ module Technoweenie # :nodoc:
         end
       end
 
-      protected
         # Generates a unique filename for a Tempfile.
         def random_tempfile_filename
           "#{rand Time.now.to_i}#{filename || 'attachment'}"
