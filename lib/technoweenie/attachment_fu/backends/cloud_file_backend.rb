@@ -182,7 +182,7 @@ module Technoweenie # :nodoc:
         # If you are trying to get the URL for a nonpublic container, nil will be returned.
         def cloudfiles_url(thumbnail = nil)
           if container.public?
-            File.join(@@container.cdn_url, full_filename(thumbnail))
+            File.join(container.cdn_url, full_filename(thumbnail))
           else
             nil
           end
