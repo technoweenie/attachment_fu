@@ -129,14 +129,18 @@ module Technoweenie # :nodoc:
           @@container_name = @@cloudfiles_config[:container_name]
 
           base.before_update :rename_file
+
+          base.extend(ClassMethods)
         end
 
-        def self.cloudfiles
-          @cf ||= CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
-        end
+        module ClassMethods
+          def cloudfiles
+            @cf ||= CloudFiles::Connection.new(CloudFileBackend.cloudfiles_config[:username], CloudFileBackend.cloudfiles_config[:api_key])
+          end
 
-        def self.container
-          @container ||= cloudfiles.container(@@container_name)
+          def container
+            @container ||= cloudfiles.container(CloudFileBackend.container_name)
+          end
         end
 
         def container
