@@ -127,10 +127,20 @@ module Technoweenie # :nodoc:
           end
 
           @@container_name = @@cloudfiles_config[:container_name]
-          @@cf = CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
-          @@container = @@cf.container(@@container_name)
 
           base.before_update :rename_file
+        end
+
+        def self.cloudfiles
+          @cf ||= CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
+        end
+
+        def self.container
+          @container ||= cloudfiles.container(@@container_name)
+        end
+
+        def container
+          self.class.container
         end
 
         # Overwrites the base filename writer in order to store the old filename
@@ -167,7 +177,7 @@ module Technoweenie # :nodoc:
         #
         # If you are trying to get the URL for a nonpublic container, nil will be returned.
         def cloudfiles_url(thumbnail = nil)
-          if @@container.public?
+          if container.public?
             File.join(@@container.cdn_url, full_filename(thumbnail))
           else
             nil
@@ -180,13 +190,13 @@ module Technoweenie # :nodoc:
         end
 
         def current_data
-          @@container.get_object(full_filename).data
+          container.get_object(full_filename).data
         end
 
         protected
           # Called in the after_destroy callback
           def destroy_file
-            @@container.delete_object(full_filename)
+            container.delete_object(full_filename)
           end
 
           def rename_file
@@ -194,7 +204,7 @@ module Technoweenie # :nodoc:
             return unless @old_filename && @old_filename != filename
 
             old_full_filename = File.join(base_path, @old_filename)
-            @@container.delete_object(old_full_filename)
+            container.delete_object(old_full_filename)
 
             @old_filename = nil
             true
@@ -202,7 +212,7 @@ module Technoweenie # :nodoc:
 
           def save_to_storage
             if save_attachment?
-              @object = @@container.create_object(full_filename)
+              @object = container.create_object(full_filename)
               @object.write((temp_path ? File.open(temp_path) : temp_data))
             end
 
