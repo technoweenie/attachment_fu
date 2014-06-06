@@ -156,7 +156,7 @@ module Technoweenie # :nodoc:
       #
       #   @photo.full_filename # => photos/
       #
-      # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the bucket name as part of the path.
+      # Neither <tt>base_path</tt> nor <tt>full_filename</tt> include the bucket name as part of the path.
       # You can retrieve the bucket name using the <tt>bucket_name</tt> method.
       # 
       # === Accessing CloudFront URLs
