@@ -61,6 +61,11 @@ module Technoweenie # :nodoc:
               commands.background('#ffffff')
               commands.gravity('center')
               commands.extent(size)
+            elsif size.is_a?(String) and size =~ /!$/
+              size = size.gsub(/!/, '')
+              commands.resize(size.to_s + '^')
+              commands.gravity('center')
+              commands.crop(size.to_s + '+0+0')
             # crop thumbnail, the smart way
             elsif size.is_a?(String) and size =~ /c$/
                size = size.gsub(/c/, '')
