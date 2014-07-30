@@ -49,8 +49,8 @@ module Technoweenie # :nodoc:
             
             if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
               if size.is_a?(Fixnum)
-                size = [size, size]
-                commands.resize(size.join('x'))
+                commands.resize([size, size].join('x'))
+                commands.unsharp('0x5') if img[:dimensions].max < size
               else
                 commands.resize(size.join('x') + '!')
               end
