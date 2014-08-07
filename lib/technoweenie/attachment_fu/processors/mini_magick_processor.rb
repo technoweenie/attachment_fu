@@ -50,7 +50,7 @@ module Technoweenie # :nodoc:
             if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
               if size.is_a?(Fixnum)
                 commands.resize([size, size].join('x'))
-                commands.unsharp('0x5') if img[:dimensions].max < size
+                commands.unsharp('0x3') if img[:dimensions].max < size
               else
                 commands.resize(size.join('x') + '!')
               end
