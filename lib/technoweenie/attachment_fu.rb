@@ -279,7 +279,7 @@ module Technoweenie # :nodoc:
 
     module InstanceMethods
       def self.included(base)
-        base.define_callbacks *[:after_resize, :after_attachment_saved, :before_thumbnail_saved] if base.respond_to?(:define_callbacks)
+        base.define_callbacks *[:after_resize, :after_attachment_saved, :before_thumbnail_saved] if base.respond_to?(:define_callbacks, true)
       end
 
       # Checks whether the attachment's content type is an image content type
@@ -314,7 +314,7 @@ module Technoweenie # :nodoc:
 
       # Generate the thumbnails for the picture
       def generate_thumbnails
-        if respond_to?(:process_attachment_with_processing) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
+        if respond_to?(:process_attachment_with_processing, true) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
           temp_file = temp_path || create_temp_file
           attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail temp_file, suffix, *size }
         end
@@ -546,7 +546,7 @@ module Technoweenie # :nodoc:
 
         if defined?(Rails) && Rails::VERSION::MAJOR >= 3
           def callback_with_args(method, arg = self)
-            if respond_to?(method)
+            if respond_to?(method, true)
               send(method, arg)
             end
           end
