@@ -7,7 +7,7 @@ module Technoweenie # :nodoc:
           base.send :extend, ClassMethods
           base.alias_method_chain :process_attachment, :processing
         end
- 
+
         module ClassMethods
           # Yields a block containing an MiniMagick Image for the given binary data.
           def with_image(file, &block)
@@ -23,7 +23,7 @@ module Technoweenie # :nodoc:
             !binary_data.nil?
           end
         end
- 
+
       protected
         def process_attachment_with_processing
           return unless process_attachment_without_processing
@@ -34,7 +34,7 @@ module Technoweenie # :nodoc:
             callback_with_args :after_resize, img
           end if image?
         end
- 
+
         # Performs the actual resizing operation for a thumbnail
         def resize_image(img, size)
           size = size.first if size.is_a?(Array) && size.length == 1
@@ -46,7 +46,7 @@ module Technoweenie # :nodoc:
             if format == 'GIF'
               img.format('PNG')
             end
-            
+
             if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
               if size.is_a?(Fixnum)
                 commands.resize([size, size].join('x'))
@@ -69,16 +69,16 @@ module Technoweenie # :nodoc:
             # crop thumbnail, the smart way
             elsif size.is_a?(String) and size =~ /c$/
                size = size.gsub(/c/, '')
-              
+
               # calculate sizes and aspect ratio
               thumb_width, thumb_height = size.split("x")
               thumb_width   = thumb_width.to_f
               thumb_height  = thumb_height.to_f
-              
+
               thumb_aspect = thumb_width.to_f / thumb_height.to_f
               image_width, image_height = img[:width].to_f, img[:height].to_f
               image_aspect = image_width / image_height
-              
+
               # only crop if image is not smaller in both dimensions
               unless image_width < thumb_width and image_height < thumb_height
                 command = calculate_offset(image_width,image_height,image_aspect,thumb_width,thumb_height,thumb_aspect)
