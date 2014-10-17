@@ -7,8 +7,7 @@ module Technoweenie # :nodoc:
       #
       # == Requirements
       #
-      # Requires the {AWS::S3 Library}[http://amazon.rubyforge.org] for S3 by Marcel Molina Jr. installed either
-      # as a gem or a as a Rails plugin.
+      # Requires the {AWS Ruby SDK Library}[http://docs.aws.amazon.com/AWSRubySDK/latest/frames.html] installed.
       #
       # == Configuration
       #
@@ -50,7 +49,7 @@ module Technoweenie # :nodoc:
       # * <tt>:secret_access_key</tt> - The secret access key for your S3 account. Provided by Amazon.
       # * <tt>:bucket_name</tt> - A unique bucket name (think of the bucket_name as being like a database name).
       #
-      # If any of these required arguments is missing, a MissingAccessKey exception will be raised from AWS::S3.
+      # If any of these required arguments is missing, a AWS::Errors::MissingCredentialsError exception will be raised from AWS Ruby SDK.
       #
       # == About bucket names
       #
@@ -62,9 +61,7 @@ module Technoweenie # :nodoc:
       #
       # === Optional configuration parameters
       #
-      # * <tt>:server</tt> - The server to make requests to. Defaults to <tt>s3.amazonaws.com</tt>.
-      # * <tt>:port</tt> - The port to the requests should be made on. Defaults to 80 or 443 if <tt>:use_ssl</tt> is set.
-      # * <tt>:use_ssl</tt> - If set to true, <tt>:port</tt> will be implicitly set to 443, unless specified otherwise. Defaults to false.
+      # * <tt>:use_ssl</tt> - Defaults to false.
       # * <tt>:distribution_domain</tt> - The CloudFront distribution domain for the bucket.  This can either be the assigned
       #     distribution domain (ie. XXX.cloudfront.net) or a chosen domain using a CNAME. See CloudFront for more details.
       #
@@ -126,7 +123,7 @@ module Technoweenie # :nodoc:
       #
       # By default, files are stored on S3 with public access permissions. You can customize this using
       # the <tt>:s3_access</tt> option to <tt>has_attachment</tt>. Available values are
-      # <tt>:private</tt>, <tt>:public_read_write</tt>, and <tt>:authenticated_read</tt>.
+      # <tt>:private</tt>, <tt>:public_read</tt>, <tt>:public_read_write</tt>, <tt>:authenticated_read</tt>.
       #
       # === Other options
       #
@@ -150,11 +147,11 @@ module Technoweenie # :nodoc:
       # Additionally, you can get an object's base path relative to the bucket root using
       # <tt>base_path</tt>:
       #
-      #   @photo.file_base_path # => photos/1
+      #   @photo.base_path # => photos/1
       #
       # And the full path (including the filename) using <tt>full_filename</tt>:
       #
-      #   @photo.full_filename # => photos/
+      #   @photo.full_filename # => photos/1/my-photo.jpg
       #
       # Niether <tt>base_path</tt> or <tt>full_filename</tt> include the bucket name as part of the path.
       # You can retrieve the bucket name using the <tt>bucket_name</tt> method.
@@ -188,6 +185,8 @@ module Technoweenie # :nodoc:
             @@s3_config_path = base.attachment_options[:s3_config_path] || (Rails.root.to_s + '/config/amazon_s3.yml')
             config = YAML.load(ERB.new(File.read(@@s3_config_path)).result)[Rails.env]
             config = config[base.attachment_options[:config_scope]] if base.attachment_options[:config_scope]
+
+            config['use_ssl'] = false if config['use_ssl'].nil?
 
             @@s3_config = config.symbolize_keys
 
@@ -265,9 +264,7 @@ module Technoweenie # :nodoc:
         #
         #   @photo.s3_url
         #
-        # The resulting url is in the form: <tt>http(s)://:server/:bucket_name/:table_name/:id/:file</tt> where
-        # the <tt>:server</tt> variable defaults to <tt>AWS::S3 URL::DEFAULT_HOST</tt> (s3.amazonaws.com) and can be
-        # set using the configuration parameters in <tt>#{Rails.root}/config/amazon_s3.yml</tt>.
+        # The resulting url is in the form: <tt>http(s)://:server/:bucket_name/:table_name/:id/:file</tt>.
         #
         # The optional thumbnail argument will output the thumbnail's filename (if any).
         def s3_url(thumbnail = nil)
