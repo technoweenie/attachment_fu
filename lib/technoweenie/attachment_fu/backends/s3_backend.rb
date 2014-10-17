@@ -353,6 +353,7 @@ module Technoweenie # :nodoc:
           # Called in the after_destroy callback
           def destroy_file
             s3_object.delete
+            s3_object.freeze unless s3_object.exists?
           end
 
           def rename_file
