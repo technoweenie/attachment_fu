@@ -177,6 +177,14 @@ module Technoweenie # :nodoc:
 
           begin
             require 'aws-sdk'
+            #
+            # Eagerly loads all AWS classes/modules registered with autoload to
+            # make it threadsafe which allow to be used with Sidekiq.
+            #
+            #   * https://github.com/mperham/sidekiq/wiki/Problems-and-Troubleshooting#thread-safe-libraries
+            #   * https://forums.aws.amazon.com/thread.jspa?messageID=290781#290781
+            #
+            AWS.eager_autoload!
           rescue LoadError
             raise RequiredLibraryNotFoundError.new('aws-sdk could not be loaded')
           end
@@ -202,9 +210,6 @@ module Technoweenie # :nodoc:
             eval_string = "def bucket_name()\n  \"#{s3_config[:bucket_name]}\"\nend"
           end
           base.class_eval(eval_string, __FILE__, __LINE__)
-
-          # https://forums.aws.amazon.com/thread.jspa?messageID=290781#290781
-          AWS.eager_autoload!
 
           AWS.config(
             s3_config.slice(
