@@ -211,7 +211,7 @@ module Technoweenie # :nodoc:
               :access_key_id,
               :secret_access_key,
               :use_ssl,
-              :proxy_url
+              :proxy_uri
             )
           )
 
