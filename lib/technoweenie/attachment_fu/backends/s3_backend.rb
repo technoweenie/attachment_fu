@@ -290,11 +290,12 @@ module Technoweenie # :nodoc:
         end
 
         def public_filename(*args)
-          if attachment_options[:cloudfront]
+          filename = if attachment_options[:cloudfront]
             cloudfront_url(*args)
           else
             s3_url(*args)
           end
+          filename.nil? ? nil : filename.to_s
         end
 
         # All private objects are accessible via an authenticated GET request to the S3 servers. You can generate an
