@@ -500,6 +500,8 @@ module Technoweenie # :nodoc:
         # Cleans up after processing.  Thumbnails are created, the attachment is stored to the backend, and the temp_paths are cleared.
         def after_process_attachment
           if @saved_attachment
+            save_to_storage
+
             if attachment_options[:background]
               self.delay.generate_thumbnails
             else
@@ -527,7 +529,6 @@ module Technoweenie # :nodoc:
             #   }
             # end
 
-            save_to_storage
             @temp_paths.clear
             @saved_attachment = nil
             #callback :after_attachment_saved
