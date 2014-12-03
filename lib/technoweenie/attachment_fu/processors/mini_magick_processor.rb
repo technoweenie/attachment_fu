@@ -49,8 +49,25 @@ module Technoweenie # :nodoc:
 
             if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
               if size.is_a?(Fixnum)
-                commands.resize([size, size].join('x'))
-                commands.unsharp('0x3') if img[:dimensions].max < size
+                # Different config depending on whether the image is being enlarged or shrunk
+                if img[:dimensions].max < size
+                  # Upsample - "LanczosSharp-11.5"
+                  # convert $< -colorspace RGB +sigmoidal-contrast 11.5 -filter LanczosSharp -distort Resize 630x630 -sigmoidal-contrast 11.5 -colorspace sRGB $@
+                  commands.colorspace 'RGB'
+                  commands.sigmoidal_contrast + '11.5'
+                  commands.filter 'LanczosSharp'
+                  commands.distort "Resize", [size, size].join('x')
+                  commands.sigmoidal_contrast '11.5'
+                  commands.colorspace 'sRGB'
+                else
+                  # Downsample "Lanczos3Sharpest"
+                  # convert $< -colorspace RGB -filter Lanczos -define filter:blur=0.88549061701764 -distort Resize 630x630  -colorspace sRGB $@
+                  commands.colorspace 'RGB'
+                  commands.filter 'Lanczos'
+                  commands.define 'filter:blur=0.88549061701764'
+                  commands.distort "Resize", [size, size].join('x')
+                  commands.colorspace 'sRGB'
+                end
               else
                 commands.resize(size.join('x') + '!')
               end
