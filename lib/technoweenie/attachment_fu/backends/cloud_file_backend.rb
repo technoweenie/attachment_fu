@@ -110,9 +110,9 @@ module Technoweenie # :nodoc:
           mattr_reader :container_name, :cloudfiles_config
 
           begin
-            require 'cloudfiles'
+            require 'fog'
           rescue LoadError
-            raise RequiredLibraryNotFoundError.new('CloudFiles could not be loaded')
+            raise RequiredLibraryNotFoundError.new('CloudFiles library (fog) could not be loaded')
           end
 
           begin
@@ -135,11 +135,16 @@ module Technoweenie # :nodoc:
 
         module ClassMethods
           def cloudfiles
-            @cf ||= CloudFiles::Connection.new(CloudFileBackend.cloudfiles_config[:username], CloudFileBackend.cloudfiles_config[:api_key])
+            @cf ||= Fog::Storage.new(
+              :provider           => 'rackspace',
+              :rackspace_username => CloudFileBackend.cloudfiles_config[:username],
+              :rackspace_api_key  => CloudFileBackend.cloudfiles_config[:api_key],
+              :rackspace_region   => CloudFileBackend.cloudfiles_config[:region],
+            )
           end
 
           def container
-            @container ||= cloudfiles.container(CloudFileBackend.container_name)
+            @container ||= cloudfiles.directories.get(CloudFileBackend.container_name)
           end
         end
 
@@ -182,7 +187,7 @@ module Technoweenie # :nodoc:
         # If you are trying to get the URL for a nonpublic container, nil will be returned.
         def cloudfiles_url(thumbnail = nil)
           if container.public?
-            File.join(container.cdn_url, full_filename(thumbnail))
+            File.join(container.public_url, full_filename(thumbnail))
           else
             nil
           end
@@ -194,13 +199,13 @@ module Technoweenie # :nodoc:
         end
 
         def current_data
-          container.get_object(full_filename).data
+          container.files.get(full_filename).body
         end
 
         protected
           # Called in the after_destroy callback
           def destroy_file
-            container.delete_object(full_filename)
+            container.files.get(full_filename).destroy
           end
 
           def rename_file
@@ -208,7 +213,7 @@ module Technoweenie # :nodoc:
             return unless @old_filename && @old_filename != filename
 
             old_full_filename = File.join(base_path, @old_filename)
-            container.delete_object(old_full_filename)
+            container.files.get(old_full_filename).destroy
 
             @old_filename = nil
             true
@@ -216,8 +221,7 @@ module Technoweenie # :nodoc:
 
           def save_to_storage
             if save_attachment?
-              @object = container.create_object(full_filename)
-              @object.write((temp_path ? File.open(temp_path) : temp_data))
+              @object = container.files.create(:key => full_filename, :body => (temp_path ? File.open(temp_path) : temp_data))
             end
 
             @old_filename = nil
