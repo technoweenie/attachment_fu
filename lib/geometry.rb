@@ -1,9 +1,9 @@
 # This Geometry class was yanked from RMagick.  However, it lets ImageMagick handle the actual change_geometry.
-# Use #new_dimensions_for to get new dimensons
+# Use #new_dimensions_for to get new dimensions
 # Used so I can use spiffy RMagick geometry strings with ImageScience
 class Geometry
-  # ! and @ are removed until support for them is added
-  FLAGS = ['', '%', '<', '>']#, '!', '@']
+  # @ is removed until support for them is added
+  FLAGS = ['', '%', '<', '>', '!']#, '@']
   RFLAGS = { '%' => :percent,
              '!' => :aspect,
              '<' => :>,
@@ -29,7 +29,7 @@ class Geometry
 
   def self.from_s(str)
     raise(ArgumentError, "no geometry string specified") unless str
-  
+
     if m = RE.match(str)
       new(m[1].to_i, m[2].to_i, m[3].to_i, m[4].to_i, RFLAGS[m[5]])
     else
@@ -44,9 +44,9 @@ class Geometry
     str << 'x' if (@width > 0 || @height > 0)
     str << "%g" % @height if @height > 0
     str << "%+d%+d" % [@x, @y] if (@x != 0 || @y != 0)
-    str << FLAGS[@flag.to_i]
+    str << RFLAGS[@flag.to_i]
   end
-  
+
   # attempts to get new dimensions for the current geometry string given these old dimensions.
   # This doesn't implement the aspect flag (!) or the area flag (@).  PDI
   def new_dimensions_for(orig_width, orig_height)
@@ -59,6 +59,9 @@ class Geometry
         scale_y = @height.zero? ? @width : @height
         new_width    = scale_x.to_f * (orig_width.to_f  / 100.0)
         new_height   = scale_y.to_f * (orig_height.to_f / 100.0)
+      when :aspect
+        new_width = @width unless @width.nil?
+        new_height = @height unless @height.nil?
       when :<, :>, nil
         scale_factor =
           if new_width.zero? || new_height.zero?
@@ -74,6 +77,9 @@ class Geometry
         new_height = scale_factor * new_height.to_f
         new_width  = orig_width  if @flag && orig_width.send(@flag,  new_width)
         new_height = orig_height if @flag && orig_height.send(@flag, new_height)
+      when :aspect
+        new_width = width
+        new_height = height
     end
 
     [new_width, new_height].collect! { |v| [v.round, 1].max }

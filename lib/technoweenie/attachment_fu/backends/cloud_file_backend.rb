@@ -9,15 +9,15 @@ module Technoweenie # :nodoc:
       #
       # == Requirements
       #
-      # Requires the {Cloud Files Gem}[http://www.mosso.com/cloudfiles.jsp] by Rackspace 
+      # Requires the {Cloud Files Gem}[http://www.mosso.com/cloudfiles.jsp] by Rackspace
       #
       # == Configuration
       #
-      # Configuration is done via <tt>RAILS_ROOT/config/rackspace_cloudfiles.yml</tt> and is loaded according to the <tt>RAILS_ENV</tt>.
+      # Configuration is done via <tt>Rails.root.to_s/config/rackspace_cloudfiles.yml</tt> and is loaded according to the <tt>#{Rails.env}</tt>.
       # The minimum connection options that you must specify are a container name, your Mosso login name and your Mosso API key.
-      # You can sign up for Cloud Files and get access keys by visiting https://www.mosso.com/buy.htm 
+      # You can sign up for Cloud Files and get access keys by visiting https://www.mosso.com/buy.htm
       #
-      # Example configuration (RAILS_ROOT/config/rackspace_cloudfiles.yml)
+      # Example configuration (Rails.root.to_s/config/rackspace_cloudfiles.yml)
       #
       #   development:
       #     container_name: appname_development
@@ -36,7 +36,7 @@ module Technoweenie # :nodoc:
       #
       # You can change the location of the config path by passing a full path to the :cloudfiles_config_path option.
       #
-      #   has_attachment :storage => :cloud_files, :cloudfiles_config_path => (RAILS_ROOT + '/config/mosso.yml')
+      #   has_attachment :storage => :cloud_files, :cloudfiles_config_path => (Rails.root.to_s + '/config/mosso.yml')
       #
       # === Required configuration parameters
       #
@@ -110,23 +110,46 @@ module Technoweenie # :nodoc:
           mattr_reader :container_name, :cloudfiles_config
 
           begin
-            require 'cloudfiles'
+            require 'fog'
           rescue LoadError
-            raise RequiredLibraryNotFoundError.new('CloudFiles could not be loaded')
+            raise RequiredLibraryNotFoundError.new('CloudFiles library (fog) could not be loaded')
           end
 
           begin
-            @@cloudfiles_config_path = base.attachment_options[:cloudfiles_config_path] || (RAILS_ROOT + '/config/rackspace_cloudfiles.yml')
-            @@cloudfiles_config = @@cloudfiles_config = YAML.load(ERB.new(File.read(@@cloudfiles_config_path)).result)[RAILS_ENV].symbolize_keys
+            @@cloudfiles_config_path = base.attachment_options[:cloudfiles_config_path] || (Rails.root.to_s + '/config/rackspace_cloudfiles.yml')
+
+            config = YAML.load(ERB.new(File.read(@@cloudfiles_config_path)).result)[Rails.env]
+            config = config[base.attachment_options[:config_scope]] if base.attachment_options[:config_scope]
+
+            @@cloudfiles_config = config.symbolize_keys
           rescue
             #raise ConfigFileNotFoundError.new('File %s not found' % @@cloudfiles_config_path)
           end
 
           @@container_name = @@cloudfiles_config[:container_name]
-          @@cf = CloudFiles::Connection.new(@@cloudfiles_config[:username], @@cloudfiles_config[:api_key])
-          @@container = @@cf.container(@@container_name)
-          
+
           base.before_update :rename_file
+
+          base.extend(ClassMethods)
+        end
+
+        module ClassMethods
+          def cloudfiles
+            @cf ||= Fog::Storage.new(
+              :provider           => 'rackspace',
+              :rackspace_username => CloudFileBackend.cloudfiles_config[:username],
+              :rackspace_api_key  => CloudFileBackend.cloudfiles_config[:api_key],
+              :rackspace_region   => CloudFileBackend.cloudfiles_config[:region],
+            )
+          end
+
+          def container
+            @container ||= cloudfiles.directories.get(CloudFileBackend.container_name)
+          end
+        end
+
+        def container
+          self.class.container
         end
 
         # Overwrites the base filename writer in order to store the old filename
@@ -163,8 +186,8 @@ module Technoweenie # :nodoc:
         #
         # If you are trying to get the URL for a nonpublic container, nil will be returned.
         def cloudfiles_url(thumbnail = nil)
-          if @@container.public?
-            File.join(@@container.cdn_url, full_filename(thumbnail))
+          if container.public?
+            File.join(container.public_url, full_filename(thumbnail))
           else
             nil
           end
@@ -176,13 +199,13 @@ module Technoweenie # :nodoc:
         end
 
         def current_data
-          @@container.get_object(full_filename).data
+          container.files.get(full_filename).body
         end
 
         protected
           # Called in the after_destroy callback
           def destroy_file
-            @@container.delete_object(full_filename)
+            container.files.get(full_filename).destroy
           end
 
           def rename_file
@@ -190,7 +213,7 @@ module Technoweenie # :nodoc:
             return unless @old_filename && @old_filename != filename
 
             old_full_filename = File.join(base_path, @old_filename)
-            @@container.delete_object(old_full_filename)
+            container.files.get(old_full_filename).destroy
 
             @old_filename = nil
             true
@@ -198,8 +221,7 @@ module Technoweenie # :nodoc:
 
           def save_to_storage
             if save_attachment?
-              @object = @@container.create_object(full_filename)
-              @object.write((temp_path ? File.open(temp_path) : temp_data))
+              @object = container.files.create(:key => full_filename, :body => (temp_path ? File.open(temp_path) : temp_data))
             end
 
             @old_filename = nil
