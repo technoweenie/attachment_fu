@@ -311,23 +311,28 @@ module Technoweenie # :nodoc:
         end
         "#{basename}_#{thumbnail}#{ext}"
       end
+      def jpeg_thumbnail_name_for(thumbnail = nil)
+        return filename if thumbnail.blank?
+        basename = filename.gsub(/\.\w+$/, '')
+        "#{basename}_#{thumbnail}.jpeg"
+      end
 
       # Generate the thumbnails for the picture
       def generate_thumbnails
         if respond_to?(:process_attachment_with_processing, true) && thumbnailable? && !attachment_options[:thumbnails].blank? && parent_id.nil?
           temp_file = temp_path || create_temp_file
-          attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail temp_file, suffix, *size }
+          attachment_options[:thumbnails].each { |suffix, size| create_or_update_thumbnail_as_jpeg temp_file, suffix, *size }
         end
       end
 
       # Creates or updates the thumbnail for the current attachment.
-      def create_or_update_thumbnail(temp_file, file_name_suffix, *size)
+      def create_or_update_thumbnail_as_jpeg(temp_file, file_name_suffix, *size)
         thumbnailable? || raise(ThumbnailError.new("Can't create a thumbnail if the content type is not an image or there is no parent_id column"))
         find_or_initialize_thumbnail(file_name_suffix).tap do |thumb|
           thumb.temp_paths.unshift temp_file
           thumb.send(:assign_attributes, {
-            :content_type             => content_type,
-            :filename                 => thumbnail_name_for(file_name_suffix),
+            :content_type             => 'image/jpeg',
+            :filename                 => jpeg_thumbnail_name_for(file_name_suffix),
             :thumbnail_resize_options => size
           }, :without_protection => true)
           callback_with_args :before_thumbnail_saved, thumb

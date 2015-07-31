@@ -3,6 +3,8 @@ module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     module Processors
       module MiniMagickProcessor
+        IMAGE_FORMAT = 'JPEG'
+
         def self.included(base)
           base.send :extend, ClassMethods
           base.alias_method_chain :process_attachment, :processing
@@ -28,6 +30,7 @@ module Technoweenie # :nodoc:
         def process_attachment_with_processing
           return unless process_attachment_without_processing
           with_image do |img|
+            img.format(IMAGE_FORMAT)
             resize_image_or_thumbnail! img
             self.width = img[:width] if respond_to?(:width)
             self.height = img[:height] if respond_to?(:height)
@@ -38,14 +41,9 @@ module Technoweenie # :nodoc:
         # Performs the actual resizing operation for a thumbnail
         def resize_image(img, size)
           size = size.first if size.is_a?(Array) && size.length == 1
-          format = img[:format]
+          format = IMAGE_FORMAT
           img.combine_options do |commands|
             commands.strip unless attachment_options[:keep_profile]
-
-            # GIF is not handled correctly, so we move to PNG, as in other processors…
-            if format == 'GIF'
-              img.format('PNG')
-            end
 
             if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
               if size.is_a?(Fixnum)
@@ -105,7 +103,7 @@ module Technoweenie # :nodoc:
               end
 
               # don not resize if image is not as height or width then thumbnail
-              if image_width < thumb_width or image_height < thumb_height                   
+              if image_width < thumb_width or image_height < thumb_height
                   commands.background('#ffffff')
                   commands.gravity('center')
                   commands.extent(size)
@@ -142,7 +140,7 @@ module Technoweenie # :nodoc:
             command = "#{thumb_width}x#{image_height}+#{offset}+0"
 
           # normal thumbnail generation
-          # calculate height and offset y, width is fixed                 
+          # calculate height and offset y, width is fixed
           elsif (image_aspect <= thumb_aspect or image_width < thumb_width) and image_height > thumb_height
             height = image_width / thumb_aspect
             offset = (image_height / 2) - (height / 2)
