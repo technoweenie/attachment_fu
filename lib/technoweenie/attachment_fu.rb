@@ -1,5 +1,7 @@
 module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
+    THUMBNAIL_FORMAT = 'JPEG'
+
     @@default_processors = %w(ImageScience Rmagick MiniMagick Gd2 CoreImage)
     @@tempfile_path      = File.join(Rails.root, 'tmp', 'attachment_fu')
     @@content_types      = [
@@ -546,6 +548,7 @@ module Technoweenie # :nodoc:
           if (!respond_to?(:parent_id) || parent_id.nil?) && attachment_options[:resize_to] # parent image
             resize_image(img, attachment_options[:resize_to])
           elsif thumbnail_resize_options # thumbnail
+            img.format(THUMBNAIL_FORMAT)
             resize_image(img, thumbnail_resize_options)
           end
         end

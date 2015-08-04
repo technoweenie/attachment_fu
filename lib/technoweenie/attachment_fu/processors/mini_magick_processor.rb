@@ -3,7 +3,6 @@ module Technoweenie # :nodoc:
   module AttachmentFu # :nodoc:
     module Processors
       module MiniMagickProcessor
-        IMAGE_FORMAT = 'JPEG'
 
         def self.included(base)
           base.send :extend, ClassMethods
@@ -30,7 +29,6 @@ module Technoweenie # :nodoc:
         def process_attachment_with_processing
           return unless process_attachment_without_processing
           with_image do |img|
-            img.format(IMAGE_FORMAT)
             resize_image_or_thumbnail! img
             self.width = img[:width] if respond_to?(:width)
             self.height = img[:height] if respond_to?(:height)
@@ -41,7 +39,7 @@ module Technoweenie # :nodoc:
         # Performs the actual resizing operation for a thumbnail
         def resize_image(img, size)
           size = size.first if size.is_a?(Array) && size.length == 1
-          format = IMAGE_FORMAT
+          format = AttachmentFu::THUMBNAIL_FORMAT
           img.combine_options do |commands|
             commands.strip unless attachment_options[:keep_profile]
 
