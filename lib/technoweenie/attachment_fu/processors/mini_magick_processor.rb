@@ -40,13 +40,17 @@ module Technoweenie # :nodoc:
         def resize_image(img, size)
           size = size.first if size.is_a?(Array) && size.length == 1
           format = AttachmentFu::THUMBNAIL_FORMAT
+          # Fetch the dimensions outside the combine_options call. Calling it
+          # inside the block causes the image info to be read before the image
+          # is resized, thus caching the wrong values.
+          dimensions = img[:dimensions]
           img.combine_options do |commands|
             commands.strip unless attachment_options[:keep_profile]
 
             if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
               if size.is_a?(Fixnum)
                 # Different config depending on whether the image is being enlarged or shrunk
-                if img[:dimensions].max < size
+                if dimensions.max < size
                   # Upsample - "LanczosSharp-11.5"
                   # convert $< -colorspace RGB +sigmoidal-contrast 11.5 -filter LanczosSharp -distort Resize 630x630 -sigmoidal-contrast 11.5 -colorspace sRGB $@
                   commands.colorspace 'RGB'
