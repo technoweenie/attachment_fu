@@ -216,7 +216,8 @@ module Technoweenie # :nodoc:
               :access_key_id,
               :secret_access_key,
               :use_ssl,
-              :proxy_uri
+              :proxy_uri,
+              :region
             )
           )
 
