@@ -277,6 +277,10 @@ module Technoweenie # :nodoc:
         ref = reflections.values.detect { |r| r.macro == :belongs_to && r.options[:polymorphic] }
         @@_polymorphic_relation_type_column = ref && ref.options[:foreign_type]
       end
+
+      def generate_thumbnails(record_id)
+        find(record_id).generate_thumbnails
+      end
     end
 
     module InstanceMethods
@@ -510,7 +514,20 @@ module Technoweenie # :nodoc:
             save_to_storage
 
             if attachment_options[:background]
-              self.delay.generate_thumbnails
+              if attachment_options[:background] == :sidekiq
+                # This prevents Sidekiq from serializing and then recreating
+                # the instance from YAML. The problem with this is if
+                # the record has been deleted by the time the job is executed
+                # the instance is still rebuilt without error, then when it
+                # tries to talk to S3 it encounters a AWS::S3::Errors::NoSuchKey
+                # error. Based on:
+                # "I strongly recommend avoiding delaying methods on
+                # instances", from
+                # https://github.com/mperham/sidekiq/wiki/Delayed-extensions#activerecord
+                self.class.delay(:retry => 0).generate_thumbnails(self.id)
+              else
+                self.delay.generate_thumbnails
+              end
             else
               self.generate_thumbnails
             end
