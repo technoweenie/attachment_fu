@@ -46,7 +46,7 @@ module Technoweenie # :nodoc:
           dimensions = img[:dimensions]
           img.combine_options do |commands|
             commands.strip unless attachment_options[:keep_profile]
-            commands.limit 'area', '100MB'
+            commands.limit 'area', '300MB'
 
             if size.is_a?(Fixnum) || (size.is_a?(Array) && size.first.is_a?(Fixnum))
               if size.is_a?(Fixnum)
