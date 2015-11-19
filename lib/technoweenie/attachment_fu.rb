@@ -279,7 +279,13 @@ module Technoweenie # :nodoc:
       end
 
       def generate_thumbnails(record_id)
-        find(record_id).generate_thumbnails
+        begin
+          record = find(record_id)
+        rescue ActiveRecord::RecordNotFound
+          record = nil
+        end
+
+        record.generate_thumbnails if record
       end
     end
 
