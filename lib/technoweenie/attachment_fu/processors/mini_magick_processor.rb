@@ -53,21 +53,17 @@ module Technoweenie # :nodoc:
                 # Different config depending on whether the image is being enlarged or shrunk
                 if dimensions.max < size
                   # Upsample - "LanczosSharp-11.5"
-                  # convert $< -colorspace sRGB +sigmoidal-contrast 11.5 -filter LanczosSharp -distort Resize 630x630 -sigmoidal-contrast 11.5 -colorspace RGB $@
-                  commands.colorspace 'sRGB'
+                  # convert $< +sigmoidal-contrast 11.5 -filter LanczosSharp -distort Resize 630x630 -sigmoidal-contrast 11.5 $@
                   commands.sigmoidal_contrast + '11.5'
                   commands.filter 'LanczosSharp'
                   commands.distort "Resize", [size, size].join('x')
                   commands.sigmoidal_contrast '11.5'
-                  commands.colorspace 'RGB'
                 else
                   # Downsample "Lanczos3Sharpest"
-                  # convert $< -colorspace sRGB -filter Lanczos -define filter:blur=0.88549061701764 -distort Resize 630x630  -colorspace RGB $@
-                  commands.colorspace 'sRGB'
+                  # convert $< -filter Lanczos -define filter:blur=0.88549061701764 -distort Resize 630x630 $@
                   commands.filter 'Lanczos'
                   commands.define 'filter:blur=0.88549061701764'
                   commands.distort "Resize", [size, size].join('x')
-                  commands.colorspace 'RGB'
                 end
               else
                 commands.resize(size.join('x') + '!')
