@@ -279,13 +279,7 @@ module Technoweenie # :nodoc:
       end
 
       def generate_thumbnails(record_id)
-        begin
-          record = find(record_id)
-        rescue ActiveRecord::RecordNotFound
-          record = nil
-        end
-
-        record.generate_thumbnails if record
+        find(record_id).generate_thumbnails
       end
     end
 
@@ -530,7 +524,7 @@ module Technoweenie # :nodoc:
                 # "I strongly recommend avoiding delaying methods on
                 # instances", from
                 # https://github.com/mperham/sidekiq/wiki/Delayed-extensions#activerecord
-                self.class.delay(:retry => 0).generate_thumbnails(self.id)
+                self.class.delay(:retry => 1).generate_thumbnails(self.id)
               else
                 self.delay.generate_thumbnails
               end
