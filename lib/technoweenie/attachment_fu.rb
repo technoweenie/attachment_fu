@@ -426,13 +426,15 @@ module Technoweenie # :nodoc:
 
         # validates the size and content_type attributes according to the current model's options
         def attachment_attributes_valid?
-          [:size, :content_type].each do |attr_name|
-            enum = attachment_options[attr_name]
-            if Object.const_defined?(:I18n) # Rails >= 2.2
-              errors.add attr_name, I18n.translate("activerecord.errors.messages.inclusion", attr_name => enum) unless enum.nil? || enum.include?(send(attr_name))
-            else
-              errors.add attr_name, ActiveRecord::Errors.default_error_messages[:inclusion] unless enum.nil? || enum.include?(send(attr_name))
-            end
+          content_type = attachment_options[:content_type]
+          if Object.const_defined?(:I18n) # Rails >= 2.2
+            errors.add :content_type, I18n.translate("errors.messages.inclusion", attr_name => content_type) unless content_type.nil? || content_type.include?(send(:content_type))
+            errors.add :size, I18n.translate("errors.messages.less_than", count: attachment_options[:max_size]) if send(:size) > attachment_options[:max_size]
+            errors.add attr_name, I18n.translate("errors.messages.greater_than", count: attachment_options[:min_size]) if send(:size) < attachment_options[:min_size]
+          else
+            errors.add :content_type, ActiveRecord::Errors.default_error_messages[:inclusion] unless content_type.nil? || content_type.include?(send(:content_type))
+            errors.add :size, ActiveRecord::Errors.default_error_messages[:less_than] if send(:size) > attachment_options[:max_size]
+            errors.add :size, ActiveRecord::Errors.default_error_messages[:greater_than] if send(:size) < attachment_options[:min_size]
           end
         end
 
