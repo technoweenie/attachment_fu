@@ -110,7 +110,7 @@ module Technoweenie # :nodoc:
           mattr_reader :container_name, :cloudfiles_config
 
           begin
-            require 'fog'
+            require 'fog/rackspace'
           rescue LoadError
             raise RequiredLibraryNotFoundError.new('CloudFiles library (fog) could not be loaded')
           end
