@@ -1,3 +1,43 @@
+* Apr 10, 2013 *
+* Ruby 2 compatibility fix
+* Removed some lingering occurrences of RAILS_ROOT and RAILS_ENV
+* clean up of gemspec file
+* no longer package unnecessary files like the test files
+
+* Mar 12, 2013 *
+* Pull in changes from https://github.com/aalong/attachment_fu to use Ruby 1.9.2 Tempfile naming strategy to fix conflicts with Sprockets (see https://github.com/aalong/attachment_fu/commit/938ec3b8597fbf82b1de8c98de12c4688463450a)
+
+* Feb 19, 2013 *
+* Pull in changes from https://github.com/itkin/attachment_fu fork to fix mini magick
+
+* Nov 15, 2012 *
+* Removed 'crop:' option as already included when prefixing geometry with a 'c'.  Add note to docs.
+* Added option to sharpen resized images ':sharpen_on_resize'
+
+* Oct 26, 2012 *
+* Merged with https://github.com/tdd/attachment_fu fork to include GEM support for use in Rails 3.2, and bumped version to 3.2.x to indicate Rails 3.2 support.
+
+* Oct 25, 2012 *
+* Fix to support Ruby 1.9.3
+* Image cropping support (append 'crop:' to desired file size when resizing)
+
+* Mar 15, 2010 *
+* Added a symbol syntax for parent-type-based size spec: calls the corresponding method on the current asset instance to
+  get a Hash of required thumbnails.  Lets us dynamically specify what would otherwise be hard-coded, which is useful
+  when the set of thumbnails for a given parent type varies depending on the usage context.
+
+* Aug 6, 2009 *
+* JPEG quality control finalized across processors (although CoreImage applies it in a rather fuzzy-logic way), with tests.
+
+* Aug 4, 2009 *
+* Supports the :aspect/'!' geometry flag in all processors
+  (thanks to http://www.deepcalm.com/writing/cropped-thumbnails-in-attachment_fu-using-imagescience)
+* JPEG quality control on thumbnailing/resizing (still buggy on Rmagick/MiniMagick though).
+* Moves from GIF to PNG regardless of the source file extension's case (used to require lowercase)
+* Auto-orients image (if EXIF suggests it) prior to processing with RMagickProcessor
+* Fixes non-image upload tests (both regular files and Merb files)
+* Fixes obsolete failures on RMagick tests (aspect_ratio tested but not initialized anymore due to new callback architecture
+
 * Apr 17 2008 *
 * amazon_s3.yml is now passed through ERB before being passed to AWS::S3 [François Beausoleil]
 

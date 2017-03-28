@@ -1,3 +1,4 @@
-test/amazon_s3.yml
-test/rackspace_cloudfiles.yml
-test/debug.log
+tmp/restart.txt
+.DS_Store
+*~
+*.gem

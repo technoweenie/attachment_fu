@@ -32,13 +32,13 @@ module Technoweenie # :nodoc:
             # pngs for thumbnails.  It has something to do with trying to save gifs
             # with a larger palette than 256 colors, which is all the gif format
             # supports.
-            filename.sub! /gif$/, 'png'
+            filename.sub! /gif$/i, 'png'
             content_type.sub!(/gif$/, 'png')
             temp_paths.unshift write_to_temp_file(filename)
             grab_dimensions = lambda do |img|
               self.width  = img.width  if respond_to?(:width)
               self.height = img.height if respond_to?(:height)
-              img.save self.temp_path
+              img.save_with_quality self.temp_path, ImageScience::JPEG_QUALITYGOOD
               self.size = File.size(self.temp_path)
               callback_with_args :after_resize, img
             end
@@ -52,7 +52,18 @@ module Technoweenie # :nodoc:
               end
             else
               new_size = [img.width, img.height] / size.to_s
-              img.resize(new_size[0], new_size[1], &grab_dimensions)
+              if size.ends_with? "!"
+                aspect = new_size[0].to_f / new_size[1].to_f
+                ih, iw = img.height, img.width
+                w, h = (ih * aspect), (iw / aspect)
+                w = [iw, w].min.to_i
+                h = [ih, h].min.to_i
+                img.with_crop( (iw-w)/2, (ih-h)/2, (iw+w)/2, (ih+h)/2) {
+                  |crop| crop.resize(new_size[0], new_size[1], &grab_dimensions )
+                }
+              else
+                img.resize(new_size[0], new_size[1], &grab_dimensions)
+              end
             end
           end
       end
